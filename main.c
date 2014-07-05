@@ -33,7 +33,7 @@ void reshape(int width, int height)
 
 void initialize(void)
 {
-	// Set the backgroun to black
+	// Set the background to black
 	glClearColor(0, 0, 0, 1);
 }
 
