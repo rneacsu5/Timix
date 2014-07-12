@@ -1,5 +1,5 @@
 build:
-	gcc main.c -lglut -lGL -lGLU -o fin -Wall
+	gcc test.c -lglut -lGL -lGLU -lm -o fin -Wall
 run:
 	./fin
 clear:
