@@ -4,10 +4,81 @@
 
 #define PI 3.14159265
 
-int a = 0;
+int a1 = 0;
+int a2 = 0;
 float r;
-float loc[] = {5, 2.5, 5, 1};
-float white_color[] = {0.5, 0.5, 0.5, 1};
+float lightPos[] = {5, 2.5, 5, 1};
+float lightColor[] = {0.5, 0.5, 0.5, 1};
+
+void drawWallsAndFloor(void)
+{
+	int i, j;
+	glBegin(GL_QUADS);
+		for (i = 0; i < 10; i++) {
+			for (j = 0; j < 10; j++) {
+				// Floor
+				glColor3f(i / 10.0, 0, j / 10.0);
+				glNormal3f(0, 1, 0);
+				glVertex3f(i, 0, j);
+				// glTexCoord2f(i, j);
+				glVertex3f(i, 0, j + 1);
+				// glTexCoord2f(i, j + 1);
+				glVertex3f(i + 1, 0, j + 1);
+				// glTexCoord2f(i + 1, j + 1);
+				glVertex3f(i + 1, 0, j);
+				// glTexCoord2f(i + 1, j);
+
+				// Wall 1
+				glColor3f(j / 10.0, 0, i / 10.0);
+				glNormal3f(0, 0, 1);
+				glVertex3f(i, 0.25 * j, 0);
+				// glTexCoord2f(i, k);
+				glVertex3f(i, 0.25 * (j + 1), 0);
+				// glTexCoord2f(i, k + 1);
+				glVertex3f(i + 1, 0.25 * (j + 1), 0);
+				// glTexCoord2f(i + 1, k + 1);
+				glVertex3f(i + 1, 0.25 * j, 0);
+				// glTexCoord2f(i + 1, k);
+
+				// Wall 2
+				glColor3f(j / 10.0, i / 10.0, 0);
+				glNormal3f(0, 0, -1);
+				glVertex3f(i, 0.25 * j, 10);
+				// glTexCoord2f(i, k);
+				glVertex3f(i, 0.25 * (j + 1), 10);
+				// glTexCoord2f(i, k + 1);
+				glVertex3f(i + 1, 0.25 * (j + 1), 10);
+				// glTexCoord2f(i + 1, k + 1);
+				glVertex3f(i + 1, 0.25 * j, 10);
+				// glTexCoord2f(i + 1, k);
+
+				// Wall 3
+				glColor3f(0, i / 10.0, j / 10.0);
+				glNormal3f(1, 0, 0);
+				glVertex3f(0, 0.25 * j, i);
+				// glTexCoord2f(i, k);
+				glVertex3f(0, 0.25 * (j + 1), i);
+				// glTexCoord2f(i, k + 1);
+				glVertex3f(0, 0.25 * (j + 1), i + 1);
+				// glTexCoord2f(i + 1, k + 1);
+				glVertex3f(0, 0.25 * j, i + 1);
+				// glTexCoord2f(i + 1, k);
+
+				// Wall 4
+				glColor3f(j / 10.0, 1, i / 10.0);
+				glNormal3f(-1, 0, 0);
+				glVertex3f(10, 0.25 * j, i);
+				// glTexCoord2f(i, k);
+				glVertex3f(10, 0.25 * (j + 1), i);
+				// glTexCoord2f(i, k + 1);
+				glVertex3f(10, 0.25 * (j + 1), i + 1);
+				// glTexCoord2f(i + 1, k + 1);
+				glVertex3f(10, 0.25 * j, i + 1);
+				// glTexCoord2f(i + 1, k);
+			}
+		}
+	glEnd();
+}
 
 void display(void)
 {
@@ -16,144 +87,20 @@ void display(void)
 	// Load the identity matrix, clear all the previous transformations
 	glLoadIdentity();
 	// Set up the camera
-	gluLookAt(5, 1.7, 5, 5 + sin(r), 1.7, 5 + cos(r), 0, 1, 0);
+	gluLookAt(5, 1.7, 5, 5 + sin(r), 1.7, 5 + cos(r), -cos(r), 3, sin(r));
 	// Set camera position
-	glLightfv(GL_LIGHT0, GL_POSITION, loc);
+	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 	// Set the drawing color to cyan
 	glColor3f(0, 1, 1);
-
+	// Draws, moves and rotates a teapot
 	glPushMatrix();
-	glTranslatef(2, 0.15, 2);
-	glRotatef(a, 0, 1, 0);
-	glutSolidTeapot(0.3);
+		glTranslatef(2, 0.15, 2);
+		glRotatef(a2, 0, 1, 0);
+		glutSolidTeapot(0.3);
 	glPopMatrix();
 
-	int i, j;
+	drawWallsAndFloor();
 
-	//Floor
-	glColor3f(0.7, 1, 0.7);
-	glBegin(GL_QUADS);
-	for (i = 0; i < 10; i++) {
-		for (j = 0; j < 10; j++) {
-			glVertex3f(i, 0, j);
-			// glTexCoord2f(i, j);
-			glNormal3f(0, 1, 0);
-
-			glVertex3f(i, 0, j + 1);
-			// glTexCoord2f(i, j + 1);
-			glNormal3f(0, 1, 0);
-
-			glVertex3f(i + 1, 0, j + 1);
-			// glTexCoord2f(i + 1, j + 1);
-			glNormal3f(0, 1, 0);
-
-			glVertex3f(i + 1, 0, j);
-			// glTexCoord2f(i + 1, j);
-			glNormal3f(0, 1, 0);
-
-		}
-	}
-	glEnd();
-
-	//Wall 1
-	glColor3f(1, 1, 0);
-	glBegin(GL_QUADS);
-	for (i = 0; i < 10; i++) {
-		for (j = 0; j < 10; j ++) {
-			glVertex3f(i, 0.25 * j, 0);
-			// glTexCoord2f(i, k);
-			glNormal3f(0, 0, 1);
-
-			glVertex3f(i, 0.25 * (j + 1), 0);
-			// glTexCoord2f(i, k + 1);
-			glNormal3f(0, 0, 1);
-
-			glVertex3f(i + 1, 0.25 * (j + 1), 0);
-			// glTexCoord2f(i + 1, k + 1);
-			glNormal3f(0, 0, 1);
-
-			glVertex3f(i + 1, 0.25 * j, 0);
-			// glTexCoord2f(i + 1, k);
-			glNormal3f(0, 0, 1);
-
-		}
-	}
-	glEnd();
-
-	//Wall 2
-	glColor3f(1, 0, 1);
-	glBegin(GL_QUADS);
-	for (i = 0; i < 10; i++) {
-		for (j = 0; j < 10; j ++) {
-			glVertex3f(i, 0.25 * j, 10);
-			// glTexCoord2f(i, k);
-			glNormal3f(0, 0, -1);
-
-			glVertex3f(i, 0.25 * (j + 1), 10);
-			// glTexCoord2f(i, k + 1);
-			glNormal3f(0, 0, -1);
-
-			glVertex3f(i + 1, 0.25 * (j + 1), 10);
-			// glTexCoord2f(i + 1, k + 1);
-			glNormal3f(0, 0, -1);
-
-			glVertex3f(i + 1, 0.25 * j, 10);
-			// glTexCoord2f(i + 1, k);
-			glNormal3f(0, 0, -1);
-
-		}
-	}
-	glEnd();
-
-	//Wall 3
-	glColor3f(0, 1, 1);
-	glBegin(GL_QUADS);
-	for (i = 0; i < 10; i++) {
-		for (j = 0; j < 10; j ++) {
-			glVertex3f(0, 0.25 * j, i);
-			// glTexCoord2f(i, k);
-			glNormal3f(1, 0, 0);
-
-			glVertex3f(0, 0.25 * (j + 1), i);
-			// glTexCoord2f(i, k + 1);
-			glNormal3f(1, 0, 0);
-
-			glVertex3f(0, 0.25 * (j + 1), i + 1);
-			// glTexCoord2f(i + 1, k + 1);
-			glNormal3f(1, 0, 0);
-
-			glVertex3f(0, 0.25 * j, i + 1);
-			// glTexCoord2f(i + 1, k);
-			glNormal3f(1, 0, 0);
-
-		}
-	}
-	glEnd();
-
-	//Wall 4
-	glColor3f(1, 1, 1);
-	glBegin(GL_QUADS);
-	for (i = 0; i < 10; i++) {
-		for (j = 0; j < 10; j ++) {
-			glVertex3f(10, 0.25 * j, i);
-			// glTexCoord2f(i, k);
-			glNormal3f(-1, 0, 0);
-
-			glVertex3f(10, 0.25 * (j + 1), i);
-			// glTexCoord2f(i, k + 1);
-			glNormal3f(-1, 0, 0);
-
-			glVertex3f(10, 0.25 * (j + 1), i + 1);
-			// glTexCoord2f(i + 1, k + 1);
-			glNormal3f(-1, 0, 0);
-
-			glVertex3f(10, 0.25 * j, i + 1);
-			// glTexCoord2f(i + 1, k);
-			glNormal3f(-1, 0, 0);
-
-		}
-	}
-	glEnd();
 	// Swap buffers in GPU
 	glutSwapBuffers();
 }
@@ -178,18 +125,23 @@ void initialize(void)
 	glClearColor(0, 0, 0, 1);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_COLOR_MATERIAL);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, white_color);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, white_color);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	glShadeModel(GL_SMOOTH);
 }
 void tick(int value)
 {
-	a++;
-	if (a == 360)
-		a = 0;
-	r = a * PI / 180;
+	a1++;
+	if (a1 >= 360)
+		a1 = 0;
+	r = a1 * PI / 180;
+
+	a2 += 5;
+	if (a2 >= 360)
+		a2 = 0;
+
 	glutPostRedisplay();
 	glutTimerFunc(10, tick, value);
 }
