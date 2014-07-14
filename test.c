@@ -80,6 +80,56 @@ void drawWallsAndFloor(void)
 	glEnd();
 }
 
+void drawCube(float size) 
+{
+	int i, j;
+	float s = size / 10;
+	glPushMatrix();
+		glTranslatef(-size / 2, -size / 2, -size / 2);
+		glBegin(GL_QUADS);
+			for (i = 0; i < 10; i++) {
+				for (j = 0; j < 10; j++) {
+					glNormal3f(0, -1, 0);
+					glVertex3f(s * i, 0 , s * j);
+					glVertex3f(s * (i + 1), 0 , s * j);
+					glVertex3f(s * (i + 1) , 0 , s * (j + 1));
+					glVertex3f(s * i, 0 , s * (j + 1));
+
+					glNormal3f(0, 0, -1);
+					glVertex3f(s * i, s * j, 0);
+					glVertex3f(s * (i + 1), s * j, 0);
+					glVertex3f(s * (i + 1) , s * (j + 1), 0);
+					glVertex3f(s * i, s * (j + 1), 0);
+
+					glNormal3f(1, 0, 0);
+					glVertex3f(size, s * i, s * j);
+					glVertex3f(size, s * i, s * (j + 1));
+					glVertex3f(size, s * (i + 1), s * (j + 1));
+					glVertex3f(size, s * (i + 1), s * j);
+
+					glNormal3f(0, 0, 1);
+					glVertex3f(s * i, s * j, size);
+					glVertex3f(s * i, s * (j + 1), size);
+					glVertex3f(s * (i + 1), s * (j + 1), size);
+					glVertex3f(s * (i + 1), s * j, size);
+
+					glNormal3f(-1, 0, 0);
+					glVertex3f(0, s * i, s * j);
+					glVertex3f(0, s * i, s * (j + 1));
+					glVertex3f(0, s * (i + 1), s * (j + 1));
+					glVertex3f(0, s * (i + 1), s * j);
+
+					glNormal3f(0, 1, 0);
+					glVertex3f(s * i, size , s * j);
+					glVertex3f(s * (i + 1), size , s * j);
+					glVertex3f(s * (i + 1) , size , s * (j + 1));
+					glVertex3f(s * i, size , s * (j + 1));
+				}
+			}
+		glEnd();
+	glPopMatrix();
+}
+
 void display(void)
 {
 	// Clear the color buffer, restore the background
@@ -100,6 +150,13 @@ void display(void)
 	glPopMatrix();
 
 	drawWallsAndFloor();
+
+	glPushMatrix();
+		glTranslatef(2, 0.5, 8);
+		glRotatef(a2, 0, 1, 0);
+		glColor3f(0,0.5,0);
+		drawCube(1);
+	glPopMatrix();
 
 	// Swap buffers in GPU
 	glutSwapBuffers();
