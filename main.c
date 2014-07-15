@@ -1,14 +1,20 @@
 #include <GL/glut.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
+#include "utility.h"
 
 #define PI 3.14159265
+#define WALKING_UNIT 0.4
 
 float a1 = 0;
 float a2 = 0;
 float r;
 float lightPos[] = {5, 2.5, 5, 1};
 float lightColor[] = {0.5, 0.5, 0.5, 1};
+vector eye, target;
+vector direction;
+
 
 void drawWallsAndFloor(void)
 {
@@ -138,7 +144,7 @@ void display(void)
 	glLoadIdentity();
 	// Set up the camera
 	// Note: Delete "* 0" for a tilted camera
-	gluLookAt(5, 1.7, 5, 5 + sin(r), 1.7, 5 + cos(r), -cos(r) * 0, 3, sin(r) * 0);
+	gluLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, 0, 1, 0);
 	// Set light position
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 	// Draws and rotates a cyan teapot
@@ -190,7 +196,17 @@ void initialize(void)
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	glShadeModel(GL_SMOOTH);
+	eye.x = 5;
+	eye.y = 1.7;
+	eye.z = 5;
+	target.x = target.y = target.z = 0;
+	direction = substractVectors(target, eye);
+	normalize(&direction);
+	multiply(&direction, WALKING_UNIT);
 }
+
+
+
 void tick(int value)
 {
 	a1+= 5 * 0.1;
@@ -206,14 +222,46 @@ void tick(int value)
 	glutTimerFunc(10, tick, value);
 }
 
+void keyboardHandler(unsigned char key, int x, int y) 
+{
+	printf("%c\n", key);
+	vector pardir = createVector(direction.x, 1.7, direction.z);
+	switch(key) {
+		case 'W':
+		case 'w':
+			eye = addVectors(eye, pardir);
+			target = addVectors(target, pardir);
+			break;
+		case 'S':
+		case 's':
+			eye = substractVectors(eye, pardir);
+			target = addVectors(target, pardir);
+			break;
+		case 'A':
+		case 'a':
+			eye = addVectors(eye, rotateVector(pardir, 90));
+			target = addVectors(target, rotateVector(pardir, 90));
+			break;
+		case 'D':
+		case 'd':
+			eye = addVectors(eye, rotateVector(pardir, -90));
+			target = addVectors(target, rotateVector(pardir, -90));
+			break;
+		case 27:
+			exit(0);
+			break;
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	glutInitWindowSize(1280, 720);
+	glutInitWindowSize(800, 600);
 	glutCreateWindow("Epic Game");
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
+	glutKeyboardFunc(keyboardHandler);
 	initialize();
 	glutTimerFunc(10, tick, 0);
 	glutMainLoop();
