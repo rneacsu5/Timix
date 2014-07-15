@@ -4,17 +4,20 @@
 #include <stdlib.h>
 #include "utility.h"
 
+#define true 1
+#define false 0
+
 #define PI 3.14159265
-#define WALKING_UNIT 0.4
+#define WALKING_UNIT 0.05
+#define EYE_HEIGHT 1.7
 
 float a1 = 0;
 float a2 = 0;
 float r;
 float lightPos[] = {5, 2.5, 5, 1};
 float lightColor[] = {0.5, 0.5, 0.5, 1};
-vector eye, target;
-vector direction;
-
+vector eye, target, direction;
+int keyStates[256];
 
 void drawWallsAndFloor(void)
 {
@@ -136,6 +139,26 @@ void drawCube(float size)
 	glPopMatrix();
 }
 
+void moveCamera(void) 
+{
+	if (keyStates['w']) {
+		eye = addv(eye, direction);
+		target = addv(target, direction);
+	}
+	if (keyStates['s']) {
+		eye = substractv(eye, direction);
+		target = substractv(target, direction);
+	}
+	if (keyStates['a']) {
+		eye = addv(eye, rotatev(direction, 90));
+		target = addv(target, rotatev(direction, 90));
+	}
+	if (keyStates['d']) {
+		eye = addv(eye, rotatev(direction, -90));
+		target = addv(target, rotatev(direction, -90));
+	}
+}
+
 void display(void)
 {
 	// Clear the color buffer, restore the background
@@ -143,7 +166,7 @@ void display(void)
 	// Load the identity matrix, clear all the previous transformations
 	glLoadIdentity();
 	// Set up the camera
-	// Note: Delete "* 0" for a tilted camera
+	moveCamera();
 	gluLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, 0, 1, 0);
 	// Set light position
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
@@ -196,16 +219,12 @@ void initialize(void)
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	glShadeModel(GL_SMOOTH);
-	eye.x = 5;
-	eye.y = 1.7;
-	eye.z = 5;
-	target.x = target.y = target.z = 0;
-	direction = substractVectors(target, eye);
-	normalize(&direction);
-	multiply(&direction, WALKING_UNIT);
+	eye = createv(5, EYE_HEIGHT, 5);
+	target = createv(0, EYE_HEIGHT, 0);
+	direction = substractv(target, eye);
+	normalizev(&direction);
+	multiplyv(&direction, WALKING_UNIT);
 }
-
-
 
 void tick(int value)
 {
@@ -222,33 +241,88 @@ void tick(int value)
 	glutTimerFunc(10, tick, value);
 }
 
-void keyboardHandler(unsigned char key, int x, int y) 
+void normalKeysHandler(unsigned char key, int x, int y) 
 {
-	printf("%c\n", key);
-	vector pardir = createVector(direction.x, 1.7, direction.z);
+	keyStates[key] = true;
+	//printf("%c\n", key);
 	switch(key) {
 		case 'W':
 		case 'w':
-			eye = addVectors(eye, pardir);
-			target = addVectors(target, pardir);
+			keyStates['w'] = true;
 			break;
 		case 'S':
 		case 's':
-			eye = substractVectors(eye, pardir);
-			target = addVectors(target, pardir);
+			keyStates['s'] = true;
 			break;
 		case 'A':
 		case 'a':
-			eye = addVectors(eye, rotateVector(pardir, 90));
-			target = addVectors(target, rotateVector(pardir, 90));
+			keyStates['a'] = true;
 			break;
 		case 'D':
 		case 'd':
-			eye = addVectors(eye, rotateVector(pardir, -90));
-			target = addVectors(target, rotateVector(pardir, -90));
+			keyStates['d'] = true;
 			break;
 		case 27:
 			exit(0);
+			break;
+	}
+}
+
+void specialKeysHandler(int key, int x, int y) 
+{
+	switch(key) {
+		case GLUT_KEY_UP:
+			normalKeysHandler('w', x, y);
+			break;
+		case GLUT_KEY_DOWN:
+			normalKeysHandler('s', x, y);
+			break;
+		case GLUT_KEY_LEFT:
+			normalKeysHandler('a', x, y);
+			break;
+		case GLUT_KEY_RIGHT:
+			normalKeysHandler('d', x, y);
+			break;
+	}
+}
+
+void normalKeysUpHandler (unsigned char key, int x, int y) 
+{
+	keyStates[key] = false;
+	switch(key) {
+		case 'W':
+		case 'w':
+			keyStates['w'] = false;
+			break;
+		case 'S':
+		case 's':
+			keyStates['s'] = false;
+			break;
+		case 'A':
+		case 'a':
+			keyStates['a'] = false;
+			break;
+		case 'D':
+		case 'd':
+			keyStates['d'] = false;
+			break;
+	}
+}
+
+void specialKeysUpHandler(int key, int x, int y) 
+{
+	switch(key) {
+		case GLUT_KEY_UP:
+			keyStates['w'] = false;
+			break;
+		case GLUT_KEY_DOWN:
+			keyStates['s'] = false;
+			break;
+		case GLUT_KEY_LEFT:
+			keyStates['a'] = false;
+			break;
+		case GLUT_KEY_RIGHT:
+			keyStates['d'] = false;
 			break;
 	}
 }
@@ -261,7 +335,10 @@ int main(int argc, char *argv[])
 	glutCreateWindow("Epic Game");
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
-	glutKeyboardFunc(keyboardHandler);
+	glutKeyboardFunc(normalKeysHandler);
+	glutKeyboardUpFunc(normalKeysUpHandler);
+	glutSpecialFunc(specialKeysHandler);
+	glutSpecialUpFunc(specialKeysUpHandler);
 	initialize();
 	glutTimerFunc(10, tick, 0);
 	glutMainLoop();

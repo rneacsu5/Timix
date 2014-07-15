@@ -4,7 +4,7 @@
 
 #define PI 3.14159265
 
-void normalize(vector *v) {
+void normalizev(vector *v) {
 
 	GLfloat modul = sqrt((*v).x * (*v).x + (*v).y * (*v).y + (*v).z * (*v).z);
 	(*v).x /= modul;
@@ -12,14 +12,14 @@ void normalize(vector *v) {
 	(*v).z /= modul; 
 }
 
-void multiply(vector *v, GLfloat factor) 
+void multiplyv(vector *v, GLfloat factor) 
 {
 	(*v).x *= factor;
 	(*v).y *= factor;
 	(*v).z *= factor;
 }
 
-vector addVectors(vector v1, vector v2) 
+vector addv(vector v1, vector v2) 
 {
 	vector sum;
 	sum.x = v1.x + v2.x;
@@ -28,7 +28,7 @@ vector addVectors(vector v1, vector v2)
 	return sum;
 }
 
-vector substractVectors(vector v1, vector v2) 
+vector substractv(vector v1, vector v2) 
 {
 	vector sum;
 	sum.x = v1.x - v2.x;
@@ -37,7 +37,7 @@ vector substractVectors(vector v1, vector v2)
 	return sum;
 }
 
-vector rotateVector(vector v, GLfloat a) 
+vector rotatev(vector v, GLfloat a) 
 {
 	vector r;
 	GLfloat ar = a * PI / 180;
@@ -47,7 +47,7 @@ vector rotateVector(vector v, GLfloat a)
 	return r;
 }
 
-vector createVector(GLfloat x, GLfloat y, GLfloat z) 
+vector createv(GLfloat x, GLfloat y, GLfloat z) 
 {
 	vector v;
 	v.x = x;
