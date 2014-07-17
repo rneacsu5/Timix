@@ -331,18 +331,22 @@ void normalKeysUpHandler (unsigned char key, int x, int y)
 		case 'W':
 		case 'w':
 			keyStates['w'] = false;
+			glutPostRedisplay();
 			break;
 		case 'S':
 		case 's':
 			keyStates['s'] = false;
+			glutPostRedisplay();
 			break;
 		case 'A':
 		case 'a':
 			keyStates['a'] = false;
+			glutPostRedisplay();
 			break;
 		case 'D':
 		case 'd':
 			keyStates['d'] = false;
+			glutPostRedisplay();
 			break;
 	}
 }
@@ -381,7 +385,7 @@ int main(int argc, char *argv[])
 	initialize();
 	// glutTimerFunc(10, tick, 0);
 	// Starts main timer
-	glutTimerFunc(10, tick, 0);
+	// glutTimerFunc(10, tick, 0);
 	glutMainLoop();
 	return 0;
 }
