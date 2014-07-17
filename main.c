@@ -249,18 +249,22 @@ void normalKeysHandler(unsigned char key, int x, int y)
 		case 'W':
 		case 'w':
 			keyStates['w'] = true;
+			glutPostRedisplay();
 			break;
 		case 'S':
 		case 's':
 			keyStates['s'] = true;
+			glutPostRedisplay();
 			break;
 		case 'A':
 		case 'a':
 			keyStates['a'] = true;
+			glutPostRedisplay();
 			break;
 		case 'D':
 		case 'd':
 			keyStates['d'] = true;
+			glutPostRedisplay();
 			break;
 		case 27:
 			exit(0);
@@ -340,7 +344,7 @@ int main(int argc, char *argv[])
 	glutSpecialFunc(specialKeysHandler);
 	glutSpecialUpFunc(specialKeysUpHandler);
 	initialize();
-	glutTimerFunc(10, tick, 0);
+	// glutTimerFunc(10, tick, 0);
 	glutMainLoop();
 	return 0;
 }
