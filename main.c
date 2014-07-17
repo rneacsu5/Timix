@@ -4,19 +4,21 @@
 #include <stdlib.h>
 #include "utility.h"
 
+// C does not support boolean?! WTF!
 #define true 1
 #define false 0
 
-#define PI 3.14159265
-#define WALKING_UNIT 0.05
-#define EYE_HEIGHT 1.7
+#define PI 3.14159265359
 
-float a1 = 0;
-float a2 = 0;
-float r;
+#define EYE_HEIGHT 1.7
+#define ACCELERATION 0.02
+#define DRAG 0.01
+#define MAX_SPEED 0.15
+
+float a1 = 0, a2 = 0, r;
 float lightPos[] = {5, 2.5, 5, 1};
 float lightColor[] = {0.5, 0.5, 0.5, 1};
-vector eye, target, direction;
+vector eye, target, cameraForce;
 int keyStates[256];
 
 void drawWallsAndFloor(void)
@@ -141,22 +143,52 @@ void drawCube(float size)
 
 void moveCamera(void) 
 {
+	// Aplys drag to the camera force
+	vector drag = cameraForce;
+	normalizev(&drag);
+	if (vlength(cameraForce) - DRAG > 0) {
+		multiplyv(&drag, vlength(cameraForce) - DRAG);
+	}
+	else {
+		drag = createv(0, 0, 0);
+	}
+	cameraForce = drag;
+
+	// Makes the acceleration vector based on input and direction
+	vector direction = substractv(target, eye);
+	normalizev(&direction);
+	vector acc = createv(0, 0, 0);
 	if (keyStates['w']) {
-		eye = addv(eye, direction);
-		target = addv(target, direction);
+		acc = addv(acc, direction);
 	}
 	if (keyStates['s']) {
-		eye = substractv(eye, direction);
-		target = substractv(target, direction);
+		acc = substractv(acc, direction);
 	}
 	if (keyStates['a']) {
-		eye = addv(eye, rotatev(direction, 90));
-		target = addv(target, rotatev(direction, 90));
+		acc = addv(acc, rotatev(direction, 90, 0, 1, 0));
 	}
 	if (keyStates['d']) {
-		eye = addv(eye, rotatev(direction, -90));
-		target = addv(target, rotatev(direction, -90));
+		acc = addv(acc, rotatev(direction, -90, 0, 1, 0));
 	}
+
+	// Makes the acceleration vector the right length
+	normalizev(&acc);
+	multiplyv(&acc, ACCELERATION);
+
+	// Adds the acceleration vector to the camera force
+	cameraForce = addv(cameraForce, acc);
+
+	// Makes sure it does not exceed MAX_SPEED
+	if (vlength(cameraForce) > MAX_SPEED) {
+		normalizev(&cameraForce);
+		multiplyv(&cameraForce, MAX_SPEED);
+	}
+
+	// Moves eye and target
+	eye = addv(eye, cameraForce);
+	target = addv(target, cameraForce);
+
+	//printv(cameraForce);
 }
 
 void display(void)
@@ -219,11 +251,12 @@ void initialize(void)
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	glShadeModel(GL_SMOOTH);
+	// Represents the camera position
 	eye = createv(5, EYE_HEIGHT, 5);
+	// Represents the point where the camera looks
 	target = createv(0, EYE_HEIGHT, 0);
-	direction = substractv(target, eye);
-	normalizev(&direction);
-	multiplyv(&direction, WALKING_UNIT);
+	// A vector that moves the camera
+	cameraForce = createv(0, 0, 0);
 }
 
 void tick(int value)
@@ -236,15 +269,15 @@ void tick(int value)
 	a2 += 5 * 0.62831;
 	if (a2 >= 360)
 		a2 = 0;
-
+	// Calls the display() function
 	glutPostRedisplay();
+	// Waits 10 ms
 	glutTimerFunc(10, tick, value);
 }
 
+// Handles normal key presses (arrow, function and other keys not included)
 void normalKeysHandler(unsigned char key, int x, int y) 
 {
-	keyStates[key] = true;
-	//printf("%c\n", key);
 	switch(key) {
 		case 'W':
 		case 'w':
@@ -268,27 +301,28 @@ void normalKeysHandler(unsigned char key, int x, int y)
 	}
 }
 
+// Handles arrow, function and other keys presses (and maps them with normal keys)
 void specialKeysHandler(int key, int x, int y) 
 {
 	switch(key) {
 		case GLUT_KEY_UP:
-			normalKeysHandler('w', x, y);
+			keyStates['w'] = true;
 			break;
 		case GLUT_KEY_DOWN:
-			normalKeysHandler('s', x, y);
+			keyStates['s'] = true;
 			break;
 		case GLUT_KEY_LEFT:
-			normalKeysHandler('a', x, y);
+			keyStates['a'] = true;
 			break;
 		case GLUT_KEY_RIGHT:
-			normalKeysHandler('d', x, y);
+			keyStates['d'] = true;
 			break;
 	}
 }
 
+// Handles normal keys releases (arrow, function and other keys not included)
 void normalKeysUpHandler (unsigned char key, int x, int y) 
 {
-	keyStates[key] = false;
 	switch(key) {
 		case 'W':
 		case 'w':
@@ -309,6 +343,7 @@ void normalKeysUpHandler (unsigned char key, int x, int y)
 	}
 }
 
+// Handles arrow, function and other keys realeses (and maps them with normal keys releases)
 void specialKeysUpHandler(int key, int x, int y) 
 {
 	switch(key) {
@@ -340,6 +375,7 @@ int main(int argc, char *argv[])
 	glutSpecialFunc(specialKeysHandler);
 	glutSpecialUpFunc(specialKeysUpHandler);
 	initialize();
+	// Starts main timer
 	glutTimerFunc(10, tick, 0);
 	glutMainLoop();
 	return 0;
