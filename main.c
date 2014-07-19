@@ -5,7 +5,7 @@
 #include "utility.h"
 
 // C does not support boolean?! WTF!
-#define true 1
+#define true 70
 #define false 0
 
 #define PI 3.14159265359
@@ -14,11 +14,14 @@
 #define ACCELERATION 0.02
 #define DRAG 0.01
 #define MAX_SPEED 0.15
+#define GFORCE 0.05
 
 float a1 = 0, a2 = 0, r;
 float lightPos[] = {5, 2.5, 5, 1};
 float lightColor[] = {0.5, 0.5, 0.5, 1};
-vector eye, target, cameraForce;
+int viewHeight, viewWidth;
+GLfloat cameraXAngle = 0, cameraYAngle = 225;
+vector eye, target, cameraForce, gForce;
 int keyStates[256];
 
 void drawWallsAndFloor(void)
@@ -155,7 +158,7 @@ void moveCamera(void)
 	cameraForce = drag;
 
 	// Makes the acceleration vector based on input and direction
-	vector direction = substractv(target, eye);
+	vector direction = substractv(createv(target.x, EYE_HEIGHT, target.z), eye);
 	normalizev(&direction);
 	vector acc = createv(0, 0, 0);
 	if (keyStates['w']) {
@@ -178,6 +181,7 @@ void moveCamera(void)
 	// Adds the acceleration vector to the camera force
 	cameraForce = addv(cameraForce, acc);
 
+
 	// Makes sure it does not exceed MAX_SPEED
 	if (vlength(cameraForce) > MAX_SPEED) {
 		normalizev(&cameraForce);
@@ -186,9 +190,28 @@ void moveCamera(void)
 
 	// Moves eye and target
 	eye = addv(eye, cameraForce);
+	eye = addv(eye, gForce);
 	target = addv(target, cameraForce);
+	target = addv(target, gForce);
+
+
+	if (eye.y <= EYE_HEIGHT) {
+		target.y += EYE_HEIGHT - eye.y;
+		eye.y = EYE_HEIGHT;
+		gForce = createv(0, 0, 0);
+		keyStates[32] = false;
+	}
 
 	//printv(cameraForce);
+}
+
+void jumpFunc(void) {
+	if (keyStates[32] == false) {
+		keyStates[32] = true;
+		gForce = createv(0, - GFORCE, 0);
+		cameraForce = addv(cameraForce, createv(0, 2, 0));
+	}
+
 }
 
 void display(void)
@@ -238,6 +261,9 @@ void reshape(int width, int height)
 	gluPerspective(70, (GLdouble) width / (GLdouble) height, 0.1, 60000);
 	// Load back the modelview matrix
 	glMatrixMode(GL_MODELVIEW);
+
+	viewHeight = height;
+	viewWidth = width;
 }
 
 void initialize(void)
@@ -257,6 +283,8 @@ void initialize(void)
 	target = createv(0, EYE_HEIGHT, 0);
 	// A vector that moves the camera
 	cameraForce = createv(0, 0, 0);
+	gForce = createv(0, 0, 0);
+
 }
 
 void tick(int value)
@@ -271,8 +299,10 @@ void tick(int value)
 		a2 = 0;
 	// Calls the display() function
 	glutPostRedisplay();
+	if (value % 3 == 0)
+		glutWarpPointer(viewWidth / 2, viewHeight / 2);
 	// Waits 10 ms
-	glutTimerFunc(10, tick, value);
+	glutTimerFunc(10, tick, value + 1);
 }
 
 // Handles normal key presses (arrow, function and other keys not included)
@@ -294,6 +324,10 @@ void normalKeysHandler(unsigned char key, int x, int y)
 		case 'D':
 		case 'd':
 			keyStates['d'] = true;
+			break;
+		// Space
+		case 32:
+			jumpFunc();
 			break;
 		case 27:
 			exit(0);
@@ -317,6 +351,7 @@ void specialKeysHandler(int key, int x, int y)
 		case GLUT_KEY_RIGHT:
 			keyStates['d'] = true;
 			break;
+
 	}
 }
 
@@ -362,6 +397,30 @@ void specialKeysUpHandler(int key, int x, int y)
 	}
 }
 
+void freeCameraHandler (int x, int y) {
+	GLfloat angleX, angleY;
+	angleY = -45 + 90 * x / viewWidth;
+	angleX = -30 + 60 * y / viewHeight;
+	cameraXAngle += angleX;
+	cameraYAngle += angleY;
+	if (cameraXAngle >= 89) {
+		angleX -= cameraXAngle - 89;
+		cameraXAngle = 89;
+	}
+	if (cameraXAngle <= -89) {
+		angleX -= cameraXAngle + 89;
+		cameraXAngle = -89;
+	}
+	cameraYAngle = (int) cameraYAngle % 360;
+	target = substractv(target, eye);
+	target = rotatev(target, angleX, cos((cameraYAngle - 90) * DEG_TO_RAD), 0, sin((cameraYAngle - 90) * DEG_TO_RAD));
+	target = rotatev(target, -angleY, 0, 1, 0);
+	target = addv(target, eye);
+
+
+	// if ((x != viewWidth / 2) && (y != viewHeight / 2))	
+}
+
 int main(int argc, char *argv[])
 {
 	glutInit(&argc, argv);
@@ -374,6 +433,8 @@ int main(int argc, char *argv[])
 	glutKeyboardUpFunc(normalKeysUpHandler);
 	glutSpecialFunc(specialKeysHandler);
 	glutSpecialUpFunc(specialKeysUpHandler);
+	glutPassiveMotionFunc(freeCameraHandler);
+	glutMotionFunc(freeCameraHandler);
 	initialize();
 	// Starts main timer
 	glutTimerFunc(10, tick, 0);

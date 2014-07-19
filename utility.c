@@ -3,10 +3,6 @@
 #include <stdio.h>
 #include "utility.h"
 
-#define PI 3.14159265359
-#define DEG_TO_RAD PI / 180
-#define RAD_TO_DEG 180 / PI
-
 void normalizev(vector *v) {
 
 	GLfloat modul = sqrt((*v).x * (*v).x + (*v).y * (*v).y + (*v).z * (*v).z);
