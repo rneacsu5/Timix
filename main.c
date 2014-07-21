@@ -5,41 +5,42 @@
 #include "utility.h"
 
 // C does not support boolean?! WTF!
-#define true 70
+#define true 7
 #define false 0
-
-#define PI 3.14159265359
-
 #define EYE_HEIGHT 1.7
 #define ACCELERATION 0.02
 #define DRAG 0.01
 #define MAX_SPEED 0.15
-#define GFORCE 0.05
+// The formula is: GFORCE = 2 * heightOfJump / ((timeOfJump / 2) * (timeOfJump / 2 + 1))   where heigthOfJump is in meters and timeOfJump is in milliseconds
+#define GFORCE 0.0041666666
 
 float a1 = 0, a2 = 0, r;
-float lightPos[] = {5, 2.5, 5, 1};
+float lightPos[] = {5, 2.4, 5, 1};
 float lightColor[] = {0.5, 0.5, 0.5, 1};
 int viewHeight, viewWidth;
-GLfloat cameraXAngle = 0, cameraYAngle = 225;
+GLfloat cameraXAngle = 225, cameraYAngle = 0;
 vector eye, target, cameraForce, gForce;
+int test = 0;
 int keyStates[256];
 
 void drawWallsAndFloor(void)
 {
-	int i, j;
+	GLdouble i, j;
+	// The walls and floor will be a (10 / nr) * (10 / nr) grid
+	GLfloat nr = 0.1;
 	glBegin(GL_QUADS);
-		for (i = 0; i < 10; i++) {
-			for (j = 0; j < 10; j++) {
+		for (i = 0; i < 10; i += nr) {
+			for (j = 0; j < 10; j += nr) {
 				// Floor
 				glColor3f(i / 10.0, 0, j / 10.0);
 				glNormal3f(0, 1, 0);
 				glVertex3f(i, 0, j);
 				// glTexCoord2f(i, j);
-				glVertex3f(i, 0, j + 1);
+				glVertex3f(i, 0, j + nr);
 				// glTexCoord2f(i, j + 1);
-				glVertex3f(i + 1, 0, j + 1);
+				glVertex3f(i + nr, 0, j + nr);
 				// glTexCoord2f(i + 1, j + 1);
-				glVertex3f(i + 1, 0, j);
+				glVertex3f(i + nr, 0, j);
 				// glTexCoord2f(i + 1, j);
 
 				// Wall 1
@@ -47,11 +48,11 @@ void drawWallsAndFloor(void)
 				glNormal3f(0, 0, 1);
 				glVertex3f(i, 0.25 * j, 0);
 				// glTexCoord2f(i, k);
-				glVertex3f(i, 0.25 * (j + 1), 0);
+				glVertex3f(i, 0.25 * (j + nr), 0);
 				// glTexCoord2f(i, k + 1);
-				glVertex3f(i + 1, 0.25 * (j + 1), 0);
+				glVertex3f(i + nr, 0.25 * (j + nr), 0);
 				// glTexCoord2f(i + 1, k + 1);
-				glVertex3f(i + 1, 0.25 * j, 0);
+				glVertex3f(i + nr, 0.25 * j, 0);
 				// glTexCoord2f(i + 1, k);
 
 				// Wall 2
@@ -59,11 +60,11 @@ void drawWallsAndFloor(void)
 				glNormal3f(0, 0, -1);
 				glVertex3f(i, 0.25 * j, 10);
 				// glTexCoord2f(i, k);
-				glVertex3f(i, 0.25 * (j + 1), 10);
+				glVertex3f(i, 0.25 * (j + nr), 10);
 				// glTexCoord2f(i, k + 1);
-				glVertex3f(i + 1, 0.25 * (j + 1), 10);
+				glVertex3f(i + nr, 0.25 * (j + nr), 10);
 				// glTexCoord2f(i + 1, k + 1);
-				glVertex3f(i + 1, 0.25 * j, 10);
+				glVertex3f(i + nr, 0.25 * j, 10);
 				// glTexCoord2f(i + 1, k);
 
 				// Wall 3
@@ -71,11 +72,11 @@ void drawWallsAndFloor(void)
 				glNormal3f(1, 0, 0);
 				glVertex3f(0, 0.25 * j, i);
 				// glTexCoord2f(i, k);
-				glVertex3f(0, 0.25 * (j + 1), i);
+				glVertex3f(0, 0.25 * (j + nr), i);
 				// glTexCoord2f(i, k + 1);
-				glVertex3f(0, 0.25 * (j + 1), i + 1);
+				glVertex3f(0, 0.25 * (j + nr), i + nr);
 				// glTexCoord2f(i + 1, k + 1);
-				glVertex3f(0, 0.25 * j, i + 1);
+				glVertex3f(0, 0.25 * j, i + nr);
 				// glTexCoord2f(i + 1, k);
 
 				// Wall 4
@@ -83,12 +84,24 @@ void drawWallsAndFloor(void)
 				glNormal3f(-1, 0, 0);
 				glVertex3f(10, 0.25 * j, i);
 				// glTexCoord2f(i, k);
-				glVertex3f(10, 0.25 * (j + 1), i);
+				glVertex3f(10, 0.25 * (j + nr), i);
 				// glTexCoord2f(i, k + 1);
-				glVertex3f(10, 0.25 * (j + 1), i + 1);
+				glVertex3f(10, 0.25 * (j + nr), i + nr);
 				// glTexCoord2f(i + 1, k + 1);
-				glVertex3f(10, 0.25 * j, i + 1);
+				glVertex3f(10, 0.25 * j, i + nr);
 				// glTexCoord2f(i + 1, k);
+
+				// Ceiling
+				glColor3f(i / 10.0, 0, j / 10.0);
+				glNormal3f(0, -1, 0);
+				glVertex3f(i, 2.5, j);
+				// glTexCoord2f(i, j);
+				glVertex3f(i, 2.5, j + nr);
+				// glTexCoord2f(i, j + 1);
+				glVertex3f(i + nr, 2.5, j + nr);
+				// glTexCoord2f(i + 1, j + 1);
+				glVertex3f(i + nr, 2.5, j);
+				// glTexCoord2f(i + 1, j);
 			}
 		}
 	glEnd();
@@ -146,16 +159,18 @@ void drawCube(float size)
 
 void moveCamera(void) 
 {
-	// Aplys drag to the camera force
-	vector drag = cameraForce;
-	normalizev(&drag);
-	if (vlength(cameraForce) - DRAG > 0) {
-		multiplyv(&drag, vlength(cameraForce) - DRAG);
+	// Aplys drag to the camera force if he isn't jumping
+	if (keyStates[32] == false) {
+		vector drag = cameraForce;
+		normalizev(&drag);
+		if (vlength(cameraForce) - DRAG > 0) {
+			multiplyv(&drag, vlength(cameraForce) - DRAG);
+		}
+		else {
+			drag = createv(0, 0, 0);
+		}
+		cameraForce = drag;
 	}
-	else {
-		drag = createv(0, 0, 0);
-	}
-	cameraForce = drag;
 
 	// Makes the acceleration vector based on input and direction
 	vector direction = substractv(createv(target.x, EYE_HEIGHT, target.z), eye);
@@ -178,40 +193,41 @@ void moveCamera(void)
 	normalizev(&acc);
 	multiplyv(&acc, ACCELERATION);
 
-	// Adds the acceleration vector to the camera force
-	cameraForce = addv(cameraForce, acc);
+	// Adds the acceleration vector to the camera force if he isn't jumping
+	if (keyStates[32] == false) {
+		cameraForce = addv(cameraForce, acc);
+	}
 
+	// Gravity
+	cameraForce = addv(cameraForce, gForce);
 
-	// Makes sure it does not exceed MAX_SPEED
-	if (vlength(cameraForce) > MAX_SPEED) {
+	// Makes sure camera force does not exceed MAX_SPEED (again if he isn't jumping)
+	if (vlength(cameraForce) > MAX_SPEED && keyStates[32] == false) {
 		normalizev(&cameraForce);
 		multiplyv(&cameraForce, MAX_SPEED);
 	}
 
 	// Moves eye and target
 	eye = addv(eye, cameraForce);
-	eye = addv(eye, gForce);
 	target = addv(target, cameraForce);
-	target = addv(target, gForce);
 
-
+	// Check for floor
 	if (eye.y <= EYE_HEIGHT) {
 		target.y += EYE_HEIGHT - eye.y;
 		eye.y = EYE_HEIGHT;
-		gForce = createv(0, 0, 0);
+		cameraForce = createv(cameraForce.x, 0, cameraForce.z);
 		keyStates[32] = false;
 	}
-
-	//printv(cameraForce);
 }
 
 void jumpFunc(void) {
 	if (keyStates[32] == false) {
 		keyStates[32] = true;
 		gForce = createv(0, - GFORCE, 0);
-		cameraForce = addv(cameraForce, createv(0, 2, 0));
+		//                                  GFORCE * (timeOfJump / 2 + 1)
+		//                                               ||
+		cameraForce = addv(cameraForce, createv(0, GFORCE * 16, 0));
 	}
-
 }
 
 void display(void)
@@ -283,8 +299,37 @@ void initialize(void)
 	target = createv(0, EYE_HEIGHT, 0);
 	// A vector that moves the camera
 	cameraForce = createv(0, 0, 0);
+	// Gravity
 	gForce = createv(0, 0, 0);
 
+}
+
+void freeCameraHandler (int x, int y) {
+	// Determines the angle on each axis based on mouse position
+	cameraXAngle += -45 + 90 * x / (double) viewWidth;
+	cameraYAngle += -30 + 60 * y / (double) viewHeight;
+
+	// cameraXAngle must not exeed 360 or be below -360 degrees
+	cameraXAngle -= ((int) cameraYAngle / 360) * 360;
+
+	// cameraYAngle must not exeed 90 degrees or be below -90 degrees
+	if (cameraYAngle >= 89) 
+		cameraYAngle = 89;
+	if (cameraYAngle <= -89) 
+		cameraYAngle = -89;
+
+	// Some notations
+	GLfloat sinY = sin(-cameraYAngle * DEG_TO_RAD);
+	GLfloat sinX = sin(cameraXAngle * DEG_TO_RAD);
+	GLfloat cosX = cos(cameraXAngle * DEG_TO_RAD);
+
+	// Makes the target vector based on cameraXAngle and cameraYAngle (rotating the vector using rotatev() was a bit buggy)
+	target = createv(cosX, 0, sinX);
+	multiplyv(&target, sqrt(1 - sinY * sinY));
+	target = addv(target, createv(0, sinY, 0));
+
+	// Adds the eye position so that the camera points to the right place
+	target = addv(target, eye);	
 }
 
 void tick(int value)
@@ -297,10 +342,13 @@ void tick(int value)
 	a2 += 5 * 0.62831;
 	if (a2 >= 360)
 		a2 = 0;
+
+	// Moves mouse to the middle
+	glutWarpPointer(viewWidth / 2, viewHeight / 2);
+	
 	// Calls the display() function
 	glutPostRedisplay();
-	if (value % 3 == 0)
-		glutWarpPointer(viewWidth / 2, viewHeight / 2);
+
 	// Waits 10 ms
 	glutTimerFunc(10, tick, value + 1);
 }
@@ -325,10 +373,11 @@ void normalKeysHandler(unsigned char key, int x, int y)
 		case 'd':
 			keyStates['d'] = true;
 			break;
-		// Space
+		// Space Key
 		case 32:
 			jumpFunc();
 			break;
+		// Esc Key
 		case 27:
 			exit(0);
 			break;
@@ -397,29 +446,6 @@ void specialKeysUpHandler(int key, int x, int y)
 	}
 }
 
-void freeCameraHandler (int x, int y) {
-	GLfloat angleX, angleY;
-	angleY = -45 + 90 * x / viewWidth;
-	angleX = -30 + 60 * y / viewHeight;
-	cameraXAngle += angleX;
-	cameraYAngle += angleY;
-	if (cameraXAngle >= 89) {
-		angleX -= cameraXAngle - 89;
-		cameraXAngle = 89;
-	}
-	if (cameraXAngle <= -89) {
-		angleX -= cameraXAngle + 89;
-		cameraXAngle = -89;
-	}
-	cameraYAngle = (int) cameraYAngle % 360;
-	target = substractv(target, eye);
-	target = rotatev(target, angleX, cos((cameraYAngle - 90) * DEG_TO_RAD), 0, sin((cameraYAngle - 90) * DEG_TO_RAD));
-	target = rotatev(target, -angleY, 0, 1, 0);
-	target = addv(target, eye);
-
-
-	// if ((x != viewWidth / 2) && (y != viewHeight / 2))	
-}
 
 int main(int argc, char *argv[])
 {
