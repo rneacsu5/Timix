@@ -10,9 +10,10 @@
 #define EYE_HEIGHT 1.7
 #define ACCELERATION 0.02
 #define DRAG 0.01
+#define AIR_DRAG 0.0025
 #define MAX_SPEED 0.15
 // The formula is: GFORCE = 2 * heightOfJump / ((timeOfJump / 2) * (timeOfJump / 2 + 1))   where heigthOfJump is in meters and timeOfJump is in milliseconds
-#define GFORCE 0.0041666666
+#define GFORCE 0.00583333
 
 float a1 = 0, a2 = 0, r;
 float lightPos[] = {5, 2.4, 5, 1};
@@ -172,6 +173,19 @@ void moveCamera(void)
 		cameraForce = drag;
 	}
 
+	// Aplys air drag to the camera force if he is jumping
+	else {
+		vector drag = createv(cameraForce.x, 0, cameraForce.z);
+		normalizev(&drag);
+		if (vlength(createv(cameraForce.x, 0, cameraForce.z)) - AIR_DRAG > 0) {
+			multiplyv(&drag, vlength(createv(cameraForce.x, 0, cameraForce.z)) - AIR_DRAG);
+		}
+		else {
+			drag = createv(0, 0, 0);
+		}
+		cameraForce = createv(drag.x, cameraForce.y, drag.z);
+	}
+
 	// Makes the acceleration vector based on input and direction
 	vector direction = substractv(createv(target.x, EYE_HEIGHT, target.z), eye);
 	normalizev(&direction);
@@ -253,7 +267,7 @@ void display(void)
 
 	// Draws and animates a green cube
 	glPushMatrix();
-		float k = (a2 - ((int) a2 / 90) * 90) * 2 * PI / 180;
+		float k = (a2 - ((int) a2 / 90) * 90) * 2 * DEG_TO_RAD;
 		glTranslatef(5 + 4 * sin(r), 0.5 + sin(k) * (sqrt(2) / 2 - 0.5), 5 + 4 * cos(r));
 		glRotatef(a2, -sin(r), 0, -cos(r));
 		glRotatef(a1, 0, 1, 0);
@@ -284,8 +298,8 @@ void reshape(int width, int height)
 
 void initialize(void)
 {
-	// Set the background to black
-	glClearColor(0, 0, 0, 1);
+	// Set the background to light gray
+	glClearColor(0.8, 0.8, 0.8, 1);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_COLOR_MATERIAL);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor);
@@ -337,7 +351,7 @@ void tick(int value)
 	a1+= 5 * 0.1;
 	if (a1 >= 360)
 		a1 = 0;
-	r = a1 * PI / 180;
+	r = a1 * DEG_TO_RAD;
 
 	a2 += 5 * 0.62831;
 	if (a2 >= 360)
