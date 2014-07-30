@@ -212,32 +212,63 @@ void moveCamera(void)
 		cameraForce = addv(cameraForce, acc);
 	}
 
-	// Gravity
-	cameraForce = addv(cameraForce, gForce);
-
 	// Makes sure camera force does not exceed MAX_SPEED (again if he isn't jumping)
 	if (vlength(cameraForce) > MAX_SPEED && keyStates[32] == false) {
 		normalizev(&cameraForce);
 		multiplyv(&cameraForce, MAX_SPEED);
 	}
 
-	// Moves eye and target
-	eye = addv(eye, cameraForce);
-	target = addv(target, cameraForce);
+	// Gravity
+	cameraForce = addv(cameraForce, gForce);
 
 	// Check for floor
-	if (eye.y <= EYE_HEIGHT) {
+	if (eye.y + cameraForce.y < EYE_HEIGHT) {
 		target.y += EYE_HEIGHT - eye.y;
 		eye.y = EYE_HEIGHT;
 		cameraForce = createv(cameraForce.x, 0, cameraForce.z);
 		keyStates[32] = false;
 	}
+
+	// Moves eye and target
+	eye = addv(eye, cameraForce);
+	target = addv(target, cameraForce);
 }
 
 void jumpFunc(void) {
 	if (keyStates[32] == false) {
 		keyStates[32] = true;
-		gForce = createv(0, - GFORCE, 0);
+
+		// Makes a push vector based on input and direction (this allows sprint jumping)
+		vector direction = substractv(createv(target.x, EYE_HEIGHT, target.z), eye);
+		normalizev(&direction);
+		vector push = createv(0, 0, 0);
+		if (keyStates['w']) {
+			push = addv(push, direction);
+		}
+		if (keyStates['s']) {
+			push = substractv(push, direction);
+		}
+		if (keyStates['a']) {
+			push = addv(push, rotatev(direction, 90, 0, 1, 0));
+		}
+		if (keyStates['d']) {
+			push = addv(push, rotatev(direction, -90, 0, 1, 0));
+		}
+
+		// Makes the push vector the right length
+		normalizev(&push);
+		multiplyv(&push, ACCELERATION * 5);
+
+		// Adds the push vector to the camera force
+		cameraForce = addv(cameraForce, push);
+
+		// Makes sure camera force does not exceed MAX_SPEED
+		if (vlength(cameraForce) > MAX_SPEED) {
+			normalizev(&cameraForce);
+			multiplyv(&cameraForce, MAX_SPEED);
+		}
+
+		// Adds the jump vector to the camera force
 		//                                  GFORCE * (timeOfJump / 2 + 1)
 		//                                               ||
 		cameraForce = addv(cameraForce, createv(0, GFORCE * 16, 0));
@@ -314,7 +345,7 @@ void initialize(void)
 	// A vector that moves the camera
 	cameraForce = createv(0, 0, 0);
 	// Gravity
-	gForce = createv(0, 0, 0);
+	gForce = createv(0, - GFORCE, 0);
 
 }
 
@@ -467,6 +498,8 @@ int main(int argc, char *argv[])
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 	glutInitWindowSize(800, 600);
 	glutCreateWindow("Epic Game");
+
+	// Event listeners
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(normalKeysHandler);
@@ -475,9 +508,15 @@ int main(int argc, char *argv[])
 	glutSpecialUpFunc(specialKeysUpHandler);
 	glutPassiveMotionFunc(freeCameraHandler);
 	glutMotionFunc(freeCameraHandler);
+	
 	initialize();
+
 	// Starts main timer
 	glutTimerFunc(10, tick, 0);
+
+	// Hides the mouse cursor
+	glutSetCursor(GLUT_CURSOR_NONE); 
+
 	glutMainLoop();
 	return 0;
 }
