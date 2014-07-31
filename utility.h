@@ -3,14 +3,14 @@
 #define RAD_TO_DEG 180 / PI
 
 typedef struct _vector {
-	GLfloat x, y, z;
+	GLdouble x, y, z;
 } vector;
 
 void normalizev(vector *v);
-void multiplyv(vector *v, GLfloat factor);
+void multiplyv(vector *v, GLdouble factor);
 vector addv(vector v1, vector v2);
 vector substractv(vector v1, vector v2);
-vector rotatev(vector v, GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
-vector createv(GLfloat x, GLfloat y, GLfloat z);
-GLfloat vlength(vector v);
+vector rotatev(vector v, GLdouble angle, GLdouble x, GLdouble y, GLdouble z);
+vector createv(GLdouble x, GLdouble y, GLdouble z);
+GLdouble vlength(vector v);
 void printv(vector v);

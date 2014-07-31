@@ -11,25 +11,27 @@
 #define ACCELERATION 0.02
 #define DRAG 0.01
 #define AIR_DRAG 0.0025
-#define MAX_SPEED 0.15
+#define MAX_SPEED 0.10
+#define SPRINT_BOOST 0.07
 // The formula is: GFORCE = 2 * heightOfJump / ((timeOfJump / 2) * (timeOfJump / 2 + 1))   where heigthOfJump is in meters and timeOfJump is in milliseconds
 #define GFORCE 0.00583333
 
-float a1 = 0, a2 = 0, r;
-float lightPos[] = {5, 2.4, 5, 1};
-float lightColor[] = {0.5, 0.5, 0.5, 1};
+GLdouble a1 = 0, a2 = 0, r;
+GLfloat lightPos[] = {5, 2.4, 5, 1};
+GLfloat lightColor[] = {0.5, 0.5, 0.5, 1};
 int viewHeight, viewWidth;
-GLfloat cameraXAngle = 225, cameraYAngle = 0;
+GLdouble cameraXAngle = 225, cameraYAngle = 0;
 vector eye, target, cameraForce, gForce;
 int test = 0;
 int keyStates[256];
 int isJumping = false;
+int isSprinting = false;
 
 void drawWallsAndFloor(void)
 {
 	GLdouble i, j;
 	// The walls and floor will be a (10 / nr) * (10 / nr) grid
-	GLfloat nr = 0.1;
+	GLfloat nr = 0.1; // <<<<< Strange bug right here
 	glBegin(GL_QUADS);
 		for (i = 0; i < 10; i += nr) {
 			for (j = 0; j < 10; j += nr) {
@@ -109,10 +111,10 @@ void drawWallsAndFloor(void)
 	glEnd();
 }
 
-void drawCube(float size) 
+void drawCube(GLdouble size) 
 {
 	int i, j;
-	float s = size / 10;
+	GLdouble s = size / 10;
 	glPushMatrix();
 		glTranslatef(-size / 2, -size / 2, -size / 2);
 		glBegin(GL_QUADS);
@@ -253,15 +255,17 @@ void moveCamera(void)
 	normalizev(&acc);
 	multiplyv(&acc, ACCELERATION);
 
-	// Adds the acceleration vector to the camera force if he isn't jumping
-	if (!isJumping) {
-		cameraForce = addv(cameraForce, acc);
-	}
+	// Makes the sprint vector
+	vector sprint = acc;
+	normalizev(&sprint);
+	multiplyv(&sprint, 2 * ACCELERATION);
 
-	// Makes sure camera force does not exceed MAX_SPEED (again if he isn't jumping)
-	if (vlength(cameraForce) > MAX_SPEED && !isJumping) {
-		normalizev(&cameraForce);
-		multiplyv(&cameraForce, MAX_SPEED);
+	// Adds the acceleration or the sprint vector to the camera force if he isn't jumping and makes sure it does not exeed max speed or max speed + sprint boost
+	if (!isJumping) {
+		if (!isSprinting && vlength(addv(cameraForce, acc)) <= MAX_SPEED) 
+			cameraForce = addv(cameraForce, acc);
+		if (isSprinting && vlength(addv(cameraForce, sprint)) <= MAX_SPEED + SPRINT_BOOST)
+			cameraForce = addv(cameraForce, sprint);
 	}
 
 	// Gravity
@@ -304,7 +308,7 @@ void display(void)
 
 	// Draws and animates a green cube
 	glPushMatrix();
-		float k = (a2 - ((int) a2 / 90) * 90) * 2 * DEG_TO_RAD;
+		GLdouble k = (a2 - ((int) a2 / 90) * 90) * 2 * DEG_TO_RAD;
 		glTranslatef(5 + 4 * sin(r), 0.5 + sin(k) * (sqrt(2) / 2 - 0.5), 5 + 4 * cos(r));
 		glRotatef(a2, -sin(r), 0, -cos(r));
 		glRotatef(a1, 0, 1, 0);
@@ -356,8 +360,8 @@ void initialize(void)
 
 void freeCameraHandler (int x, int y) {
 	// Determines the angle on each axis based on mouse position
-	cameraXAngle += -45 + 90 * x / (GLfloat) viewWidth;
-	cameraYAngle += -30 + 60 * y / (GLfloat) viewHeight;
+	cameraXAngle += -45 + 90 * x / (GLdouble) viewWidth;
+	cameraYAngle += -30 + 60 * y / (GLdouble) viewHeight;
 
 	// cameraXAngle must not exeed 360 or be below -360 degrees
 	cameraXAngle -= ((int) cameraYAngle / 360) * 360;
@@ -369,9 +373,9 @@ void freeCameraHandler (int x, int y) {
 		cameraYAngle = -89;
 
 	// Some notations
-	GLfloat sinY = sin(-cameraYAngle * DEG_TO_RAD);
-	GLfloat sinX = sin(cameraXAngle * DEG_TO_RAD);
-	GLfloat cosX = cos(cameraXAngle * DEG_TO_RAD);
+	GLdouble sinY = sin(-cameraYAngle * DEG_TO_RAD);
+	GLdouble sinX = sin(cameraXAngle * DEG_TO_RAD);
+	GLdouble cosX = cos(cameraXAngle * DEG_TO_RAD);
 
 	// Makes the target vector based on cameraXAngle and cameraYAngle (rotating the vector using rotatev() was a bit buggy)
 	target = createv(cosX, 0, sinX);
@@ -432,6 +436,12 @@ void normalKeysHandler(unsigned char key, int x, int y)
 			exit(0);
 			break;
 	}
+
+	// Shift key
+	if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) 
+		isSprinting = true;
+	else
+		isSprinting = false;
 }
 
 // Handles arrow, function and other keys presses (and maps them with normal keys)

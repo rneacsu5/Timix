@@ -10,12 +10,8 @@ The game is now in **Alpha** stage.
 See CHANGELOG for info about the current version.
 How to play
 ---
-Enter this command from your terminal:
+Download this repository, navigate with your terminal to it (using cd) and enter this command:
 ```
-make
+make buildrun
 ```
-Then enter:
-```
-make run
-```
-and enjoy.
+Enjoy.

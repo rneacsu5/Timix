@@ -5,7 +5,7 @@
 
 void normalizev(vector *v) {
 
-	GLfloat modul = sqrt((*v).x * (*v).x + (*v).y * (*v).y + (*v).z * (*v).z);
+	GLdouble modul = sqrt((*v).x * (*v).x + (*v).y * (*v).y + (*v).z * (*v).z);
 	if (modul != 0) {
 		(*v).x /= modul;
 		(*v).y /= modul;
@@ -13,7 +13,7 @@ void normalizev(vector *v) {
 	}
 }
 
-void multiplyv(vector *v, GLfloat factor) 
+void multiplyv(vector *v, GLdouble factor) 
 {
 	(*v).x *= factor;
 	(*v).y *= factor;
@@ -38,7 +38,7 @@ vector substractv(vector v1, vector v2)
 	return diff;
 }
 
-vector rotatev(vector v, GLfloat angle, GLfloat x, GLfloat y, GLfloat z) 
+vector rotatev(vector v, GLdouble angle, GLdouble x, GLdouble y, GLdouble z) 
 {
 	// Normalizes the rotation vector
 	vector n = createv(x, y, z);
@@ -47,9 +47,9 @@ vector rotatev(vector v, GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 	y = n.y;
 	z = n.z;
 
-	GLfloat r = angle * DEG_TO_RAD;
-	GLfloat c = cos(r);
-	GLfloat s = sin(r);
+	GLdouble r = angle * DEG_TO_RAD;
+	GLdouble c = cos(r);
+	GLdouble s = sin(r);
 
 	// Rotates the vector
 	vector out;
@@ -60,7 +60,7 @@ vector rotatev(vector v, GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 	return out;
 }
 
-vector createv(GLfloat x, GLfloat y, GLfloat z) 
+vector createv(GLdouble x, GLdouble y, GLdouble z) 
 {
 	vector v;
 	v.x = x;
@@ -69,7 +69,7 @@ vector createv(GLfloat x, GLfloat y, GLfloat z)
 	return v;
 }
 
-GLfloat vlength(vector v) {
+GLdouble vlength(vector v) {
 	return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
