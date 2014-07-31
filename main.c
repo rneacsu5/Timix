@@ -23,6 +23,7 @@ GLfloat cameraXAngle = 225, cameraYAngle = 0;
 vector eye, target, cameraForce, gForce;
 int test = 0;
 int keyStates[256];
+int isJumping = false;
 
 void drawWallsAndFloor(void)
 {
@@ -158,10 +159,55 @@ void drawCube(float size)
 	glPopMatrix();
 }
 
+void jumpFunc(void) {
+	// The player jumps only if the spacebar is pressed and if he is not jumping
+	if (!isJumping && keyStates[32]) {
+		isJumping = true;
+
+		// Makes a push vector based on input and direction (this allows sprint jumping)
+		vector direction = substractv(createv(target.x, EYE_HEIGHT, target.z), eye);
+		normalizev(&direction);
+		vector push = createv(0, 0, 0);
+		if (keyStates['w']) {
+			push = addv(push, direction);
+		}
+		if (keyStates['s']) {
+			push = substractv(push, direction);
+		}
+		if (keyStates['a']) {
+			push = addv(push, rotatev(direction, 90, 0, 1, 0));
+		}
+		if (keyStates['d']) {
+			push = addv(push, rotatev(direction, -90, 0, 1, 0));
+		}
+
+		// Makes the push vector the right length
+		normalizev(&push);
+		multiplyv(&push, ACCELERATION * 5);
+
+		// Adds the push vector to the camera force
+		cameraForce = addv(cameraForce, push);
+
+		// Makes sure camera force does not exceed MAX_SPEED
+		if (vlength(cameraForce) > MAX_SPEED) {
+			normalizev(&cameraForce);
+			multiplyv(&cameraForce, MAX_SPEED);
+		}
+
+		// Adds the jump vector to the camera force
+		//                                  GFORCE * (timeOfJump / 2 + 1)
+		//                                               ||
+		cameraForce = addv(cameraForce, createv(0, GFORCE * 16, 0));
+	}
+}
+
 void moveCamera(void) 
 {
+	// Checks whether to jump or not
+	jumpFunc();
+	
 	// Aplys drag to the camera force if he isn't jumping
-	if (keyStates[32] == false) {
+	if (!isJumping) {
 		vector drag = cameraForce;
 		normalizev(&drag);
 		if (vlength(cameraForce) - DRAG > 0) {
@@ -208,12 +254,12 @@ void moveCamera(void)
 	multiplyv(&acc, ACCELERATION);
 
 	// Adds the acceleration vector to the camera force if he isn't jumping
-	if (keyStates[32] == false) {
+	if (!isJumping) {
 		cameraForce = addv(cameraForce, acc);
 	}
 
 	// Makes sure camera force does not exceed MAX_SPEED (again if he isn't jumping)
-	if (vlength(cameraForce) > MAX_SPEED && keyStates[32] == false) {
+	if (vlength(cameraForce) > MAX_SPEED && !isJumping) {
 		normalizev(&cameraForce);
 		multiplyv(&cameraForce, MAX_SPEED);
 	}
@@ -226,7 +272,7 @@ void moveCamera(void)
 		target.y += EYE_HEIGHT - eye.y;
 		eye.y = EYE_HEIGHT;
 		cameraForce = createv(cameraForce.x, 0, cameraForce.z);
-		keyStates[32] = false;
+		isJumping = false;
 	}
 
 	// Moves eye and target
@@ -234,46 +280,6 @@ void moveCamera(void)
 	target = addv(target, cameraForce);
 }
 
-void jumpFunc(void) {
-	if (keyStates[32] == false) {
-		keyStates[32] = true;
-
-		// Makes a push vector based on input and direction (this allows sprint jumping)
-		vector direction = substractv(createv(target.x, EYE_HEIGHT, target.z), eye);
-		normalizev(&direction);
-		vector push = createv(0, 0, 0);
-		if (keyStates['w']) {
-			push = addv(push, direction);
-		}
-		if (keyStates['s']) {
-			push = substractv(push, direction);
-		}
-		if (keyStates['a']) {
-			push = addv(push, rotatev(direction, 90, 0, 1, 0));
-		}
-		if (keyStates['d']) {
-			push = addv(push, rotatev(direction, -90, 0, 1, 0));
-		}
-
-		// Makes the push vector the right length
-		normalizev(&push);
-		multiplyv(&push, ACCELERATION * 5);
-
-		// Adds the push vector to the camera force
-		cameraForce = addv(cameraForce, push);
-
-		// Makes sure camera force does not exceed MAX_SPEED
-		if (vlength(cameraForce) > MAX_SPEED) {
-			normalizev(&cameraForce);
-			multiplyv(&cameraForce, MAX_SPEED);
-		}
-
-		// Adds the jump vector to the camera force
-		//                                  GFORCE * (timeOfJump / 2 + 1)
-		//                                               ||
-		cameraForce = addv(cameraForce, createv(0, GFORCE * 16, 0));
-	}
-}
 
 void display(void)
 {
@@ -346,21 +352,20 @@ void initialize(void)
 	cameraForce = createv(0, 0, 0);
 	// Gravity
 	gForce = createv(0, - GFORCE, 0);
-
 }
 
 void freeCameraHandler (int x, int y) {
 	// Determines the angle on each axis based on mouse position
-	cameraXAngle += -45 + 90 * x / (double) viewWidth;
-	cameraYAngle += -30 + 60 * y / (double) viewHeight;
+	cameraXAngle += -45 + 90 * x / (GLfloat) viewWidth;
+	cameraYAngle += -30 + 60 * y / (GLfloat) viewHeight;
 
 	// cameraXAngle must not exeed 360 or be below -360 degrees
 	cameraXAngle -= ((int) cameraYAngle / 360) * 360;
 
 	// cameraYAngle must not exeed 90 degrees or be below -90 degrees
-	if (cameraYAngle >= 89) 
+	if (cameraYAngle > 89) 
 		cameraYAngle = 89;
-	if (cameraYAngle <= -89) 
+	if (cameraYAngle < -89) 
 		cameraYAngle = -89;
 
 	// Some notations
@@ -381,12 +386,12 @@ void tick(int value)
 {
 	a1+= 5 * 0.1;
 	if (a1 >= 360)
-		a1 = 0;
+		a1 -= 360;
 	r = a1 * DEG_TO_RAD;
 
 	a2 += 5 * 0.62831;
 	if (a2 >= 360)
-		a2 = 0;
+		a2 -= 360;
 
 	// Moves mouse to the middle
 	glutWarpPointer(viewWidth / 2, viewHeight / 2);
@@ -420,7 +425,7 @@ void normalKeysHandler(unsigned char key, int x, int y)
 			break;
 		// Space Key
 		case 32:
-			jumpFunc();
+			keyStates[32] = true;
 			break;
 		// Esc Key
 		case 27:
@@ -445,7 +450,6 @@ void specialKeysHandler(int key, int x, int y)
 		case GLUT_KEY_RIGHT:
 			keyStates['d'] = true;
 			break;
-
 	}
 }
 
@@ -468,6 +472,9 @@ void normalKeysUpHandler (unsigned char key, int x, int y)
 		case 'D':
 		case 'd':
 			keyStates['d'] = false;
+			break;
+		case 32:
+			keyStates[32] = false;
 			break;
 	}
 }
@@ -511,11 +518,11 @@ int main(int argc, char *argv[])
 	
 	initialize();
 
+	// Hides the mouse cursor
+	glutSetCursor(GLUT_CURSOR_NONE);
+
 	// Starts main timer
 	glutTimerFunc(10, tick, 0);
-
-	// Hides the mouse cursor
-	glutSetCursor(GLUT_CURSOR_NONE); 
 
 	glutMainLoop();
 	return 0;
