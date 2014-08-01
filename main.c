@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "utility.h"
+#include "bitmap.h"
 
 // C does not support boolean?! WTF!
 #define true 7
@@ -19,6 +20,9 @@
 GLdouble a1 = 0, a2 = 0, r;
 GLfloat lightPos[] = {5, 2.4, 5, 1};
 GLfloat lightColor[] = {0.5, 0.5, 0.5, 1};
+GLfloat matSpecular[] = { 1.0, 1.0, 1.0, 1.0 };
+GLfloat matShininess[] = { 50.0 };
+GLfloat matSurface[] = { 1.0, 1.0, 1.0, 0.0 };
 int viewHeight, viewWidth;
 GLdouble cameraXAngle = 225, cameraYAngle = 0;
 vector eye, target, cameraForce, gForce;
@@ -26,77 +30,124 @@ int test = 0;
 int keyStates[256];
 int isJumping = false;
 int isSprinting = false;
+GLubyte* textureData;
+BITMAPINFO* textureInfo;
+GLubyte* textureData2;
+BITMAPINFO* textureInfo2;
 
 void drawWallsAndFloor(void)
 {
+
+	glMaterialfv(GL_FRONT, GL_SPECULAR,  matSpecular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, matShininess);
+	glMaterialfv(GL_FRONT, GL_AMBIENT,   matSurface);
+
+	glDisable(GL_COLOR_MATERIAL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, 3, textureInfo->bmiHeader.biWidth,
+			textureInfo->bmiHeader.biHeight, 0, GL_RGB,
+			GL_UNSIGNED_BYTE, textureData);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glEnable(GL_TEXTURE_2D);
+
+
 	GLdouble i, j;
 	// The walls and floor will be a (10 / nr) * (10 / nr) grid
-	GLfloat nr = 0.1; // <<<<< Strange bug right here
+	GLdouble nr = 0.1;
 	glBegin(GL_QUADS);
-		for (i = 0; i < 10; i += nr) {
-			for (j = 0; j < 10; j += nr) {
+		for (i = 0; i < 9.99; i += nr) {
+			for (j = 0; j < 9.99; j += nr) {
 				// Floor
-				glColor3f(i / 10.0, 0, j / 10.0);
+				//glColor3f(i / 10.0, 0, j / 10.0);
 				glNormal3f(0, 1, 0);
+				glTexCoord2f(0.5 * i, 0.5 * j);
 				glVertex3f(i, 0, j);
-				// glTexCoord2f(i, j);
+				glTexCoord2f(0.5 * i, 0.5 * (j + nr));
 				glVertex3f(i, 0, j + nr);
-				// glTexCoord2f(i, j + 1);
+				glTexCoord2f(0.5 * (i + nr), 0.5 * (j + nr));
 				glVertex3f(i + nr, 0, j + nr);
-				// glTexCoord2f(i + 1, j + 1);
+				glTexCoord2f(0.5 * (i + nr), 0.5 * j);
 				glVertex3f(i + nr, 0, j);
-				// glTexCoord2f(i + 1, j);
+			}
+		}
 
+	glEnd();
+
+	glMaterialfv(GL_FRONT, GL_SPECULAR,  matSpecular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, matShininess);
+	glMaterialfv(GL_FRONT, GL_AMBIENT,   matSurface);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, 3, textureInfo2->bmiHeader.biWidth,
+			textureInfo2->bmiHeader.biHeight, 0, GL_RGB,
+			GL_UNSIGNED_BYTE, textureData2);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glEnable(GL_TEXTURE_2D);
+	
+	glBegin(GL_QUADS);
+
+		for (i = 0; i < 9.99; i += nr) {
+			for (j = 0; j < 9.99; j += nr) {
 				// Wall 1
-				glColor3f(j / 10.0, 0, i / 10.0);
+				//glColor3f(j / 10.0, 0, i / 10.0);
 				glNormal3f(0, 0, 1);
+				glTexCoord2f(0.5 * i, 0.2 * j);
 				glVertex3f(i, 0.25 * j, 0);
-				// glTexCoord2f(i, k);
+				glTexCoord2f(0.5 * i, 0.2 * (j + nr));
 				glVertex3f(i, 0.25 * (j + nr), 0);
-				// glTexCoord2f(i, k + 1);
+				glTexCoord2f(0.5 * (i + nr), 0.2 * (j + nr));
 				glVertex3f(i + nr, 0.25 * (j + nr), 0);
-				// glTexCoord2f(i + 1, k + 1);
+				glTexCoord2f(0.5 * (i + nr), 0.2 * j);
 				glVertex3f(i + nr, 0.25 * j, 0);
-				// glTexCoord2f(i + 1, k);
 
 				// Wall 2
-				glColor3f(j / 10.0, i / 10.0, 0);
+				//glColor3f(j / 10.0, i / 10.0, 0);
 				glNormal3f(0, 0, -1);
+				glTexCoord2f(0.5 * i, 0.2 * j);
 				glVertex3f(i, 0.25 * j, 10);
-				// glTexCoord2f(i, k);
+				glTexCoord2f(0.5 * i, 0.2 * (j + nr));
 				glVertex3f(i, 0.25 * (j + nr), 10);
-				// glTexCoord2f(i, k + 1);
+				glTexCoord2f(0.5 * (i + nr), 0.2 * (j + nr));
 				glVertex3f(i + nr, 0.25 * (j + nr), 10);
-				// glTexCoord2f(i + 1, k + 1);
+				glTexCoord2f(0.5 * (i + nr), 0.2 * j);
 				glVertex3f(i + nr, 0.25 * j, 10);
-				// glTexCoord2f(i + 1, k);
 
 				// Wall 3
-				glColor3f(0, i / 10.0, j / 10.0);
+				//glColor3f(0, i / 10.0, j / 10.0);
 				glNormal3f(1, 0, 0);
+				glTexCoord2f(0.5 * i, 0.2 * j);
 				glVertex3f(0, 0.25 * j, i);
-				// glTexCoord2f(i, k);
+				glTexCoord2f(0.5 * i, 0.2 * (j + nr));
 				glVertex3f(0, 0.25 * (j + nr), i);
-				// glTexCoord2f(i, k + 1);
+				glTexCoord2f(0.5 * (i + nr), 0.2 * (j + nr));
 				glVertex3f(0, 0.25 * (j + nr), i + nr);
-				// glTexCoord2f(i + 1, k + 1);
+				glTexCoord2f(0.5 * (i + nr), 0.2 * j);
 				glVertex3f(0, 0.25 * j, i + nr);
-				// glTexCoord2f(i + 1, k);
 
 				// Wall 4
-				glColor3f(j / 10.0, 1, i / 10.0);
+				//glColor3f(j / 10.0, 1, i / 10.0);
 				glNormal3f(-1, 0, 0);
+				glTexCoord2f(0.5 * i, 0.2 * j);
 				glVertex3f(10, 0.25 * j, i);
-				// glTexCoord2f(i, k);
+				glTexCoord2f(0.5 * i, 0.2 * (j + nr));
 				glVertex3f(10, 0.25 * (j + nr), i);
-				// glTexCoord2f(i, k + 1);
+				glTexCoord2f(0.5 * (i + nr), 0.2 * (j + nr));
 				glVertex3f(10, 0.25 * (j + nr), i + nr);
-				// glTexCoord2f(i + 1, k + 1);
+				glTexCoord2f(0.5 * (i + nr), 0.2 * j);
 				glVertex3f(10, 0.25 * j, i + nr);
-				// glTexCoord2f(i + 1, k);
+			}
+		}
 
+		for (i = 0; i < 9.99; i += nr) {
+			for (j = 0; j < 9.99; j += nr) {
 				// Ceiling
-				glColor3f(i / 10.0, 0, j / 10.0);
+				//glColor3f(i / 10.0, 0, j / 10.0);
 				glNormal3f(0, -1, 0);
 				glVertex3f(i, 2.5, j);
 				// glTexCoord2f(i, j);
@@ -109,6 +160,7 @@ void drawWallsAndFloor(void)
 			}
 		}
 	glEnd();
+	glEnable(GL_COLOR_MATERIAL);
 }
 
 void drawCube(GLdouble size) 
@@ -300,7 +352,7 @@ void display(void)
 	glPushMatrix();
 		glTranslatef(2, 0.15, 2);
 		glRotatef(a2, 0, 1, 0);
-		glColor3f(0, 1, 1);
+		//glColor3f(0, 1, 1);
 		glutSolidTeapot(0.3);
 	glPopMatrix();
 
@@ -312,7 +364,7 @@ void display(void)
 		glTranslatef(5 + 4 * sin(r), 0.5 + sin(k) * (sqrt(2) / 2 - 0.5), 5 + 4 * cos(r));
 		glRotatef(a2, -sin(r), 0, -cos(r));
 		glRotatef(a1, 0, 1, 0);
-		glColor3f(0,0.5,0);
+		//glColor3f(0,0.5,0);
 		drawCube(1);
 	glPopMatrix();
 
@@ -342,7 +394,6 @@ void initialize(void)
 	// Set the background to light gray
 	glClearColor(0.8, 0.8, 0.8, 1);
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_COLOR_MATERIAL);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor);
 	glEnable(GL_LIGHTING);
@@ -356,6 +407,9 @@ void initialize(void)
 	cameraForce = createv(0, 0, 0);
 	// Gravity
 	gForce = createv(0, - GFORCE, 0);
+	// Loads texture
+	textureData = LoadDIBitmap("wall.bmp", &textureInfo);
+	textureData2 = LoadDIBitmap("wall2.bmp", &textureInfo2);
 }
 
 void freeCameraHandler (int x, int y) {
@@ -436,12 +490,6 @@ void normalKeysHandler(unsigned char key, int x, int y)
 			exit(0);
 			break;
 	}
-
-	// Shift key
-	if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) 
-		isSprinting = true;
-	else
-		isSprinting = false;
 }
 
 // Handles arrow, function and other keys presses (and maps them with normal keys)
@@ -459,6 +507,10 @@ void specialKeysHandler(int key, int x, int y)
 			break;
 		case GLUT_KEY_RIGHT:
 			keyStates['d'] = true;
+			break;
+		// Shift key
+		case 112:
+			isSprinting = true;
 			break;
 	}
 }
@@ -504,6 +556,10 @@ void specialKeysUpHandler(int key, int x, int y)
 			break;
 		case GLUT_KEY_RIGHT:
 			keyStates['d'] = false;
+			break;
+		// Shift key
+		case 112:
+			isSprinting = false;
 			break;
 	}
 }
