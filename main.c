@@ -227,7 +227,7 @@ void jumpFunc(void) {
 		normalizev(&push);
 		multiplyv(&push, ACCELERATION * 7);
 
-		// Adds the push vector to the camera force and limits it's speed
+		// Adds the push vector to the camera force and limits its speed
 		if (!isSprinting && vlength(addv(cameraForce, push)) <= MAX_SPEED)
 			cameraForce = addv(cameraForce, push);
 		else if (!isSprinting && vlength(addv(cameraForce, push)) > MAX_SPEED && vlength(cameraForce) <= MAX_SPEED) {
@@ -307,7 +307,7 @@ void moveCamera(void)
 	normalizev(&sprint);
 	multiplyv(&sprint, 2 * ACCELERATION);
 
-	// Adds the acceleration or the sprint vector to the camera force if he isn't jumping and limits it's speed
+	// Adds the acceleration or the sprint vector to the camera force if he isn't jumping and limits its speed
 	if (!isJumping) {
 		if (!isSprinting && vlength(addv(cameraForce, acc)) <= MAX_SPEED)
 			cameraForce = addv(cameraForce, acc);
