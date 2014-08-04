@@ -6,7 +6,7 @@
 #include "bitmap.h"
 
 // C does not support boolean?! WTF!
-#define true 7
+#define true 1
 #define false 0
 #define EYE_HEIGHT 1.7
 #define ACCELERATION 0.02
@@ -17,51 +17,52 @@
 // The formula is: GFORCE = 2 * heightOfJump / ((timeOfJump / 2) * (timeOfJump / 2 + 1))   where heigthOfJump is in meters and timeOfJump is in milliseconds
 #define GFORCE 0.00583333
 
+// Ligth parameters
+GLfloat lightPos[] = {5, 2.3, 5, 1};
+GLfloat lightAmbient[] = {0.2, 0.2, 0.2, 1};
+GLfloat lightDiffuse[] = {0.5, 0.5, 0.5, 1};
+GLfloat lightSpecular[] = {1.0, 1.0, 1.0, 1};
+// Material parameters
+GLfloat matAmbient[] = {0.0, 1.0, 0.0, 1}; // << This two don't seem to do anything
+GLfloat matDiffuse[] = {0.0, 0.0, 1.0, 1}; // <<
+GLfloat matSpecular[] = {0.3, 0.3, 0.3, 1};
+GLfloat matEmission[] = {0, 0, 0, 1};
+GLfloat matShininess[] = {15.0};
+
 GLdouble a1 = 0, a2 = 0, r;
-GLfloat lightPos[] = {5, 2.4, 5, 1};
-GLfloat lightColor[] = {0.5, 0.5, 0.5, 1};
-GLfloat matSpecular[] = { 1.0, 1.0, 1.0, 1.0 };
-GLfloat matShininess[] = { 50.0 };
-GLfloat matSurface[] = { 1.0, 1.0, 1.0, 0.0 };
+// Viewport width and height
 int viewHeight, viewWidth;
-GLdouble cameraXAngle = 225, cameraYAngle = 0;
+// Camerea pitch and yaw
+GLdouble cameraYaw = 225, cameraPitch = 0;
+// Vectors
 vector eye, target, cameraForce, gForce;
-int test = 0;
+// Key state: true if the key is pressed and false if not
 int keyStates[256];
 int isJumping = false;
 int isSprinting = false;
-GLubyte* textureData;
-BITMAPINFO* textureInfo;
-GLubyte* textureData2;
-BITMAPINFO* textureInfo2;
+// Textures
+Texture floorTex, wallTex;
+
 
 void drawWallsAndFloor(void)
 {
-
-	glMaterialfv(GL_FRONT, GL_SPECULAR,  matSpecular);
-	glMaterialfv(GL_FRONT, GL_SHININESS, matShininess);
-	glMaterialfv(GL_FRONT, GL_AMBIENT,   matSurface);
-
-	glDisable(GL_COLOR_MATERIAL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, 3, textureInfo->bmiHeader.biWidth,
-			textureInfo->bmiHeader.biHeight, 0, GL_RGB,
-			GL_UNSIGNED_BYTE, textureData);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	glEnable(GL_TEXTURE_2D);
-
-
 	GLdouble i, j;
 	// The walls and floor will be a (10 / nr) * (10 / nr) grid
 	GLdouble nr = 0.1;
+
+	// Enables textures
+	glEnable(GL_TEXTURE_2D);
+	// Texture environment
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	// Binds the floor's texture to GL_TEXTURE_2D
+	glBindTexture(GL_TEXTURE_2D, floorTex.texName);
+	// Resets the color to white
+	glColor3f(1.0,1.0,1.0);
+	// Draws floor
 	glBegin(GL_QUADS);
 		for (i = 0; i < 9.99; i += nr) {
 			for (j = 0; j < 9.99; j += nr) {
-				// Floor
-				//glColor3f(i / 10.0, 0, j / 10.0);
 				glNormal3f(0, 1, 0);
 				glTexCoord2f(0.5 * i, 0.5 * j);
 				glVertex3f(i, 0, j);
@@ -73,94 +74,81 @@ void drawWallsAndFloor(void)
 				glVertex3f(i + nr, 0, j);
 			}
 		}
-
 	glEnd();
 
-	glMaterialfv(GL_FRONT, GL_SPECULAR,  matSpecular);
-	glMaterialfv(GL_FRONT, GL_SHININESS, matShininess);
-	glMaterialfv(GL_FRONT, GL_AMBIENT,   matSurface);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, 3, textureInfo2->bmiHeader.biWidth,
-			textureInfo2->bmiHeader.biHeight, 0, GL_RGB,
-			GL_UNSIGNED_BYTE, textureData2);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	glEnable(GL_TEXTURE_2D);
-	
+	// Binds the wall's texture to GL_TEXTURE_2D
+	glBindTexture(GL_TEXTURE_2D, wallTex.texName);
+	// Draws walls
 	glBegin(GL_QUADS);
-
 		for (i = 0; i < 9.99; i += nr) {
 			for (j = 0; j < 9.99; j += nr) {
 				// Wall 1
-				//glColor3f(j / 10.0, 0, i / 10.0);
 				glNormal3f(0, 0, 1);
-				glTexCoord2f(0.5 * i, 0.2 * j);
+				glTexCoord2f(0.5 * i, 0.125 * j);
 				glVertex3f(i, 0.25 * j, 0);
-				glTexCoord2f(0.5 * i, 0.2 * (j + nr));
+				glTexCoord2f(0.5 * i, 0.125 * (j + nr));
 				glVertex3f(i, 0.25 * (j + nr), 0);
-				glTexCoord2f(0.5 * (i + nr), 0.2 * (j + nr));
+				glTexCoord2f(0.5 * (i + nr), 0.125 * (j + nr));
 				glVertex3f(i + nr, 0.25 * (j + nr), 0);
-				glTexCoord2f(0.5 * (i + nr), 0.2 * j);
+				glTexCoord2f(0.5 * (i + nr), 0.125 * j);
 				glVertex3f(i + nr, 0.25 * j, 0);
 
 				// Wall 2
-				//glColor3f(j / 10.0, i / 10.0, 0);
 				glNormal3f(0, 0, -1);
-				glTexCoord2f(0.5 * i, 0.2 * j);
+				glTexCoord2f(0.5 * i, 0.125 * j);
 				glVertex3f(i, 0.25 * j, 10);
-				glTexCoord2f(0.5 * i, 0.2 * (j + nr));
+				glTexCoord2f(0.5 * i, 0.125 * (j + nr));
 				glVertex3f(i, 0.25 * (j + nr), 10);
-				glTexCoord2f(0.5 * (i + nr), 0.2 * (j + nr));
+				glTexCoord2f(0.5 * (i + nr), 0.125 * (j + nr));
 				glVertex3f(i + nr, 0.25 * (j + nr), 10);
-				glTexCoord2f(0.5 * (i + nr), 0.2 * j);
+				glTexCoord2f(0.5 * (i + nr), 0.125 * j);
 				glVertex3f(i + nr, 0.25 * j, 10);
 
 				// Wall 3
-				//glColor3f(0, i / 10.0, j / 10.0);
 				glNormal3f(1, 0, 0);
-				glTexCoord2f(0.5 * i, 0.2 * j);
+				glTexCoord2f(0.5 * i, 0.125 * j);
 				glVertex3f(0, 0.25 * j, i);
-				glTexCoord2f(0.5 * i, 0.2 * (j + nr));
+				glTexCoord2f(0.5 * i, 0.125 * (j + nr));
 				glVertex3f(0, 0.25 * (j + nr), i);
-				glTexCoord2f(0.5 * (i + nr), 0.2 * (j + nr));
+				glTexCoord2f(0.5 * (i + nr), 0.125 * (j + nr));
 				glVertex3f(0, 0.25 * (j + nr), i + nr);
-				glTexCoord2f(0.5 * (i + nr), 0.2 * j);
+				glTexCoord2f(0.5 * (i + nr), 0.125 * j);
 				glVertex3f(0, 0.25 * j, i + nr);
 
 				// Wall 4
-				//glColor3f(j / 10.0, 1, i / 10.0);
 				glNormal3f(-1, 0, 0);
-				glTexCoord2f(0.5 * i, 0.2 * j);
+				glTexCoord2f(0.5 * i, 0.125 * j);
 				glVertex3f(10, 0.25 * j, i);
-				glTexCoord2f(0.5 * i, 0.2 * (j + nr));
+				glTexCoord2f(0.5 * i, 0.125 * (j + nr));
 				glVertex3f(10, 0.25 * (j + nr), i);
-				glTexCoord2f(0.5 * (i + nr), 0.2 * (j + nr));
+				glTexCoord2f(0.5 * (i + nr), 0.125 * (j + nr));
 				glVertex3f(10, 0.25 * (j + nr), i + nr);
-				glTexCoord2f(0.5 * (i + nr), 0.2 * j);
+				glTexCoord2f(0.5 * (i + nr), 0.125 * j);
 				glVertex3f(10, 0.25 * j, i + nr);
 			}
 		}
+	glEnd();
 
+	// Binds the ceiling's texture to GL_TEXTURE_2D
+	glBindTexture(GL_TEXTURE_2D, wallTex.texName);
+	// Draws ceiling
+	glBegin(GL_QUADS);
 		for (i = 0; i < 9.99; i += nr) {
 			for (j = 0; j < 9.99; j += nr) {
-				// Ceiling
-				//glColor3f(i / 10.0, 0, j / 10.0);
 				glNormal3f(0, -1, 0);
+				glTexCoord2f(i, j);
 				glVertex3f(i, 2.5, j);
-				// glTexCoord2f(i, j);
+				glTexCoord2f(i, j + nr);
 				glVertex3f(i, 2.5, j + nr);
-				// glTexCoord2f(i, j + 1);
+				glTexCoord2f(i + nr, j + nr);
 				glVertex3f(i + nr, 2.5, j + nr);
-				// glTexCoord2f(i + 1, j + 1);
+				glTexCoord2f(i + nr, j);
 				glVertex3f(i + nr, 2.5, j);
-				// glTexCoord2f(i + 1, j);
 			}
 		}
 	glEnd();
-	glEnable(GL_COLOR_MATERIAL);
+	// Disables textures
+	glDisable(GL_TEXTURE_2D);
 }
 
 void drawCube(GLdouble size) 
@@ -237,15 +225,22 @@ void jumpFunc(void) {
 
 		// Makes the push vector the right length
 		normalizev(&push);
-		multiplyv(&push, ACCELERATION * 5);
+		multiplyv(&push, ACCELERATION * 7);
 
-		// Adds the push vector to the camera force
-		cameraForce = addv(cameraForce, push);
-
-		// Makes sure camera force does not exceed MAX_SPEED
-		if (vlength(cameraForce) > MAX_SPEED) {
+		// Adds the push vector to the camera force and limits it's speed
+		if (!isSprinting && vlength(addv(cameraForce, push)) <= MAX_SPEED)
+			cameraForce = addv(cameraForce, push);
+		else if (!isSprinting && vlength(addv(cameraForce, push)) > MAX_SPEED && vlength(cameraForce) <= MAX_SPEED) {
+			cameraForce = addv(cameraForce, push);
 			normalizev(&cameraForce);
 			multiplyv(&cameraForce, MAX_SPEED);
+		}
+		if (isSprinting && vlength(addv(cameraForce, push)) <= MAX_SPEED + SPRINT_BOOST)
+			cameraForce = addv(cameraForce, push);
+		else if (isSprinting && vlength(addv(cameraForce, push)) > MAX_SPEED + SPRINT_BOOST && vlength(cameraForce) <= MAX_SPEED + SPRINT_BOOST) {
+			cameraForce = addv(cameraForce, push);
+			normalizev(&cameraForce);
+			multiplyv(&cameraForce, MAX_SPEED + SPRINT_BOOST);
 		}
 
 		// Adds the jump vector to the camera force
@@ -312,12 +307,34 @@ void moveCamera(void)
 	normalizev(&sprint);
 	multiplyv(&sprint, 2 * ACCELERATION);
 
-	// Adds the acceleration or the sprint vector to the camera force if he isn't jumping and makes sure it does not exeed max speed or max speed + sprint boost
+	// Adds the acceleration or the sprint vector to the camera force if he isn't jumping and limits it's speed
 	if (!isJumping) {
-		if (!isSprinting && vlength(addv(cameraForce, acc)) <= MAX_SPEED) 
+		if (!isSprinting && vlength(addv(cameraForce, acc)) <= MAX_SPEED)
 			cameraForce = addv(cameraForce, acc);
-		if (isSprinting && vlength(addv(cameraForce, sprint)) <= MAX_SPEED + SPRINT_BOOST)
+		else if (!isSprinting && vlength(addv(cameraForce, acc)) > MAX_SPEED && vlength(cameraForce) <= MAX_SPEED) {
+			cameraForce = addv(cameraForce, acc);
+			normalizev(&cameraForce);
+			multiplyv(&cameraForce, MAX_SPEED);
+		}
+		else if (!isSprinting && vlength(addv(cameraForce, acc)) > MAX_SPEED && vlength(cameraForce) > MAX_SPEED) {
+			GLdouble length = vlength(cameraForce);
+			cameraForce = addv(cameraForce, acc);
+			normalizev(&cameraForce);
+			multiplyv(&cameraForce, length);
+		}
+		if (isSprinting && vlength(addv(cameraForce, sprint)) <= MAX_SPEED + SPRINT_BOOST) 
 			cameraForce = addv(cameraForce, sprint);
+		else if (isSprinting && vlength(addv(cameraForce, sprint)) > MAX_SPEED + SPRINT_BOOST && vlength(cameraForce) <= MAX_SPEED + SPRINT_BOOST) {
+			cameraForce = addv(cameraForce, sprint);
+			normalizev(&cameraForce);
+			multiplyv(&cameraForce, MAX_SPEED + SPRINT_BOOST);
+		}
+		else if (isSprinting && vlength(addv(cameraForce, sprint)) > MAX_SPEED + SPRINT_BOOST && vlength(cameraForce) > MAX_SPEED + SPRINT_BOOST) {
+			GLdouble length = vlength(cameraForce);
+			cameraForce = addv(cameraForce, sprint);
+			normalizev(&cameraForce);
+			multiplyv(&cameraForce, length);
+		}
 	}
 
 	// Gravity
@@ -350,9 +367,9 @@ void display(void)
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 	// Draws and rotates a cyan teapot
 	glPushMatrix();
-		glTranslatef(2, 0.15, 2);
+		glTranslatef(2, 0.2, 2);
 		glRotatef(a2, 0, 1, 0);
-		//glColor3f(0, 1, 1);
+		glColor3f(0, 1, 1);
 		glutSolidTeapot(0.3);
 	glPopMatrix();
 
@@ -364,7 +381,7 @@ void display(void)
 		glTranslatef(5 + 4 * sin(r), 0.5 + sin(k) * (sqrt(2) / 2 - 0.5), 5 + 4 * cos(r));
 		glRotatef(a2, -sin(r), 0, -cos(r));
 		glRotatef(a1, 0, 1, 0);
-		//glColor3f(0,0.5,0);
+		glColor3f(0,0.5,0);
 		drawCube(1);
 	glPopMatrix();
 
@@ -393,45 +410,93 @@ void initialize(void)
 {
 	// Set the background to light gray
 	glClearColor(0.8, 0.8, 0.8, 1);
+	// Enables depth test
 	glEnable(GL_DEPTH_TEST);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor);
+	// Enables color material
+	glEnable(GL_COLOR_MATERIAL);
+	// Sets the light
+	glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular);
+	// Enables lighting
 	glEnable(GL_LIGHTING);
+	// Enables the light
 	glEnable(GL_LIGHT0);
+	// Sets the material ligthing
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, matAmbient);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, matDiffuse);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpecular);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, matShininess);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, matEmission);
 	glShadeModel(GL_SMOOTH);
+
+	// Loads textures
+
+	// Loads the .bmp file
+	loadBMP("floor.bmp", &floorTex);
+	// Generates a texture name
+	glGenTextures(1, &floorTex.texName);
+	// Binds the texture to GL_TEXTURE_2D. All the parameters that we set now will be the same when we bind the texture later
+	glBindTexture(GL_TEXTURE_2D, floorTex.texName);
+	// Sets some parameters
+	// Repeat the image on both axes
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// Sets the interpolation to linear
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	// Sets the image to be used as a texture
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
+				floorTex.texWidth, 
+                floorTex.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 
+                floorTex.texData);
+
+	// Same as above
+	loadBMP("wall.bmp", &wallTex);
+	glGenTextures(1, &wallTex.texName);
+	glBindTexture(GL_TEXTURE_2D, wallTex.texName);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
+				wallTex.texWidth, 
+                wallTex.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 
+                wallTex.texData);
+
 	// Represents the camera position
 	eye = createv(5, EYE_HEIGHT, 5);
+
 	// Represents the point where the camera looks
 	target = createv(0, EYE_HEIGHT, 0);
+
 	// A vector that moves the camera
 	cameraForce = createv(0, 0, 0);
+
 	// Gravity
 	gForce = createv(0, - GFORCE, 0);
-	// Loads texture
-	textureData = LoadDIBitmap("wall.bmp", &textureInfo);
-	textureData2 = LoadDIBitmap("wall2.bmp", &textureInfo2);
 }
 
 void freeCameraHandler (int x, int y) {
 	// Determines the angle on each axis based on mouse position
-	cameraXAngle += -45 + 90 * x / (GLdouble) viewWidth;
-	cameraYAngle += -30 + 60 * y / (GLdouble) viewHeight;
+	cameraYaw += -45 + 90 * x / (GLdouble) viewWidth;
+	cameraPitch += -30 + 60 * y / (GLdouble) viewHeight;
 
-	// cameraXAngle must not exeed 360 or be below -360 degrees
-	cameraXAngle -= ((int) cameraYAngle / 360) * 360;
+	// cameraYaw must not exeed 360 or be below -360 degrees
+	cameraYaw -= ((int) cameraYaw / 360) * 360;
 
-	// cameraYAngle must not exeed 90 degrees or be below -90 degrees
-	if (cameraYAngle > 89) 
-		cameraYAngle = 89;
-	if (cameraYAngle < -89) 
-		cameraYAngle = -89;
+	// cameraPitch must not exeed 90 degrees or be below -90 degrees
+	if (cameraPitch > 89) 
+		cameraPitch = 89;
+	if (cameraPitch < -89) 
+		cameraPitch = -89;
 
 	// Some notations
-	GLdouble sinY = sin(-cameraYAngle * DEG_TO_RAD);
-	GLdouble sinX = sin(cameraXAngle * DEG_TO_RAD);
-	GLdouble cosX = cos(cameraXAngle * DEG_TO_RAD);
+	GLdouble sinY = sin(-cameraPitch * DEG_TO_RAD);
+	GLdouble sinX = sin(cameraYaw * DEG_TO_RAD);
+	GLdouble cosX = cos(cameraYaw * DEG_TO_RAD);
 
-	// Makes the target vector based on cameraXAngle and cameraYAngle (rotating the vector using rotatev() was a bit buggy)
+	// Makes the target vector based on cameraYaw and cameraPitch (rotating the vector using rotatev() was a bit buggy)
 	target = createv(cosX, 0, sinX);
 	multiplyv(&target, sqrt(1 - sinY * sinY));
 	target = addv(target, createv(0, sinY, 0));
@@ -535,6 +600,7 @@ void normalKeysUpHandler (unsigned char key, int x, int y)
 		case 'd':
 			keyStates['d'] = false;
 			break;
+		// Space Key
 		case 32:
 			keyStates[32] = false;
 			break;

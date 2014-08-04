@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include "utility.h"
+#include "bitmap.h"
 
 void normalizev(vector *v) {
 
@@ -75,4 +76,13 @@ GLdouble vlength(vector v) {
 
 void printv(vector v) {
 	printf("%f %f %f\n", v.x, v.y, v.z);
+}
+
+void loadBMP(char *fileName, Texture *tex) {
+	// Gets the texture data and texture info 
+	(*tex).texData = LoadDIBitmap(fileName, &(*tex).texInfo);
+
+	// Gets texture width and height from texture info
+	(*tex).texWidth = (*tex).texInfo->bmiHeader.biWidth;
+	(*tex).texHeight = (*tex).texInfo->bmiHeader.biHeight;
 }

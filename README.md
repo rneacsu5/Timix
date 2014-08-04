@@ -12,6 +12,6 @@ How to play
 ---
 Download this repository, navigate with your terminal to it (using cd) and enter this command:
 ```
-make buildrun
+make
 ```
 Enjoy.
