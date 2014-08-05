@@ -41,7 +41,7 @@ int keyStates[256];
 int isJumping = false;
 int isSprinting = false;
 // Textures
-Texture floorTex, wallTex;
+Texture floorTex, wallTex, grassTex;
 
 
 void drawWallsAndFloor(void)
@@ -148,6 +148,33 @@ void drawWallsAndFloor(void)
 		}
 	glEnd();
 	// Disables textures
+	glDisable(GL_TEXTURE_2D);
+}
+
+// This will draw a 100 by 100 plane, the camera being always in the middle of it. Gives the impression of an infinite world
+void drawGround() {
+	int centerX = (int) eye.x, centerY = (int) eye.z;
+	int i, j;
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, grassTex.texName);
+	glPushMatrix();
+		glTranslatef(0, -0.01, 0);
+		glBegin(GL_QUADS);
+		glNormal3f(0, 1, 0);
+			for (i = 0; i < 100; i++) {
+				for (j = 0; j < 100; j++) {
+					glTexCoord2f(1, 0);
+					glVertex3f(centerX + i - 50, 0, centerY + j - 50);
+					glTexCoord2f(1, 1);
+					glVertex3f(centerX + i - 50 + 1, 0, centerY + j - 50);
+					glTexCoord2f(0, 1);
+					glVertex3f(centerX + i - 50 + 1, 0, centerY + j - 50 + 1);
+					glTexCoord2f(0, 0);
+					glVertex3f(centerX + i - 50, 0, centerY + j - 50 + 1);
+				}
+			}
+		glEnd();
+	glPopMatrix();
 	glDisable(GL_TEXTURE_2D);
 }
 
@@ -375,6 +402,8 @@ void display(void)
 
 	drawWallsAndFloor();
 
+	drawGround();
+
 	// Draws and animates a green cube
 	glPushMatrix();
 		GLdouble k = (a2 - ((int) a2 / 90) * 90) * 2 * DEG_TO_RAD;
@@ -448,8 +477,8 @@ void initialize(void)
 	// Sets the image to be used as a texture
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
 				floorTex.texWidth, 
-                floorTex.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 
-                floorTex.texData);
+				floorTex.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 
+				floorTex.texData);
 
 	// Same as above
 	loadBMP("wall.bmp", &wallTex);
@@ -461,8 +490,20 @@ void initialize(void)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
 				wallTex.texWidth, 
-                wallTex.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 
-                wallTex.texData);
+				wallTex.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 
+				wallTex.texData);
+
+	loadBMP("grass3.bmp", &grassTex); // <<< Not working with grass2.bmp
+	glGenTextures(1, &grassTex.texName);
+	glBindTexture(GL_TEXTURE_2D, grassTex.texName);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // <<< Change to GL_LINEAR if not using a Minecraft texture
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // <<<
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
+				grassTex.texWidth, 
+				grassTex.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 
+				grassTex.texData);
 
 	// Represents the camera position
 	eye = createv(5, EYE_HEIGHT, 5);

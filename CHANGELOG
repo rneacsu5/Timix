@@ -1,14 +1,20 @@
-v0.1.0-alpha
-
-	++ Added textures
-	** Other changes and fixes
-	++ Added Todo list
-
 	TODO: Organise files
 	TODO: Each material/texture should have a .tex (or .texture) file that countains texture parameters (used by glTexParameteri(), glTexImage2D() and glTexEnvf()), and material parameters (used by glMaterialfv())
 	TODO: Fuction that loads these texture files
 	TODO: Solve strange reflexion on ceiling
 	TODO: Shadows
+	TODO: Solve grass2.bmp loading issue. See line 497 in main.c
+
+v0.1.1-alpha
+
+	++ Added minecraft grass around the player (gives the impression of an infinite world)
+	** Found issue with loading grass2.bmp. See line 497 in main.c
+
+v0.1.0-alpha
+
+	++ Added textures
+	** Other changes and fixes
+	++ Added Todo list
 
 v0.0.4-alpha
 

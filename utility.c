@@ -1,6 +1,7 @@
 #include <GL/glut.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "utility.h"
 #include "bitmap.h"
 
@@ -79,8 +80,13 @@ void printv(vector v) {
 }
 
 void loadBMP(char *fileName, Texture *tex) {
-	// Gets the texture data and texture info 
+	// Gets the texture data and texture info
 	(*tex).texData = LoadDIBitmap(fileName, &(*tex).texInfo);
+	
+	if (!(*tex).texData) {
+		printf("Could not load %s\n", fileName);
+		exit(1);
+	}
 
 	// Gets texture width and height from texture info
 	(*tex).texWidth = (*tex).texInfo->bmiHeader.biWidth;
