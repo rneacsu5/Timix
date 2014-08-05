@@ -7,6 +7,7 @@
 #include "bitmap.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <errno.h>
 
 
@@ -173,7 +174,6 @@ SaveDIBitmap(const char *filename, /* I - File to load */
         fclose(fp);
         return (-1);
         }
-
     /* OK, everything went fine - return... */
     fclose(fp);
     return (0);
@@ -287,19 +287,21 @@ LoadDIBitmap(const char *filename, /* I - File to load */
         return (NULL);
         }
 
+
     /* Swap red and blue */
     length = ((*info)->bmiHeader.biWidth * 3 + 3) & ~3;
     for (y = 0; y < (*info)->bmiHeader.biHeight; y ++)
         for (ptr = bits + y * length, x = (*info)->bmiHeader.biWidth;
              x > 0;
-	     x --, ptr += 3)
-	    {
-	    temp   = ptr[0];
-	    ptr[0] = ptr[2];
-	    ptr[2] = temp;
-	    }
+         x --, ptr += 3)
+        {
+        temp   = ptr[0];
+        ptr[0] = ptr[2];
+        ptr[2] = temp;
+        }
 
     /* OK, everything went fine - return the allocated bitmap... */
+
     fclose(fp);
     return (bits);
     }

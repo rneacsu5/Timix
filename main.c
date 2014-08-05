@@ -20,14 +20,14 @@
 // Ligth parameters
 GLfloat lightPos[] = {5, 2.3, 5, 1};
 GLfloat lightAmbient[] = {0.2, 0.2, 0.2, 1};
-GLfloat lightDiffuse[] = {0.5, 0.5, 0.5, 1};
+GLfloat lightDiffuse[] = {0.8, 0.8, 0.8, 1};
 GLfloat lightSpecular[] = {1.0, 1.0, 1.0, 1};
 // Material parameters
-GLfloat matAmbient[] = {0.0, 1.0, 0.0, 1}; // << This two don't seem to do anything
-GLfloat matDiffuse[] = {0.0, 0.0, 1.0, 1}; // <<
+GLfloat matAmbient[] = {0.0, 0.0, 0.0, 1}; // << This two don't seem to do anything
+GLfloat matDiffuse[] = {0.0, 0.0, 0.0, 1}; // <<
 GLfloat matSpecular[] = {0.3, 0.3, 0.3, 1};
 GLfloat matEmission[] = {0, 0, 0, 1};
-GLfloat matShininess[] = {15.0};
+GLfloat matShininess[] = {50.0};
 
 GLdouble a1 = 0, a2 = 0, r;
 // Viewport width and height
@@ -392,6 +392,10 @@ void display(void)
 	gluLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, 0, 1, 0);
 	// Set light position
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+
+	// Enables color material
+	glEnable(GL_COLOR_MATERIAL);
+
 	// Draws and rotates a cyan teapot
 	glPushMatrix();
 		glTranslatef(2, 0.2, 2);
@@ -399,10 +403,6 @@ void display(void)
 		glColor3f(0, 1, 1);
 		glutSolidTeapot(0.3);
 	glPopMatrix();
-
-	drawWallsAndFloor();
-
-	drawGround();
 
 	// Draws and animates a green cube
 	glPushMatrix();
@@ -413,6 +413,15 @@ void display(void)
 		glColor3f(0,0.5,0);
 		drawCube(1);
 	glPopMatrix();
+
+	glColor3f(1, 1, 1);
+	// Disables color material
+	glDisable(GL_COLOR_MATERIAL);
+
+	drawWallsAndFloor();
+
+	drawGround();
+
 
 	// Swap buffers in GPU
 	glutSwapBuffers();
@@ -441,8 +450,6 @@ void initialize(void)
 	glClearColor(0.8, 0.8, 0.8, 1);
 	// Enables depth test
 	glEnable(GL_DEPTH_TEST);
-	// Enables color material
-	glEnable(GL_COLOR_MATERIAL);
 	// Sets the light
 	glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);

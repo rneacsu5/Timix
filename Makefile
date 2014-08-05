@@ -1,5 +1,5 @@
 buildrun:
-	gcc main.c utility.c bitmap.c -lglut -lGL -lGLU -lm -o fin -Wall
+	gcc -g main.c utility.c bitmap.c -lglut -lGL -lGLU -lm -o fin -Wall
 	./fin
 build:
 	gcc main.c utility.c bitmap.c -lglut -lGL -lGLU -lm -o fin -Wall
