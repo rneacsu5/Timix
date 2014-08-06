@@ -1,9 +1,15 @@
-	TODO: Organise files
 	TODO: Each material/texture should have a .tex (or .texture) file that countains texture parameters (used by glTexParameteri(), glTexImage2D() and glTexEnvf()), and material parameters (used by glMaterialfv())
 	TODO: Fuction that loads these texture files
 	TODO: Solve strange reflexion on ceiling
 	TODO: Shadows
 	TODO: Solve grass2.bmp loading issue. See line 497 in main.c
+
+v0.2.0-alpha
+
+	++ Created basic library for loading and displaying .obj files. See lobjder.h
+	++ Added a car model to the scene
+	++ Added lag :)
+	** Organised files to folders
 
 v0.1.1-alpha
 

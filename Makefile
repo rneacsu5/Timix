@@ -1,9 +1,9 @@
 buildrun:
-	gcc -g main.c utility.c bitmap.c -lglut -lGL -lGLU -lm -o fin -Wall
-	./fin
+	gcc -g src/main.c src/utility.c src/bitmap.c src/lobjder.c -lglut -lGL -lGLU -lm -o bin/fin -Wall
+	./bin/fin
 build:
-	gcc main.c utility.c bitmap.c -lglut -lGL -lGLU -lm -o fin -Wall
+	gcc -g src/main.c src/utility.c src/bitmap.c src/lobjder.c -lglut -lGL -lGLU -lm -o bin/fin -Wall
 run:
-	./fin
+	./bin/fin
 clear:
-	rm fin
+	rm -rf bin
