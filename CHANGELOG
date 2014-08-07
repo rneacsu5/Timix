@@ -1,8 +1,19 @@
 	TODO: Each material/texture should have a .tex (or .texture) file that countains texture parameters (used by glTexParameteri(), glTexImage2D() and glTexEnvf()), and material parameters (used by glMaterialfv())
 	TODO: Fuction that loads these texture files
-	TODO: Solve strange reflexion on ceiling
 	TODO: Shadows
-	TODO: Solve grass2.bmp loading issue. See line 497 in main.c
+	TODO: Solve grass2.bmp loading issue. See line 517 in main.c
+	TODO: Solve whiteness of loaded models
+	TODO: Reduce lag;
+
+v0.2.1-alpha
+
+	++ Added 2 new models: Plane (created by me in Cinema 4D) and Nokia phone
+	-- Removed car from scene
+	++ lobjder: Added support for quad faces
+	++ lobjder: Added stats for each file loaded
+	** lobjder: Rewritten some of the code
+	++ lobjder: Started adding support for materials (created Material structure and declared 2 function that do nothing for now)
+	** Changed ligthing;
 
 v0.2.0-alpha
 
