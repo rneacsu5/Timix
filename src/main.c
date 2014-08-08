@@ -20,11 +20,11 @@
 
 // Ligth parameters
 GLfloat lightPos[] = {5, 2.3, 5, 1};
-GLfloat lightAmbient[] = {1.0, 1.0, 1.0, 1};
-GLfloat lightDiffuse[] = {0.8, 0.8, 0.8, 1};
-GLfloat lightSpecular[] = {0.1, 0.1, 0.1, 1};
+GLfloat lightAmbient[] = {0.8, 0.8, 0.8, 1};
+GLfloat lightDiffuse[] = {1.0, 1.0, 1.0, 1};
+GLfloat lightSpecular[] = {0.0, 0.0, 0.0, 1};
 // Material parameters
-GLfloat matAmbient[] = {0.1, 0.1, 0.1, 1};
+GLfloat matAmbient[] = {0.2, 0.2, 0.2, 1};
 GLfloat matDiffuse[] = {0.8, 0.8, 0.8, 1};
 GLfloat matSpecular[] = {1.0, 1.0, 1.0, 1};
 GLfloat matEmission[] = {0, 0, 0, 1};
@@ -43,7 +43,7 @@ int isJumping = false;
 int isSprinting = false;
 // Textures
 Texture floorTex, wallTex, grassTex;
-Model planeModel, nokiaModel;
+Model planeModel, nokiaModel, cubeModel, carModel;
 
 
 void drawWallsAndFloor(void)
@@ -395,6 +395,20 @@ void display(void)
 	// Set light position
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, matAmbient);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, matDiffuse);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpecular);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, matShininess);
+
+	// Draw car
+	glPushMatrix();
+		glTranslatef(3, 0, 7);
+		glRotatef(a1, 0 , 1, 0);
+		glRotatef(-90, 1, 0, 0);
+		glScalef(0.03, 0.03, 0.03);
+		//drawModel(&carModel);
+	glPopMatrix();
+
 	// Draws and rotates a cyan teapot
 	glPushMatrix();
 		glTranslatef(2, 0.2, 2);
@@ -421,19 +435,28 @@ void display(void)
 	glPushMatrix();
 		glTranslatef(7, 1, 7);
 		glRotatef(a1, 0, 1, 0);
-		glScalef(0.004, 0.004, 0.004);
+		glScalef(0.4, 0.4, 0.4);
 		drawModel(&planeModel);
 	glPopMatrix();
 
 	// Draw Nokia
 	glPushMatrix();
-		glTranslatef(3, 1, 3);
+		glTranslatef(3, 1.7, 3);
 		glRotatef(-45, cos(a1 * DEG_TO_RAD), 0 , -sin(a1 * DEG_TO_RAD)); 
 		glRotatef(a1, 0, 1, 0);
 		glRotatef(90, 1, 0, 0);
 		glScalef(0.001, 0.001, 0.001);
 		drawModel(&nokiaModel);
 	glPopMatrix();
+
+	// Draw cube
+	glPushMatrix();
+		glTranslatef(7, 0.5, 3);
+		glRotatef(a1, 0, 1, 0);
+		glScalef(0.5, 0.5, 0.5);
+		drawModel(&cubeModel);
+	glPopMatrix();
+
 
 	// Swap buffers in GPU
 	glutSwapBuffers();
@@ -462,8 +485,9 @@ void initialize(void)
 	glClearColor(0.8, 0.8, 0.8, 1);
 	// Enables depth test
 	glEnable(GL_DEPTH_TEST);
-
+	// Disable color material
 	glDisable(GL_COLOR_MATERIAL);
+
 	// Sets the light
 	glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
@@ -527,8 +551,20 @@ void initialize(void)
 				grassTex.texData);
 
 	// Load models
-	loadOBJToModel("./data/models/nokia-n82-midres.obj", &nokiaModel);
-	loadOBJToModel("./data/models/Simple Plane.obj", &planeModel);
+	
+	//Nokia
+	//setPaths("./data/models/", "./data/models/materials/", "./data/models/textures/");
+	//loadOBJToModel("nokia-n82-midres.obj", &nokiaModel);
+
+	// Plane
+	setPaths("./data/models/", "./data/models/materials/", "./data/models/textures/");
+	loadOBJToModel("SimplePlane.obj", &planeModel);
+
+	// Cube
+	loadOBJToModel("cube2.obj", &cubeModel);
+
+	// Car
+	//loadOBJToModel("alfa147.obj", &carModel);
 
 	// Represents the camera position
 	eye = createv(5, EYE_HEIGHT, 5);

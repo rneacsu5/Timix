@@ -5,6 +5,10 @@
 #include "../include/bitmap.h"
 #include "../include/lobjder.h"
 
+char modelsPath[128] = "";
+char materialsPath[128] = "";
+char texturesPath[128] = "";
+
 
 // A simple C implementation of std::vector class (This is not mine, I adapted one for this project)
 
@@ -84,23 +88,55 @@ void freeArraym(Arraym *a) {
 	a->used = a->size = 0;
 }
 
+void initArraymi(Arraymi *a, size_t initialSize) {
+	a->array = (unsigned int *) malloc(initialSize * sizeof(unsigned int));
+	a->used = 0;
+	a->size = initialSize;
+}
+
+void insertArraymi(Arraymi *a, unsigned int mat) {
+	if (a->used == a->size) {
+		a->size *= 2;
+		a->array = (unsigned int *) realloc(a->array, a->size * sizeof(unsigned int));
+	}
+	a->array[a->used++] = mat;
+}
+
+void freeArraymi(Arraymi *a) {
+	free(a->array);
+	a->array = NULL;
+	a->used = a->size = 0;
+}
+
+// Sets paths to look for files loaded
+void setPaths(char * modelsFolderPath, char * materialsFolderPath, char * texturesFolderPath) {
+	strcpy(modelsPath, modelsFolderPath);
+	strcpy(materialsPath, materialsFolderPath);
+	strcpy(texturesPath, texturesFolderPath);
+}
+
 // Loads a .obj file to a model
-void loadOBJToModel(char * filename, Model * model) {
+void loadOBJToModel(char * fileName, Model * model) {
 	// Opens file in read-text mode
-	FILE * fp = fopen(filename, "rt");
+	char path[192] = "";
+	strcat(path, modelsPath);
+	strcat(path, fileName);
+	FILE * fp = fopen(path, "rt");
 	if (fp == NULL) {
-		printf("Failed to open %s. Aborting.\n", filename);
+		printf("Failed to open %s. Aborting.\n", path);
 		exit(1);
 	}
 	// Initializes the model's arrays
-	initArrayv(&(*model).v, 10);
-	initArrayv(&(*model).vt, 10);
-	initArrayv(&(*model).vn, 10);	
-	initArrayf(&(*model).f, 10);
-	initArraym(&(*model).mats, 10);
+	initArrayv(&model->v, 10);
+	initArrayv(&model->vt, 10);
+	initArrayv(&model->vn, 10);	
+	initArrayf(&model->f, 10);
+	initArraymi(&model->matsi, 10);
+	initArraym(&model->mats, 10);
 
 	// Now we need to read the file line by line
-	char line[256];
+	char line[70];
+	int matIndex = 0;
 	while (fgets(line, sizeof(line), fp)) {
 		// The v flag is a vertice
 		if (strncmp(line, "v ", 2) == 0) {
@@ -111,7 +147,8 @@ void loadOBJToModel(char * filename, Model * model) {
 		// The vt flag is a texture coordonate
 		else if (strncmp(line, "vt", 2) == 0) {
 			vector3d vect;
-			sscanf(line, "%*s %lf %lf %lf", &vect.x, &vect.y, &vect.z);
+			sscanf(line, "%*s %lf %lf", &vect.x, &vect.y);
+			vect.z = 0;
 			insertArrayv(&(*model).vt, vect);
 		}
 		// The vn flag is a normal
@@ -123,7 +160,7 @@ void loadOBJToModel(char * filename, Model * model) {
 		// The f flag is a face
 		else if (strncmp(line, "f ", 2) == 0) {
 			vector3i vct[4]; // Output vector
-			char point[128]; // A vertice/texture/normal sequence
+			char point[20]; // A vertice/texture/normal sequence
 
 			// Note that there are four formats:
 
@@ -197,6 +234,25 @@ void loadOBJToModel(char * filename, Model * model) {
 			*/
 
 			insertArrayf(&(*model).f, vct);
+			insertArraymi(&(*model).matsi, matIndex);
+		}
+		// .mtl file reference
+		else if (strncmp(line, "mtllib", 6) == 0){
+			char name[64];
+			sscanf(line, "%*s %s", name);
+			loadMTLToMaterials(name, &model->mats);
+		}
+		// The usemtl flag is a material
+		else if (strncmp(line, "usemtl", 6) == 0) {
+			char name[64];
+			sscanf(line, "%*s %s", name);
+			int i;
+			for (i = 0; i < model->mats.used; i++) {
+				if (strcmp(name, model->mats.array[i].matName) == 0) {
+					matIndex = i;
+					break;
+				}
+			}
 		}
 		else {
 			// Found something else. Maybe a comment?
@@ -205,61 +261,195 @@ void loadOBJToModel(char * filename, Model * model) {
 
 	// Print Stats
 	printf("==========\n");
-	printf("Loaded %s.\n", filename);
-	printf("Contained: %zd vertice, %zd texture coord, %zd normals, %zd faces\n", 
+	printf("Loaded %s.\n", path);
+	printf("Contained: %zd vertice, %zd texture coord, %zd normals, %zd faces, %zd materials\n", 
 			model->v.used, 
 			model->vt.used, 
 			model->vn.used, 
-			model->f.used);
+			model->f.used,
+			model->mats.used);
 	printf("Allocated %zd bytes of memory\n", 
 			model->v.size * sizeof(vector3d) + 
 			model->vt.size * sizeof(vector3d) + 
 			model->vn.size * sizeof(vector3d) + 
-			model->f.size * sizeof(vector3i) * 4);
+			model->f.size * sizeof(vector3i) * 4 +
+			model->mats.size * sizeof(Material) +
+			model->matsi.size * sizeof(unsigned int));
+	printf("==========\n");
 
 	// Close file
 	fclose(fp);
 }
 
 // Draws a model
-void drawModel(Model * model) {
-	int i, j, a, b, c;
-	glBegin(GL_QUADS);
-		for (i = 0; i < model->f.used; i++) {
-			for (j = 0; j < 4; j++) {
-				a = model->f.array[j][i].x - 1; // Index of vertice
-				b = model->f.array[j][i].y - 1; // Index of texture coordonates
-				c = model->f.array[j][i].z - 1; // Index of normal
-				// Substact one because the first vertice,normal, etc. starts at 1 in an .obj file
 
-				if (c >= 0) {
-					glNormal3f(model->vn.array[c].x, model->vn.array[c].y, model->vn.array[c].z);
+void loadMTLToMaterials(char * fileName, Arraym * mats) {
+	// Opens file in read-text mode
+	char path[192] = "";
+	strcat(path, materialsPath);
+	strcat(path, fileName);
+	FILE * fp = fopen(path, "rt");
+	if (fp == NULL) {
+		printf("Failed to open %s.\n", path);
+		//exit(1);
+	}
+	else {
+		// Now we need to read the file line by line
+		int i = 0;
+		Material mat;
+		char line[256];
+		while (fgets(line, sizeof(line), fp)) {
+			// The newmtl flag is a new material
+			if (strncmp(line, "newmtl", 6) == 0) {
+				if (i != 0) {
+					insertArraym(mats, mat);
 				}
-				if (b >= 0) {
-					glTexCoord2f(model->vt.array[b].x, model->vt.array[b].y);
+				i++;
+				sscanf(line, "%*s %s", mat.matName);
+				strcpy(mat.fileName, "none");
+				glGenTextures(1, &mat.glTexName);
+				glBindTexture(GL_TEXTURE_2D, mat.glTexName);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				mat.Ka[0] = mat.Ka[1] = mat.Ka[2] = 0.2;
+				mat.Kd[0] = mat.Kd[1] = mat.Kd[2] = 0.8;
+				mat.Ks[0] = mat.Ks[1] = mat.Ks[2] = 1.0;
+				mat.Ns = 50;
+				mat.Tr = 1;
+				mat.illum = 2;
+				mat.offset.x = mat.offset.y = mat.offset.z = 0;
+				mat.scale.x = mat.scale.y = mat.scale.z = 0;
+			}
+			// Material ambient
+			else if (strncmp(line, "Ka", 2) == 0) {
+				sscanf(line, "%*s %f %f %f", &mat.Ka[0], &mat.Ka[1], &mat.Ka[2]);
+			}
+			// Material diffuse
+			else if (strncmp(line, "Kd", 2) == 0) {
+				sscanf(line, "%*s %f %f %f", &mat.Kd[0], &mat.Kd[1], &mat.Kd[2]);
+			}
+			// Material specular
+			else if (strncmp(line, "Ks", 2) == 0) {
+				sscanf(line, "%*s %f %f %f", &mat.Ks[0], &mat.Ks[1], &mat.Ks[2]);
+			}
+			// Material shininess
+			else if (strncmp(line, "Ns", 2) == 0) {
+				sscanf(line, "%*s %f", &mat.Ns);
+			}
+			// Material transparency
+			else if (strncmp(line, "Tr", 2) == 0 || strncmp(line, "d ", 2) == 0) {
+				sscanf(line, "%*s %f", &mat.Tr);
+			}
+			// Material illum
+			else if (strncmp(line, "illum", 5) == 0) {
+				sscanf(line, "%*s %d", &mat.illum);
+			}
+			// Texture file
+			else if (strncmp(line, "map_Kd", 6) == 0) {
+				// There are 2 options that we need to check: -o and -s
+				char * p;
+				p = strstr(line, "-o");
+				if (p != NULL) {
+					// Found -o option. This is texture offset
+					sscanf(p, "%*s %lf %lf", &mat.offset.x, &mat.offset.y);
 				}
-				if (a >= 0) {
-					glVertex3f(model->v.array[a].x, model->v.array[a].y, model->v.array[a].z);
+				p = strstr(line, "-s");
+				if (p != NULL) {
+					// Found -s option. This is texture scale
+					sscanf(p, "%*s %lf %lf", &mat.scale.x, &mat.scale.y);
+				}
+				p = strchr(line, 32);
+				char * p1 = strchr(p+1, 32);
+				while (p1 != NULL) {
+					p = p1;
+					p1 = strchr(p + 1, 32);
+				}
+				strcpy(mat.fileName, p + 1);
+				sscanf(line, "%*s %s", mat.fileName);
+				char path[192] = "";
+				strcat(path, texturesPath);
+				strcat(path, mat.fileName);
+
+				// Gets the texture data and texture info
+				mat.texData = LoadDIBitmap(path, &mat.texInfo);
+				if (mat.texData == NULL) {
+					printf("Failed to open %s.\n", path);
+					//exit(1);
+				}
+				else {
+					// Gets texture width and height from texture info
+					mat.texWidth = mat.texInfo->bmiHeader.biWidth;
+					mat.texHeight = mat.texInfo->bmiHeader.biHeight;
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
+								mat.texWidth, 
+								mat.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 
+								mat.texData);
 				}
 			}
+			else {
+				// Found something else
+			}
 		}
-	glEnd();
-}
+		if (i != 0) {
+			insertArraym(mats, mat);
+		}
 
-void loadMTLToMaterials(char * filename, Arraym * mat) {
-	// Opens file in read-text mode
-	FILE * fp = fopen(filename, "rt");
-	if (fp == NULL) {
-		printf("Failed to open %s. Aborting.\n", filename);
-		exit(1);
+		// Close file
+		fclose(fp);
 	}
-
-	// TODO: Finish this function
-
 }
 
 void loadMaterial(Material * mat) {
+	GLfloat matAmbient[] = {mat->Ka[0], mat->Ka[1], mat->Ka[2], 1};
+	GLfloat matDiffuse[] = {mat->Kd[0], mat->Kd[1], mat->Kd[2], 1};
+	GLfloat matSpecular[] = {mat->Ks[0], mat->Ks[1], mat->Ks[2], 1};
+	GLfloat matShininess[] = {mat->Ns * 128 / 1000};
 
-	// TODO: Create function
+	glMaterialfv(GL_FRONT, GL_AMBIENT, matAmbient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, matDiffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, matShininess);
 
+	glBindTexture(GL_TEXTURE_2D, mat->glTexName);
+
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+}
+
+void drawModel(Model * model) {
+	unsigned int i, j, a, b, c;
+	glEnable(GL_TEXTURE_2D);
+	for (i = 0; i < model->f.used; i++) {
+		if (model->mats.used > 0) {
+			if (i == 0) {
+					loadMaterial(&model->mats.array[model->matsi.array[i]]);
+			}
+			else if (model->matsi.array[i - 1] != model->matsi.array[i]) {
+				loadMaterial(&model->mats.array[model->matsi.array[i]]);
+			}
+		}
+
+		glBegin(GL_QUADS);
+			for (j = 0; j < 4; j++) {
+				a = model->f.array[j][i].x; // Index of vertice
+				b = model->f.array[j][i].y; // Index of texture coordonates
+				c = model->f.array[j][i].z; // Index of normal
+
+				if (c > 0) {
+					c--; // Substact one because the first vertice,normal, etc. starts at 1 in an .obj file
+					glNormal3f(model->vn.array[c].x, model->vn.array[c].y, model->vn.array[c].z);
+				}
+				if (b > 0) {
+					b--;
+					glTexCoord2f(model->vt.array[b].x, model->vt.array[b].y);
+				}
+				if (a > 0) {
+					a--;
+					glVertex3f(model->v.array[a].x, model->v.array[a].y, model->v.array[a].z);
+				}
+			}
+		glEnd();
+	}
+	glDisable(GL_TEXTURE_2D);
 }

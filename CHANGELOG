@@ -1,9 +1,20 @@
-	TODO: Each material/texture should have a .tex (or .texture) file that countains texture parameters (used by glTexParameteri(), glTexImage2D() and glTexEnvf()), and material parameters (used by glMaterialfv())
-	TODO: Fuction that loads these texture files
 	TODO: Shadows
-	TODO: Solve grass2.bmp loading issue. See line 517 in main.c
-	TODO: Solve whiteness of loaded models
-	TODO: Reduce lag;
+	TODO: Shader/Renderer
+	TODO: Solve grass2.bmp loading issue. See line 541 in main.c
+	TODO: Remove lag;
+	TODO: Pharse -o and -s options for materials
+	TODO: Universal picture loader that suports AT LEAST .png and .jpg files (nobody uses .bmp)
+	TODO: lobjder: Function to load a default material if .mtl file is missing
+
+v0.2.2-alpha
+
+	++ lobjder: Now loads and applies materials! -o and -s operators don't work right now for map_Kd
+	++ lobjder: Function to specify folders for models, materials and textures
+	** lobjder: Optimized memory usage
+	-- Removed Nokia
+	-- Reduced lag;
+	++ Added cube
+	-- Removed specular lighting to display models properly
 
 v0.2.1-alpha
 
