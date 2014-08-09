@@ -19,10 +19,10 @@
 #define GFORCE 0.00583333
 
 // Ligth parameters
-GLfloat lightPos[] = {5, 2.3, 5, 1};
-GLfloat lightAmbient[] = {0.8, 0.8, 0.8, 1};
-GLfloat lightDiffuse[] = {1.0, 1.0, 1.0, 1};
-GLfloat lightSpecular[] = {0.0, 0.0, 0.0, 1};
+GLfloat lightPos[] = {10, 4.5, 10, 1};
+GLfloat lightAmbient[] = {0.5, 0.5, 0.5, 1};
+GLfloat lightDiffuse[] = {0.8, 0.8, 0.8, 1};
+GLfloat lightSpecular[] = {0.4, 0.4, 0.4, 1};
 // Material parameters
 GLfloat matAmbient[] = {0.2, 0.2, 0.2, 1};
 GLfloat matDiffuse[] = {0.8, 0.8, 0.8, 1};
@@ -43,14 +43,14 @@ int isJumping = false;
 int isSprinting = false;
 // Textures
 Texture floorTex, wallTex, grassTex;
-Model planeModel, nokiaModel, cubeModel, carModel;
+Model planeModel, nokiaModel, cubeModel, carModel, nexusModel;
 
 
 void drawWallsAndFloor(void)
 {
 	GLdouble i, j;
-	// The walls and floor will be a (10 / nr) * (10 / nr) grid
-	GLdouble nr = 0.1;
+	// The walls and floor will be a (20 / nr) * (20 / nr) grid
+	GLdouble nr = 0.4;
 
 	// Enables textures
 	glEnable(GL_TEXTURE_2D);
@@ -63,8 +63,8 @@ void drawWallsAndFloor(void)
 	glColor3f(1.0,1.0,1.0);
 	// Draws floor
 	glBegin(GL_QUADS);
-		for (i = 0; i < 9.99; i += nr) {
-			for (j = 0; j < 9.99; j += nr) {
+		for (i = 0; i < 19.99; i += nr) {
+			for (j = 0; j < 19.99; j += nr) {
 				glNormal3f(0, 1, 0);
 				glTexCoord2f(0.5 * i, 0.5 * j);
 				glVertex3f(i, 0, j);
@@ -82,8 +82,8 @@ void drawWallsAndFloor(void)
 	glBindTexture(GL_TEXTURE_2D, wallTex.texName);
 	// Draws walls
 	glBegin(GL_QUADS);
-		for (i = 0; i < 9.99; i += nr) {
-			for (j = 0; j < 9.99; j += nr) {
+		for (i = 0; i < 19.99; i += nr) {
+			for (j = 0; j < 19.99; j += nr) {
 				// Wall 1
 				glNormal3f(0, 0, 1);
 				glTexCoord2f(0.5 * i, 0.125 * j);
@@ -98,13 +98,13 @@ void drawWallsAndFloor(void)
 				// Wall 2
 				glNormal3f(0, 0, -1);
 				glTexCoord2f(0.5 * i, 0.125 * j);
-				glVertex3f(i, 0.25 * j, 10);
+				glVertex3f(i, 0.25 * j, 20);
 				glTexCoord2f(0.5 * i, 0.125 * (j + nr));
-				glVertex3f(i, 0.25 * (j + nr), 10);
+				glVertex3f(i, 0.25 * (j + nr), 20);
 				glTexCoord2f(0.5 * (i + nr), 0.125 * (j + nr));
-				glVertex3f(i + nr, 0.25 * (j + nr), 10);
+				glVertex3f(i + nr, 0.25 * (j + nr), 20);
 				glTexCoord2f(0.5 * (i + nr), 0.125 * j);
-				glVertex3f(i + nr, 0.25 * j, 10);
+				glVertex3f(i + nr, 0.25 * j, 20);
 
 				// Wall 3
 				glNormal3f(1, 0, 0);
@@ -120,13 +120,13 @@ void drawWallsAndFloor(void)
 				// Wall 4
 				glNormal3f(-1, 0, 0);
 				glTexCoord2f(0.5 * i, 0.125 * j);
-				glVertex3f(10, 0.25 * j, i);
+				glVertex3f(20, 0.25 * j, i);
 				glTexCoord2f(0.5 * i, 0.125 * (j + nr));
-				glVertex3f(10, 0.25 * (j + nr), i);
+				glVertex3f(20, 0.25 * (j + nr), i);
 				glTexCoord2f(0.5 * (i + nr), 0.125 * (j + nr));
-				glVertex3f(10, 0.25 * (j + nr), i + nr);
+				glVertex3f(20, 0.25 * (j + nr), i + nr);
 				glTexCoord2f(0.5 * (i + nr), 0.125 * j);
-				glVertex3f(10, 0.25 * j, i + nr);
+				glVertex3f(20, 0.25 * j, i + nr);
 			}
 		}
 	glEnd();
@@ -135,17 +135,17 @@ void drawWallsAndFloor(void)
 	glBindTexture(GL_TEXTURE_2D, wallTex.texName);
 	// Draws ceiling
 	glBegin(GL_QUADS);
-		for (i = 0; i < 9.99; i += nr) {
-			for (j = 0; j < 9.99; j += nr) {
+		for (i = 0; i < 19.99; i += nr) {
+			for (j = 0; j < 19.99; j += nr) {
 				glNormal3f(0, -1, 0);
 				glTexCoord2f(i, j);
-				glVertex3f(i, 2.5, j);
+				glVertex3f(i, 5, j);
 				glTexCoord2f(i, j + nr);
-				glVertex3f(i, 2.5, j + nr);
+				glVertex3f(i, 5, j + nr);
 				glTexCoord2f(i + nr, j + nr);
-				glVertex3f(i + nr, 2.5, j + nr);
+				glVertex3f(i + nr, 5, j + nr);
 				glTexCoord2f(i + nr, j);
-				glVertex3f(i + nr, 2.5, j);
+				glVertex3f(i + nr, 5, j);
 			}
 		}
 	glEnd();
@@ -395,26 +395,14 @@ void display(void)
 	// Set light position
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, matAmbient);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, matDiffuse);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpecular);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, matShininess);
-
-	// Draw car
-	glPushMatrix();
-		glTranslatef(3, 0, 7);
-		glRotatef(a1, 0 , 1, 0);
-		glRotatef(-90, 1, 0, 0);
-		glScalef(0.03, 0.03, 0.03);
-		//drawModel(&carModel);
-	glPopMatrix();
+	loadDefaultMaterial();
 
 	// Draws and rotates a cyan teapot
 	glPushMatrix();
-		glTranslatef(2, 0.2, 2);
+		glTranslatef(3, 0.6, 15);
 		glRotatef(a2, 0, 1, 0);
 		glColor3f(0, 1, 1);
-		glutSolidTeapot(0.3);
+		glutSolidTeapot(1);
 	glPopMatrix();
 
 	// Draws and animates a green cube
@@ -431,12 +419,37 @@ void display(void)
 
 	drawGround();
 
-	// Draw Plane
+	// Draw Plane that flies
 	glPushMatrix();
-		glTranslatef(7, 1, 7);
+		glTranslatef(10 + 7 * sin(r), 4 + 0.5 * sin(r), 10 + 7 * cos(r));
+		glRotatef(a1 - 90, 0, 1, 0);
+		glScalef(0.4, 0.4, 0.4);
+		drawModel(&planeModel);
+	glPopMatrix();
+
+	// Draw Plane on ground
+	glPushMatrix();
+		glTranslatef(17, 1, 3);
 		glRotatef(a1, 0, 1, 0);
 		glScalef(0.4, 0.4, 0.4);
 		drawModel(&planeModel);
+	glPopMatrix();
+
+	// Draw car
+	glPushMatrix();
+		glTranslatef(3, 0, 7);
+		glRotatef(a1, 0 , 1, 0);
+		glRotatef(-90, 1, 0, 0);
+		glScalef(0.03, 0.03, 0.03);
+		drawModel(&carModel);
+	glPopMatrix();
+
+	// Draw Nexus
+	glPushMatrix();
+		glTranslatef(17, 1.5, 10);
+		glRotatef(-90, 0, 1, 0);
+		glScalef(0.01, 0.01, 0.01);
+		drawModel(&nexusModel);
 	glPopMatrix();
 
 	// Draw Nokia
@@ -487,6 +500,8 @@ void initialize(void)
 	glEnable(GL_DEPTH_TEST);
 	// Disable color material
 	glDisable(GL_COLOR_MATERIAL);
+	// Enable normalize 
+	glEnable(GL_NORMALIZE);
 
 	// Sets the light
 	glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
@@ -550,12 +565,9 @@ void initialize(void)
 				grassTex.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 
 				grassTex.texData);
 
+
 	// Load models
 	
-	//Nokia
-	//setPaths("./data/models/", "./data/models/materials/", "./data/models/textures/");
-	//loadOBJToModel("nokia-n82-midres.obj", &nokiaModel);
-
 	// Plane
 	setPaths("./data/models/", "./data/models/materials/", "./data/models/textures/");
 	loadOBJToModel("SimplePlane.obj", &planeModel);
@@ -563,8 +575,15 @@ void initialize(void)
 	// Cube
 	loadOBJToModel("cube2.obj", &cubeModel);
 
+	// Nexus
+	loadOBJToModel("Nexus.obj", &nexusModel);
+
+	// Nokia
+	//loadOBJToModel("nokia-n82-midres.obj", &nokiaModel);
+
 	// Car
 	//loadOBJToModel("alfa147.obj", &carModel);
+
 
 	// Represents the camera position
 	eye = createv(5, EYE_HEIGHT, 5);

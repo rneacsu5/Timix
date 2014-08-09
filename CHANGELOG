@@ -1,10 +1,17 @@
 	TODO: Shadows
+	TODO: lobjder: Add checks for corrupted files (so that if something is wrong with the files abort the current task and continue, avoiding segfault and other errors)
 	TODO: Shader/Renderer
 	TODO: Solve grass2.bmp loading issue. See line 541 in main.c
-	TODO: Remove lag;
 	TODO: Pharse -o and -s options for materials
 	TODO: Universal picture loader that suports AT LEAST .png and .jpg files (nobody uses .bmp)
-	TODO: lobjder: Function to load a default material if .mtl file is missing
+
+v0.2.3-alpha
+
+	++ lobjder: Function that loads a default material
+	++ Added specular ligth and enabled GL_NORMALIZE (the last solved the strange material whiteness)
+	** Made room bigger and rearranged objects
+	++ Added amazing Nexus model
+	** The plane now "flies"
 
 v0.2.2-alpha
 

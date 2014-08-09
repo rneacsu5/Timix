@@ -129,3 +129,4 @@ void loadOBJToModel(char * fileName, Model * model);
 void drawModel(Model * model);
 void loadMTLToMaterials(char * fileName, Arraym * mat);
 void loadMaterial(Material * mat);
+void loadDefaultMaterial();

@@ -8,6 +8,7 @@
 char modelsPath[128] = "";
 char materialsPath[128] = "";
 char texturesPath[128] = "";
+Material defaultMaterial;
 
 
 // A simple C implementation of std::vector class (This is not mine, I adapted one for this project)
@@ -305,22 +306,15 @@ void loadMTLToMaterials(char * fileName, Arraym * mats) {
 					insertArraym(mats, mat);
 				}
 				i++;
+				loadDefaultMaterial();
+				mat = defaultMaterial;
 				sscanf(line, "%*s %s", mat.matName);
-				strcpy(mat.fileName, "none");
 				glGenTextures(1, &mat.glTexName);
 				glBindTexture(GL_TEXTURE_2D, mat.glTexName);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				mat.Ka[0] = mat.Ka[1] = mat.Ka[2] = 0.2;
-				mat.Kd[0] = mat.Kd[1] = mat.Kd[2] = 0.8;
-				mat.Ks[0] = mat.Ks[1] = mat.Ks[2] = 1.0;
-				mat.Ns = 50;
-				mat.Tr = 1;
-				mat.illum = 2;
-				mat.offset.x = mat.offset.y = mat.offset.z = 0;
-				mat.scale.x = mat.scale.y = mat.scale.z = 0;
 			}
 			// Material ambient
 			else if (strncmp(line, "Ka", 2) == 0) {
@@ -376,7 +370,6 @@ void loadMTLToMaterials(char * fileName, Arraym * mats) {
 				mat.texData = LoadDIBitmap(path, &mat.texInfo);
 				if (mat.texData == NULL) {
 					printf("Failed to open %s.\n", path);
-					//exit(1);
 				}
 				else {
 					// Gets texture width and height from texture info
@@ -423,12 +416,14 @@ void drawModel(Model * model) {
 	for (i = 0; i < model->f.used; i++) {
 		if (model->mats.used > 0) {
 			if (i == 0) {
-					loadMaterial(&model->mats.array[model->matsi.array[i]]);
+				loadMaterial(&model->mats.array[model->matsi.array[i]]);
 			}
 			else if (model->matsi.array[i - 1] != model->matsi.array[i]) {
 				loadMaterial(&model->mats.array[model->matsi.array[i]]);
 			}
 		}
+		else 
+			loadDefaultMaterial();
 
 		glBegin(GL_QUADS);
 			for (j = 0; j < 4; j++) {
@@ -452,4 +447,26 @@ void drawModel(Model * model) {
 		glEnd();
 	}
 	glDisable(GL_TEXTURE_2D);
+}
+
+void loadDefaultMaterial() {
+	if (strcmp(defaultMaterial.matName, "default") != 0) {
+		strcpy(defaultMaterial.matName, "default");
+		strcpy(defaultMaterial.fileName, "none");
+		glGenTextures(1, &defaultMaterial.glTexName);
+		glBindTexture(GL_TEXTURE_2D, defaultMaterial.glTexName);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		defaultMaterial.Ka[0] = defaultMaterial.Ka[1] = defaultMaterial.Ka[2] = 0.2;
+		defaultMaterial.Kd[0] = defaultMaterial.Kd[1] = defaultMaterial.Kd[2] = 0.8;
+		defaultMaterial.Ks[0] = defaultMaterial.Ks[1] = defaultMaterial.Ks[2] = 1.0;
+		defaultMaterial.Ns = 50;
+		defaultMaterial.Tr = 1;
+		defaultMaterial.illum = 2;
+		defaultMaterial.offset.x = defaultMaterial.offset.y = defaultMaterial.offset.z = 0;
+		defaultMaterial.scale.x = defaultMaterial.scale.y = defaultMaterial.scale.z = 0;
+	}
+	loadMaterial(&defaultMaterial);
 }
