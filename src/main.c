@@ -1,3 +1,4 @@
+#include <GL/glew.h>
 #include <GL/glut.h>
 #include <stdio.h>
 #include <math.h>
@@ -382,6 +383,39 @@ void moveCamera(void)
 	target = addv(target, cameraForce);
 }
 
+GLuint programID;
+
+GLuint makeMeAShader(char * path, GLenum type) {
+	printf("ceva\n");
+	GLuint id = glCreateShader(type);
+	FILE * fp = fopen(path, "rb");
+	if (fp == NULL) {
+		printf("Failed to open %s. Aborting.\n", path);
+		exit(1);
+	}
+	fseek(fp, 0, SEEK_END);
+	int var = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+	char * code;
+	code = (char *) malloc(var * sizeof(char));
+	fread(code, var * sizeof(char), 1, fp);
+	fclose(fp);
+
+	glShaderSource(id, 1, (const GLchar * const *) &code, NULL);
+	glCompileShader(id);
+	GLint success = 0;
+	glGetShaderiv(id, GL_COMPILE_STATUS, &success);
+	printf("STATUS: %d\n", success != GL_FALSE);
+	return id;
+}
+
+GLuint makeMeAProgram(GLuint id1, GLuint id2) {
+	GLuint id = glCreateProgram();
+	glAttachShader(id, id1);
+	glAttachShader(id, id2);
+	glLinkProgram(id);
+	return id;
+}
 
 void display(void)
 {
@@ -579,10 +613,10 @@ void initialize(void)
 	loadOBJToModel("Nexus.obj", &nexusModel);
 
 	// Nokia
-	//loadOBJToModel("nokia-n82-midres.obj", &nokiaModel);
+	// loadOBJToModel("nokia-n82-midres.obj", &nokiaModel);
 
 	// Car
-	//loadOBJToModel("alfa147.obj", &carModel);
+	loadOBJToModel("alfa147.obj", &carModel);
 
 
 	// Represents the camera position
@@ -596,6 +630,11 @@ void initialize(void)
 
 	// Gravity
 	gForce = createv(0, - GFORCE, 0);
+
+	programID = makeMeAProgram(makeMeAShader("./src/vshader.vsh", GL_VERTEX_SHADER), 
+								makeMeAShader("./src/fshader.fsh", GL_FRAGMENT_SHADER));
+	
+	glUseProgram(programID);
 }
 
 void freeCameraHandler (int x, int y) {
@@ -758,6 +797,7 @@ int main(int argc, char *argv[])
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 	glutInitWindowSize(800, 600);
 	glutCreateWindow("Epic Game");
+	glewInit();
 
 	// Event listeners
 	glutDisplayFunc(display);
