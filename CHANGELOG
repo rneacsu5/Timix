@@ -1,9 +1,18 @@
+	TODO: VBO
 	TODO: Shadows
-	TODO: lobjder: Add checks for corrupted files (so that if something is wrong with the files abort the current task and continue, avoiding segfault and other errors)
-	TODO: Shader/Renderer
-	TODO: Solve grass2.bmp loading issue. See line 541 in main.c
+	TODO: lobjder: Better memory usage
+	TODO: Solve grass2.bmp loading issue. See line 379 in main.c
 	TODO: Pharse -o and -s options for materials
 	TODO: Universal picture loader that suports AT LEAST .png and .jpg files (nobody uses .bmp)
+
+v0.3.0-alpha
+
+	++ lobjder: Added checks for corrupted files and wrong file structure
+	++ lobjder: Optimized memory usage
+	** Moved all functions that handled camera movement to motion.c and created motion.h
+	++ Added support for shaders and created basic shaders
+	** Better logging
+	** Other changes and bug fixes
 
 v0.2.3-alpha
 

@@ -41,7 +41,6 @@ typedef struct {
 	unsigned int x, y, z;
 } vector3i;
 
-// A simple C implementation of std::vector class (This is not mine, I adapted one for this project)
 // Arrayv is used for vertices, texture coordonates and normals
 typedef struct {
 	vector3d * array;
@@ -55,16 +54,6 @@ typedef struct {
 	size_t used;
 	size_t size;
 } Arrayf;
-
-
-void initArrayv(Arrayv *a, size_t initialSize);
-void insertArrayv(Arrayv *a, vector3d element);
-void freeArrayv(Arrayv *a);
-
-void initArrayf(Arrayf *a, size_t initialSize);
-void insertArrayf(Arrayf *a, vector3i element[4]);
-void freeArrayf(Arrayf *a);
-
 
 // Material structure
 typedef struct {
@@ -80,9 +69,9 @@ typedef struct {
 	GLfloat Ks[3]; // Material Specular color
 	GLfloat Ns; // Material Shininess. Ranges form 0 to 1000
 	GLfloat Tr; // Material Transparency. 1 = fully opaque 0 = fully transparent
-	vector3d offset; // Texture offset;
-	vector3d scale; // Texture scale;
-	int illum; // Not used rigth now
+	vector3d offset; // Texture offset, not used
+	vector3d scale; // Texture scale, not used
+	int illum; // not used
 
 } Material;
 
@@ -100,14 +89,6 @@ typedef struct {
 	size_t size;
 } Arraymi;
 
-void initArraym(Arraym *a, size_t initialSize);
-void insertArraym(Arraym *a, Material mat);
-void freeArraym(Arraym *a);
-
-void initArraymi(Arraymi *a, size_t initialSize);
-void insertArraymi(Arraymi *a, unsigned int mat);
-void freeArraymi(Arraymi *a);
-
 // Model structure
 typedef struct {
 	// List of vertices
@@ -124,9 +105,20 @@ typedef struct {
 	Arraymi matsi;
 } Model;
 
+// Sets paths to search for models, textures and materials
 void setPaths(char * modelsFolderPath, char * materialsFolderPath, char * texturesFolderPath);
+
+// Loads a .obj file to a model
 void loadOBJToModel(char * fileName, Model * model);
+
+// Draws the model to the scene using immediate mode
 void drawModel(Model * model);
+
+// Loads a .mtl file to a material
 void loadMTLToMaterials(char * fileName, Arraym * mat);
+
+// Loads a material to be used for drawing
 void loadMaterial(Material * mat);
+
+// Loads a default material to be used for drawing
 void loadDefaultMaterial();

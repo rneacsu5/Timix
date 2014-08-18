@@ -6,44 +6,23 @@
 #include "../include/utility.h"
 #include "../include/bitmap.h"
 #include "../include/lobjder.h"
+#include "../include/motion.h"
 
-// C does not support boolean?! WTF!
+// C does not support boolean
 #define true 1
 #define false 0
-#define EYE_HEIGHT 1.7
-#define ACCELERATION 0.02
-#define DRAG 0.01
-#define AIR_DRAG 0.0025
-#define MAX_SPEED 0.10
-#define SPRINT_BOOST 0.07
-// The formula is: GFORCE = 2 * heightOfJump / ((timeOfJump / 2) * (timeOfJump / 2 + 1))   where heigthOfJump is in meters and timeOfJump is in milliseconds
-#define GFORCE 0.00583333
 
 // Ligth parameters
 GLfloat lightPos[] = {10, 4.5, 10, 1};
 GLfloat lightAmbient[] = {0.5, 0.5, 0.5, 1};
 GLfloat lightDiffuse[] = {0.8, 0.8, 0.8, 1};
 GLfloat lightSpecular[] = {0.4, 0.4, 0.4, 1};
-// Material parameters
-GLfloat matAmbient[] = {0.2, 0.2, 0.2, 1};
-GLfloat matDiffuse[] = {0.8, 0.8, 0.8, 1};
-GLfloat matSpecular[] = {1.0, 1.0, 1.0, 1};
-GLfloat matEmission[] = {0, 0, 0, 1};
-GLfloat matShininess[] = {6.5};
 
 GLdouble a1 = 0, a2 = 0, r;
-// Viewport width and height
-int viewHeight, viewWidth;
-// Camerea pitch and yaw
-GLdouble cameraYaw = 225, cameraPitch = 0;
-// Vectors
-vector eye, target, cameraForce, gForce;
-// Key state: true if the key is pressed and false if not
-int keyStates[256];
-int isJumping = false;
-int isSprinting = false;
+
 // Textures
 Texture floorTex, wallTex, grassTex;
+// Models
 Model planeModel, nokiaModel, cubeModel, carModel, nexusModel;
 
 
@@ -150,13 +129,14 @@ void drawWallsAndFloor(void)
 			}
 		}
 	glEnd();
+
 	// Disables textures
 	glDisable(GL_TEXTURE_2D);
 }
 
 // This will draw a 100 by 100 plane, the camera being always in the middle of it. Gives the impression of an infinite world
 void drawGround() {
-	int centerX = (int) eye.x, centerY = (int) eye.z;
+	int centerX = (int) motGetEyePos().x, centerY = (int) motGetEyePos().z;
 	int i, j;
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, grassTex.texName);
@@ -231,192 +211,6 @@ void drawCube(GLdouble size)
 	glPopMatrix();
 }
 
-void jumpFunc(void) {
-	// The player jumps only if the spacebar is pressed and if he is not jumping
-	if (!isJumping && keyStates[32]) {
-		isJumping = true;
-
-		// Makes a push vector based on input and direction (this allows sprint jumping)
-		vector direction = substractv(createv(target.x, EYE_HEIGHT, target.z), eye);
-		normalizev(&direction);
-		vector push = createv(0, 0, 0);
-		if (keyStates['w']) {
-			push = addv(push, direction);
-		}
-		if (keyStates['s']) {
-			push = substractv(push, direction);
-		}
-		if (keyStates['a']) {
-			push = addv(push, rotatev(direction, 90, 0, 1, 0));
-		}
-		if (keyStates['d']) {
-			push = addv(push, rotatev(direction, -90, 0, 1, 0));
-		}
-
-		// Makes the push vector the right length
-		normalizev(&push);
-		multiplyv(&push, ACCELERATION * 7);
-
-		// Adds the push vector to the camera force and limits its speed
-		if (!isSprinting && vlength(addv(cameraForce, push)) <= MAX_SPEED)
-			cameraForce = addv(cameraForce, push);
-		else if (!isSprinting && vlength(addv(cameraForce, push)) > MAX_SPEED && vlength(cameraForce) <= MAX_SPEED) {
-			cameraForce = addv(cameraForce, push);
-			normalizev(&cameraForce);
-			multiplyv(&cameraForce, MAX_SPEED);
-		}
-		if (isSprinting && vlength(addv(cameraForce, push)) <= MAX_SPEED + SPRINT_BOOST)
-			cameraForce = addv(cameraForce, push);
-		else if (isSprinting && vlength(addv(cameraForce, push)) > MAX_SPEED + SPRINT_BOOST && vlength(cameraForce) <= MAX_SPEED + SPRINT_BOOST) {
-			cameraForce = addv(cameraForce, push);
-			normalizev(&cameraForce);
-			multiplyv(&cameraForce, MAX_SPEED + SPRINT_BOOST);
-		}
-
-		// Adds the jump vector to the camera force
-		//                                  GFORCE * (timeOfJump / 2 + 1)
-		//                                               ||
-		cameraForce = addv(cameraForce, createv(0, GFORCE * 16, 0));
-	}
-}
-
-void moveCamera(void) 
-{
-	// Checks whether to jump or not
-	jumpFunc();
-	
-	// Aplys drag to the camera force if he isn't jumping
-	if (!isJumping) {
-		vector drag = cameraForce;
-		normalizev(&drag);
-		if (vlength(cameraForce) - DRAG > 0) {
-			multiplyv(&drag, vlength(cameraForce) - DRAG);
-		}
-		else {
-			drag = createv(0, 0, 0);
-		}
-		cameraForce = drag;
-	}
-
-	// Aplys air drag to the camera force if he is jumping
-	else {
-		vector drag = createv(cameraForce.x, 0, cameraForce.z);
-		normalizev(&drag);
-		if (vlength(createv(cameraForce.x, 0, cameraForce.z)) - AIR_DRAG > 0) {
-			multiplyv(&drag, vlength(createv(cameraForce.x, 0, cameraForce.z)) - AIR_DRAG);
-		}
-		else {
-			drag = createv(0, 0, 0);
-		}
-		cameraForce = createv(drag.x, cameraForce.y, drag.z);
-	}
-
-	// Makes the acceleration vector based on input and direction
-	vector direction = substractv(createv(target.x, EYE_HEIGHT, target.z), eye);
-	normalizev(&direction);
-	vector acc = createv(0, 0, 0);
-	if (keyStates['w']) {
-		acc = addv(acc, direction);
-	}
-	if (keyStates['s']) {
-		acc = substractv(acc, direction);
-	}
-	if (keyStates['a']) {
-		acc = addv(acc, rotatev(direction, 90, 0, 1, 0));
-	}
-	if (keyStates['d']) {
-		acc = addv(acc, rotatev(direction, -90, 0, 1, 0));
-	}
-
-	// Makes the acceleration vector the right length
-	normalizev(&acc);
-	multiplyv(&acc, ACCELERATION);
-
-	// Makes the sprint vector
-	vector sprint = acc;
-	normalizev(&sprint);
-	multiplyv(&sprint, 2 * ACCELERATION);
-
-	// Adds the acceleration or the sprint vector to the camera force if he isn't jumping and limits its speed
-	if (!isJumping) {
-		if (!isSprinting && vlength(addv(cameraForce, acc)) <= MAX_SPEED)
-			cameraForce = addv(cameraForce, acc);
-		else if (!isSprinting && vlength(addv(cameraForce, acc)) > MAX_SPEED && vlength(cameraForce) <= MAX_SPEED) {
-			cameraForce = addv(cameraForce, acc);
-			normalizev(&cameraForce);
-			multiplyv(&cameraForce, MAX_SPEED);
-		}
-		else if (!isSprinting && vlength(addv(cameraForce, acc)) > MAX_SPEED && vlength(cameraForce) > MAX_SPEED) {
-			GLdouble length = vlength(cameraForce);
-			cameraForce = addv(cameraForce, acc);
-			normalizev(&cameraForce);
-			multiplyv(&cameraForce, length);
-		}
-		if (isSprinting && vlength(addv(cameraForce, sprint)) <= MAX_SPEED + SPRINT_BOOST) 
-			cameraForce = addv(cameraForce, sprint);
-		else if (isSprinting && vlength(addv(cameraForce, sprint)) > MAX_SPEED + SPRINT_BOOST && vlength(cameraForce) <= MAX_SPEED + SPRINT_BOOST) {
-			cameraForce = addv(cameraForce, sprint);
-			normalizev(&cameraForce);
-			multiplyv(&cameraForce, MAX_SPEED + SPRINT_BOOST);
-		}
-		else if (isSprinting && vlength(addv(cameraForce, sprint)) > MAX_SPEED + SPRINT_BOOST && vlength(cameraForce) > MAX_SPEED + SPRINT_BOOST) {
-			GLdouble length = vlength(cameraForce);
-			cameraForce = addv(cameraForce, sprint);
-			normalizev(&cameraForce);
-			multiplyv(&cameraForce, length);
-		}
-	}
-
-	// Gravity
-	cameraForce = addv(cameraForce, gForce);
-
-	// Check for floor
-	if (eye.y + cameraForce.y < EYE_HEIGHT) {
-		target.y += EYE_HEIGHT - eye.y;
-		eye.y = EYE_HEIGHT;
-		cameraForce = createv(cameraForce.x, 0, cameraForce.z);
-		isJumping = false;
-	}
-
-	// Moves eye and target
-	eye = addv(eye, cameraForce);
-	target = addv(target, cameraForce);
-}
-
-GLuint programID;
-
-GLuint makeMeAShader(char * path, GLenum type) {
-	printf("ceva\n");
-	GLuint id = glCreateShader(type);
-	FILE * fp = fopen(path, "rb");
-	if (fp == NULL) {
-		printf("Failed to open %s. Aborting.\n", path);
-		exit(1);
-	}
-	fseek(fp, 0, SEEK_END);
-	int var = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-	char * code;
-	code = (char *) malloc(var * sizeof(char));
-	fread(code, var * sizeof(char), 1, fp);
-	fclose(fp);
-
-	glShaderSource(id, 1, (const GLchar * const *) &code, NULL);
-	glCompileShader(id);
-	GLint success = 0;
-	glGetShaderiv(id, GL_COMPILE_STATUS, &success);
-	printf("STATUS: %d\n", success != GL_FALSE);
-	return id;
-}
-
-GLuint makeMeAProgram(GLuint id1, GLuint id2) {
-	GLuint id = glCreateProgram();
-	glAttachShader(id, id1);
-	glAttachShader(id, id2);
-	glLinkProgram(id);
-	return id;
-}
-
 void display(void)
 {
 	// Clear the color buffer, restore the background
@@ -424,11 +218,11 @@ void display(void)
 	// Load the identity matrix, clear all the previous transformations
 	glLoadIdentity();
 	// Set up the camera
-	moveCamera();
-	gluLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, 0, 1, 0);
+	motMoveCamera();
 	// Set light position
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
+	// Loads the default material
 	loadDefaultMaterial();
 
 	// Draws and rotates a cyan teapot
@@ -449,11 +243,13 @@ void display(void)
 		drawCube(1);
 	glPopMatrix();
 
+	// Draws the room
 	drawWallsAndFloor();
 
+	// Draws ground
 	drawGround();
 
-	// Draw Plane that flies
+	// Draws Plane that flies
 	glPushMatrix();
 		glTranslatef(10 + 7 * sin(r), 4 + 0.5 * sin(r), 10 + 7 * cos(r));
 		glRotatef(a1 - 90, 0, 1, 0);
@@ -461,7 +257,7 @@ void display(void)
 		drawModel(&planeModel);
 	glPopMatrix();
 
-	// Draw Plane on ground
+	// Draws Plane on ground
 	glPushMatrix();
 		glTranslatef(17, 1, 3);
 		glRotatef(a1, 0, 1, 0);
@@ -469,7 +265,7 @@ void display(void)
 		drawModel(&planeModel);
 	glPopMatrix();
 
-	// Draw car
+	// Draws car
 	glPushMatrix();
 		glTranslatef(3, 0, 7);
 		glRotatef(a1, 0 , 1, 0);
@@ -478,7 +274,7 @@ void display(void)
 		drawModel(&carModel);
 	glPopMatrix();
 
-	// Draw Nexus
+	// Draws Nexus
 	glPushMatrix();
 		glTranslatef(17, 1.5, 10);
 		glRotatef(-90, 0, 1, 0);
@@ -486,7 +282,7 @@ void display(void)
 		drawModel(&nexusModel);
 	glPopMatrix();
 
-	// Draw Nokia
+	// Draws Nokia
 	glPushMatrix();
 		glTranslatef(3, 1.7, 3);
 		glRotatef(-45, cos(a1 * DEG_TO_RAD), 0 , -sin(a1 * DEG_TO_RAD)); 
@@ -496,14 +292,13 @@ void display(void)
 		drawModel(&nokiaModel);
 	glPopMatrix();
 
-	// Draw cube
+	// Draws cube
 	glPushMatrix();
 		glTranslatef(7, 0.5, 3);
 		glRotatef(a1, 0, 1, 0);
 		glScalef(0.5, 0.5, 0.5);
 		drawModel(&cubeModel);
 	glPopMatrix();
-
 
 	// Swap buffers in GPU
 	glutSwapBuffers();
@@ -521,9 +316,6 @@ void reshape(int width, int height)
 	gluPerspective(70, (GLdouble) width / (GLdouble) height, 0.1, 60000);
 	// Load back the modelview matrix
 	glMatrixMode(GL_MODELVIEW);
-
-	viewHeight = height;
-	viewWidth = width;
 }
 
 void initialize(void)
@@ -545,12 +337,9 @@ void initialize(void)
 	glEnable(GL_LIGHTING);
 	// Enables the light
 	glEnable(GL_LIGHT0);
-	// Sets the material ligthing
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, matAmbient);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, matDiffuse);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpecular);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, matShininess);
-	glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, matEmission);
+	// Loads the default material
+	loadDefaultMaterial();
+
 	glShadeModel(GL_SMOOTH);
 
 	// Loads textures
@@ -616,53 +405,10 @@ void initialize(void)
 	// loadOBJToModel("nokia-n82-midres.obj", &nokiaModel);
 
 	// Car
-	loadOBJToModel("alfa147.obj", &carModel);
+	// loadOBJToModel("alfa147.obj", &carModel);
 
-
-	// Represents the camera position
-	eye = createv(5, EYE_HEIGHT, 5);
-
-	// Represents the point where the camera looks
-	target = createv(0, EYE_HEIGHT, 0);
-
-	// A vector that moves the camera
-	cameraForce = createv(0, 0, 0);
-
-	// Gravity
-	gForce = createv(0, - GFORCE, 0);
-
-	programID = makeMeAProgram(makeMeAShader("./src/vshader.vsh", GL_VERTEX_SHADER), 
-								makeMeAShader("./src/fshader.fsh", GL_FRAGMENT_SHADER));
-	
-	glUseProgram(programID);
-}
-
-void freeCameraHandler (int x, int y) {
-	// Determines the angle on each axis based on mouse position
-	cameraYaw += -45 + 90 * x / (GLdouble) viewWidth;
-	cameraPitch += -30 + 60 * y / (GLdouble) viewHeight;
-
-	// cameraYaw must not exeed 360 or be below -360 degrees
-	cameraYaw -= ((int) cameraYaw / 360) * 360;
-
-	// cameraPitch must not exeed 90 degrees or be below -90 degrees
-	if (cameraPitch > 89) 
-		cameraPitch = 89;
-	if (cameraPitch < -89) 
-		cameraPitch = -89;
-
-	// Some notations
-	GLdouble sinY = sin(-cameraPitch * DEG_TO_RAD);
-	GLdouble sinX = sin(cameraYaw * DEG_TO_RAD);
-	GLdouble cosX = cos(cameraYaw * DEG_TO_RAD);
-
-	// Makes the target vector based on cameraYaw and cameraPitch (rotating the vector using rotatev() was a bit buggy)
-	target = createv(cosX, 0, sinX);
-	multiplyv(&target, sqrt(1 - sinY * sinY));
-	target = addv(target, createv(0, sinY, 0));
-
-	// Adds the eye position so that the camera points to the right place
-	target = addv(target, eye);	
+	// Loads the shaders
+	loadShaders("./src/vshader.vsh", GL_VERTEX_SHADER, "./src/fshader.fsh", GL_FRAGMENT_SHADER);
 }
 
 void tick(int value)
@@ -675,9 +421,6 @@ void tick(int value)
 	a2 += 5 * 0.62831;
 	if (a2 >= 360)
 		a2 -= 360;
-
-	// Moves mouse to the middle
-	glutWarpPointer(viewWidth / 2, viewHeight / 2);
 	
 	// Calls the display() function
 	glutPostRedisplay();
@@ -686,133 +429,21 @@ void tick(int value)
 	glutTimerFunc(10, tick, value + 1);
 }
 
-// Handles normal key presses (arrow, function and other keys not included)
-void normalKeysHandler(unsigned char key, int x, int y) 
-{
-	switch(key) {
-		case 'W':
-		case 'w':
-			keyStates['w'] = true;
-			break;
-		case 'S':
-		case 's':
-			keyStates['s'] = true;
-			break;
-		case 'A':
-		case 'a':
-			keyStates['a'] = true;
-			break;
-		case 'D':
-		case 'd':
-			keyStates['d'] = true;
-			break;
-		// Space Key
-		case 32:
-			keyStates[32] = true;
-			break;
-		// Esc Key
-		case 27:
-			exit(0);
-			break;
-	}
-}
-
-// Handles arrow, function and other keys presses (and maps them with normal keys)
-void specialKeysHandler(int key, int x, int y) 
-{
-	switch(key) {
-		case GLUT_KEY_UP:
-			keyStates['w'] = true;
-			break;
-		case GLUT_KEY_DOWN:
-			keyStates['s'] = true;
-			break;
-		case GLUT_KEY_LEFT:
-			keyStates['a'] = true;
-			break;
-		case GLUT_KEY_RIGHT:
-			keyStates['d'] = true;
-			break;
-		// Shift key
-		case 112:
-			isSprinting = true;
-			break;
-	}
-}
-
-// Handles normal keys releases (arrow, function and other keys not included)
-void normalKeysUpHandler (unsigned char key, int x, int y) 
-{
-	switch(key) {
-		case 'W':
-		case 'w':
-			keyStates['w'] = false;
-			break;
-		case 'S':
-		case 's':
-			keyStates['s'] = false;
-			break;
-		case 'A':
-		case 'a':
-			keyStates['a'] = false;
-			break;
-		case 'D':
-		case 'd':
-			keyStates['d'] = false;
-			break;
-		// Space Key
-		case 32:
-			keyStates[32] = false;
-			break;
-	}
-}
-
-// Handles arrow, function and other keys realeses (and maps them with normal keys releases)
-void specialKeysUpHandler(int key, int x, int y) 
-{
-	switch(key) {
-		case GLUT_KEY_UP:
-			keyStates['w'] = false;
-			break;
-		case GLUT_KEY_DOWN:
-			keyStates['s'] = false;
-			break;
-		case GLUT_KEY_LEFT:
-			keyStates['a'] = false;
-			break;
-		case GLUT_KEY_RIGHT:
-			keyStates['d'] = false;
-			break;
-		// Shift key
-		case 112:
-			isSprinting = false;
-			break;
-	}
-}
-
-
 int main(int argc, char *argv[])
 {
+	printf("\n");
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 	glutInitWindowSize(800, 600);
 	glutCreateWindow("Epic Game");
 	glewInit();
+	motionInit();
 
 	// Event listeners
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
-	glutKeyboardFunc(normalKeysHandler);
-	glutKeyboardUpFunc(normalKeysUpHandler);
-	glutSpecialFunc(specialKeysHandler);
-	glutSpecialUpFunc(specialKeysUpHandler);
-	glutPassiveMotionFunc(freeCameraHandler);
-	glutMotionFunc(freeCameraHandler);
 	
 	initialize();
-
-	// Hides the mouse cursor
-	glutSetCursor(GLUT_CURSOR_NONE);
 
 	// Starts main timer
 	glutTimerFunc(10, tick, 0);

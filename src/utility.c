@@ -1,3 +1,4 @@
+#include <GL/glew.h>
 #include <GL/glut.h>
 #include <math.h>
 #include <stdio.h>
@@ -84,11 +85,67 @@ void loadBMP(char *fileName, Texture *tex) {
 	(*tex).texData = LoadDIBitmap(fileName, &(*tex).texInfo);
 	
 	if (!(*tex).texData) {
-		printf("Could not load %s\n", fileName);
+		printf("ERROR: Failed to load \"%s\".\n", fileName);
 		exit(1);
 	}
 
 	// Gets texture width and height from texture info
 	(*tex).texWidth = (*tex).texInfo->bmiHeader.biWidth;
 	(*tex).texHeight = (*tex).texInfo->bmiHeader.biHeight;
+}
+
+// Reads all the content of file, creates a shader, adds the source and compiles it. Returns shader's id
+GLuint loadShaderFromFile(char * path, GLenum type) {
+	// Creates Shader
+	GLuint id = glCreateShader(type);
+
+	// Opens the file
+	FILE * fp = fopen(path, "rb");
+	if (fp == NULL) {
+		printf("ERROR: Failed to open \"%s\". Aborting.\n", path);
+		exit(1);
+	}
+
+	// Gets file length
+	int length;
+	fseek(fp, 0, SEEK_END);
+	length = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+
+	// Allocates memory and loads file's content
+	char * code;
+	code = (char *) malloc(length * sizeof(char));
+	fread(code, length * sizeof(char), 1, fp);
+
+	// Close file
+	fclose(fp);
+
+	// Adds shader source and compiles it
+	glShaderSource(id, 1, (const GLchar **) &code, NULL);
+	glCompileShader(id);
+
+	// Warns the user if the compilation failed
+	GLint success = 0;
+	glGetShaderiv(id, GL_COMPILE_STATUS, &success);
+	if (success == GL_FALSE) {
+		printf("WARNING: Shader at \"%s\" didn't compile\n", path);
+	}
+	else {
+		//printf("Shader at \"%s\"" compiled successfully\n", path);
+	}
+	return id;
+}
+
+// Creates a program and links two shaders. Returns the program's id.
+GLuint createShadersProgram(GLuint id1, GLuint id2) {
+	GLuint id = glCreateProgram();
+	glAttachShader(id, id1);
+	glAttachShader(id, id2);
+	glLinkProgram(id);
+	return id;
+}
+
+// Loads two Shaders from files
+void loadShaders(char * path1, GLenum type1, char * path2, GLenum type2) {
+	glUseProgram(createShadersProgram(loadShaderFromFile(path1, type1), loadShaderFromFile(path2, type2)));
 }

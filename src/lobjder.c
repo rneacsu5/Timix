@@ -5,19 +5,18 @@
 #include "../include/bitmap.h"
 #include "../include/lobjder.h"
 
-char modelsPath[128] = "";
-char materialsPath[128] = "";
-char texturesPath[128] = "";
+char * modelsPath = NULL;
+char * materialsPath = NULL;
+char * texturesPath = NULL;
 Material defaultMaterial;
-
-
-// A simple C implementation of std::vector class (This is not mine, I adapted one for this project)
 
 // Initializes the Array and allocates memory
 void initArrayv(Arrayv *a, size_t initialSize) {
 	a->array = (vector3d *) malloc(initialSize * sizeof(vector3d));
 	a->used = 0;
 	a->size = initialSize;
+	if (initialSize <= 0)
+		a->size = 1;
 }
 
 // Adds an element to the array and reallocates memory if needed
@@ -44,6 +43,8 @@ void initArrayf(Arrayf *a, size_t initialSize) {
 	}
 	a->used = 0;
 	a->size = initialSize;
+	if (initialSize <= 0)
+		a->size = 1;
 }
 
 void insertArrayf(Arrayf *a, vector3i element[4]) {
@@ -73,6 +74,8 @@ void initArraym(Arraym *a, size_t initialSize) {
 	a->array = (Material *) malloc(initialSize * sizeof(Material));
 	a->used = 0;
 	a->size = initialSize;
+	if (initialSize <= 0)
+		a->size = 1;
 }
 
 void insertArraym(Arraym *a, Material mat) {
@@ -93,6 +96,8 @@ void initArraymi(Arraymi *a, size_t initialSize) {
 	a->array = (unsigned int *) malloc(initialSize * sizeof(unsigned int));
 	a->used = 0;
 	a->size = initialSize;
+	if (initialSize <= 0)
+		a->size = 1;
 }
 
 void insertArraymi(Arraymi *a, unsigned int mat) {
@@ -109,24 +114,34 @@ void freeArraymi(Arraymi *a) {
 	a->used = a->size = 0;
 }
 
-// Sets paths to look for files loaded
+// Sets paths to look for files
 void setPaths(char * modelsFolderPath, char * materialsFolderPath, char * texturesFolderPath) {
-	strcpy(modelsPath, modelsFolderPath);
-	strcpy(materialsPath, materialsFolderPath);
-	strcpy(texturesPath, texturesFolderPath);
+	modelsPath = modelsFolderPath;
+	materialsPath = materialsFolderPath;
+	texturesPath = texturesFolderPath;
 }
 
 // Loads a .obj file to a model
 void loadOBJToModel(char * fileName, Model * model) {
 	// Opens file in read-text mode
-	char path[192] = "";
-	strcat(path, modelsPath);
-	strcat(path, fileName);
+	char * path;
+	if (modelsPath != NULL) {
+		path = (char *) malloc((strlen(modelsPath) + strlen(fileName) + 1) * sizeof(char));
+		path[0] = '\0';
+		strcat(path, modelsPath);
+		strcat(path, fileName);
+	}
+	else {
+		path = (char *) malloc((strlen(fileName) + 1) * sizeof(char));
+		path[0] = '\0';
+		strcat(path, fileName);
+	}
 	FILE * fp = fopen(path, "rt");
 	if (fp == NULL) {
-		printf("Failed to open %s. Aborting.\n", path);
-		exit(1);
+		printf("WARNING: Failed to open \"%s\".\n", path);
+		return;
 	}
+
 	// Initializes the model's arrays
 	initArrayv(&model->v, 10);
 	initArrayv(&model->vt, 10);
@@ -136,35 +151,35 @@ void loadOBJToModel(char * fileName, Model * model) {
 	initArraym(&model->mats, 10);
 
 	// Now we need to read the file line by line
-	char line[70];
+	char * line = (char *) malloc(128 * sizeof(char));
 	int matIndex = 0;
-	while (fgets(line, sizeof(line), fp)) {
+	vector3d vect;
+	while (fgets(line, 128, fp)) {
 		// The v flag is a vertice
 		if (strncmp(line, "v ", 2) == 0) {
-			vector3d vect;
-			sscanf(line, "%*s %lf %lf %lf", &vect.x, &vect.y, &vect.z);
-			insertArrayv(&(*model).v, vect);
+			if (sscanf(line, "%*s %lf %lf %lf", &vect.x, &vect.y, &vect.z) == 3)
+				insertArrayv(&model->v, vect);
 		}
+
 		// The vt flag is a texture coordonate
 		else if (strncmp(line, "vt", 2) == 0) {
-			vector3d vect;
-			sscanf(line, "%*s %lf %lf", &vect.x, &vect.y);
 			vect.z = 0;
-			insertArrayv(&(*model).vt, vect);
+			if (sscanf(line, "%*s %lf %lf", &vect.x, &vect.y) == 2)
+				insertArrayv(&model->vt, vect);
 		}
+
 		// The vn flag is a normal
 		else if (strncmp(line, "vn", 2) == 0) {
-			vector3d vect;
-			sscanf(line, "%*s %lf %lf %lf", &vect.x, &vect.y, &vect.z);
-			insertArrayv(&(*model).vn, vect);
+			if (sscanf(line, "%*s %lf %lf %lf", &vect.x, &vect.y, &vect.z) == 3)
+				insertArrayv(&(*model).vn, vect);
 		}
+
 		// The f flag is a face
 		else if (strncmp(line, "f ", 2) == 0) {
 			vector3i vct[4]; // Output vector
-			char point[20]; // A vertice/texture/normal sequence
+			char * point = NULL; // A vertice/texture/normal sequence
 
 			// Note that there are four formats:
-
 			// <1>     f 145 679 12
 			// <2>     f 145/32 679/45 12/64
 			// <3>     f 145/32/457 679/45/4799 12/64/146
@@ -173,35 +188,41 @@ void loadOBJToModel(char * fileName, Model * model) {
 			// We need to analyze each one
 
 			int i;
-			char* p[4]; // Pointers to blank spaces
+			char * p[5]; // Pointers to blank spaces
+			int fail = 0; // Used to detect failures in reading line
 			p[0] = strchr(line, 32);
 			for (i = 0; i < 4 ; i++) {
-				if (i == 3) {
-					if (p[3] != NULL)
-						strcpy(point, p[3] + 1);
-					else {
-						vct[3] = vct[2];
-						break;
+				if (p[i] == NULL) {
+					if (i <= 2) {
+						fail++;
 					}
+					else if (i == 3){
+						vct[3] = vct[2];
+					}
+					free(point);
+					break;
+				}
+				p[i + 1] = strchr(p[i] + 1, 32);
+				if (p[i + 1] != NULL) {
+					free(point);
+					point = (char *) malloc(p[i + 1] - p[i]);
+					strncpy(point, p[i] + 1, p[i + 1] - p[i] - 1); // Take a sequence
+					point[p[i + 1] - p[i] - 1] = '\0'; // Add the null character
 				}
 				else {
-					p[i + 1] = strchr(p[i] + 1, 32);
-					if (p[i + 1] != NULL) {
-						strncpy(point, p[i] + 1, p[i + 1] - p[i] - 1); // Take a sequence
-						point[p[i + 1] - p[i] - 1] = '\0'; // Add the null character
-					}
-					else 
-						strcpy(point, p[i] + 1);
+					free(point);
+					point = (char *) malloc(strlen(p[i] + 1) + 1);
+					strcpy(point, p[i] + 1);
 				}
-
 				char * c1; // Pointer to first forward-slash
 				char * c2; // Pointer to second forward-slash
 				// These two poiters can be NULL so this is how we figure out the format used
 
-				c1 = strchr(p[i] + 1, '/'); // Check for any forward-slash
+				c1 = strchr(point, '/'); // Check for any forward-slash
 				if (c1 == NULL) {
 					// None found. This is format <1>
-					sscanf(point, "%d", &vct[i].x);
+					if (sscanf(point, "%d", &vct[i].x) != 1)
+						fail++;
 					vct[i].y = vct[i].z = 0;
 				}
 				else {
@@ -209,7 +230,8 @@ void loadOBJToModel(char * fileName, Model * model) {
 					c2 = strchr(c1 + 1, '/');
 					if (c2 == NULL) {
 						// Second one is missing. Format <2>
-						sscanf(point, "%d/%d", &vct[i].x, &vct[i].y);
+						if (sscanf(point, "%d/%d", &vct[i].x, &vct[i].y) != 2)
+							fail++;
 						vct[i].z = 0;
 					}
 					else {
@@ -217,12 +239,14 @@ void loadOBJToModel(char * fileName, Model * model) {
 						// Let's check if they are next to each other
 						if (c2 == c1 + 1) {
 							// Format <4>
-							sscanf(point, "%d//%d", &vct[i].x, &vct[i].z);
+							if (sscanf(point, "%d//%d", &vct[i].x, &vct[i].z) != 2)
+								fail++;
 							vct[i].y = 0;
 						}
 						else {
 							// Format <3>
-							sscanf(point, "%d/%d/%d", &vct[i].x, &vct[i].y, &vct[i].z);
+							if (sscanf(point, "%d/%d/%d", &vct[i].x, &vct[i].y, &vct[i].z) != 3)
+								fail++;
 						}
 					}
 				}
@@ -233,25 +257,27 @@ void loadOBJToModel(char * fileName, Model * model) {
 					vct[1].y, vct[1].z, vct[2].x, vct[2].y, 
 					vct[2].z, vct[3].x, vct[3].y, vct[3].z);
 			*/
-
-			insertArrayf(&(*model).f, vct);
-			insertArraymi(&(*model).matsi, matIndex);
+			if (fail == 0) {
+				insertArrayf(&(*model).f, vct);
+				insertArraymi(&(*model).matsi, matIndex);
+			}
 		}
 		// .mtl file reference
 		else if (strncmp(line, "mtllib", 6) == 0){
-			char name[64];
-			sscanf(line, "%*s %s", name);
-			loadMTLToMaterials(name, &model->mats);
+			char * name = (char *) malloc(128 * sizeof(char));
+			if (sscanf(line, "%*s %s", name) == 1)
+				loadMTLToMaterials(name, &model->mats);
 		}
 		// The usemtl flag is a material
 		else if (strncmp(line, "usemtl", 6) == 0) {
-			char name[64];
-			sscanf(line, "%*s %s", name);
+			char * name = (char *) malloc(128 * sizeof(char));
 			int i;
-			for (i = 0; i < model->mats.used; i++) {
-				if (strcmp(name, model->mats.array[i].matName) == 0) {
-					matIndex = i;
-					break;
+			if (sscanf(line, "%*s %s", name) == 1) {
+				for (i = 0; i < model->mats.used; i++) {
+					if (strcmp(name, model->mats.array[i].matName) == 0) {
+						matIndex = i;
+						break;
+					}
 				}
 			}
 		}
@@ -261,8 +287,8 @@ void loadOBJToModel(char * fileName, Model * model) {
 	}
 
 	// Print Stats
-	printf("==========\n");
-	printf("Loaded %s.\n", path);
+	printf("MODEL:\n");
+	printf("Loaded \"%s\".\n", path);
 	printf("Contained: %zd vertice, %zd texture coord, %zd normals, %zd faces, %zd materials\n", 
 			model->v.used, 
 			model->vt.used, 
@@ -276,30 +302,41 @@ void loadOBJToModel(char * fileName, Model * model) {
 			model->f.size * sizeof(vector3i) * 4 +
 			model->mats.size * sizeof(Material) +
 			model->matsi.size * sizeof(unsigned int));
-	printf("==========\n");
+	printf("\n");
+
+	// Free memory
+	free(line);
+	free(path);
 
 	// Close file
 	fclose(fp);
 }
 
-// Draws a model
 
 void loadMTLToMaterials(char * fileName, Arraym * mats) {
 	// Opens file in read-text mode
-	char path[192] = "";
-	strcat(path, materialsPath);
-	strcat(path, fileName);
+	char * path;
+	if (materialsPath != NULL) {
+		path = (char *) malloc((strlen(materialsPath) + strlen(fileName) + 1) * sizeof(char));
+		path[0] = '\0';
+		strcat(path, materialsPath);
+		strcat(path, fileName);
+	}
+	else {
+		path = (char *) malloc((strlen(fileName) + 1) * sizeof(char));
+		path[0] = '\0';
+		strcat(path, fileName);
+	}
 	FILE * fp = fopen(path, "rt");
 	if (fp == NULL) {
-		printf("Failed to open %s.\n", path);
-		//exit(1);
+		printf("WARNING: Failed to open \"%s\".\n", path);
 	}
 	else {
 		// Now we need to read the file line by line
 		int i = 0;
 		Material mat;
-		char line[256];
-		while (fgets(line, sizeof(line), fp)) {
+		char * line = (char *) malloc(128 * sizeof(char));
+		while (fgets(line, 128, fp)) {
 			// The newmtl flag is a new material
 			if (strncmp(line, "newmtl", 6) == 0) {
 				if (i != 0) {
@@ -354,22 +391,35 @@ void loadMTLToMaterials(char * fileName, Arraym * mats) {
 					// Found -s option. This is texture scale
 					sscanf(p, "%*s %lf %lf", &mat.scale.x, &mat.scale.y);
 				}
+				// The file name is the last
 				p = strchr(line, 32);
-				char * p1 = strchr(p+1, 32);
+				char * p1 = strchr(p + 1, 32);
 				while (p1 != NULL) {
 					p = p1;
 					p1 = strchr(p + 1, 32);
 				}
 				strcpy(mat.fileName, p + 1);
-				sscanf(line, "%*s %s", mat.fileName);
-				char path[192] = "";
-				strcat(path, texturesPath);
-				strcat(path, mat.fileName);
+				if (mat.fileName[strlen(mat.fileName) - 1] == '\n')
+					mat.fileName[strlen(mat.fileName) - 1] = '\0';
+
+				// Full path
+				char * path2;
+				if (texturesPath != NULL) {
+					path2 = (char *) malloc((strlen(texturesPath) + strlen(mat.fileName) + 1) * sizeof(char));
+					path2[0] = '\0';
+					strcat(path2, texturesPath);
+					strcat(path2, mat.fileName);
+				}
+				else {
+					path2 = (char *) malloc((strlen(mat.fileName) + 1) * sizeof(char));
+					path2[0] = '\0';
+					strcat(path2, mat.fileName);
+				}
 
 				// Gets the texture data and texture info
-				mat.texData = LoadDIBitmap(path, &mat.texInfo);
+				mat.texData = LoadDIBitmap(path2, &mat.texInfo);
 				if (mat.texData == NULL) {
-					printf("Failed to open %s.\n", path);
+					printf("WARNING: Failed to open \"%s\".\n", path2);
 				}
 				else {
 					// Gets texture width and height from texture info
@@ -380,6 +430,7 @@ void loadMTLToMaterials(char * fileName, Arraym * mats) {
 								mat.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 
 								mat.texData);
 				}
+				free(path2);
 			}
 			else {
 				// Found something else
@@ -389,9 +440,15 @@ void loadMTLToMaterials(char * fileName, Arraym * mats) {
 			insertArraym(mats, mat);
 		}
 
+		// Free memory
+		free(line);
+
 		// Close file
 		fclose(fp);
 	}
+
+	// Free memory again
+	free(path);
 }
 
 void loadMaterial(Material * mat) {
@@ -410,22 +467,29 @@ void loadMaterial(Material * mat) {
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
+// Draws model using immediate mode
 void drawModel(Model * model) {
 	unsigned int i, j, a, b, c;
 	glEnable(GL_TEXTURE_2D);
-	for (i = 0; i < model->f.used; i++) {
-		if (model->mats.used > 0) {
-			if (i == 0) {
-				loadMaterial(&model->mats.array[model->matsi.array[i]]);
+	glBegin(GL_QUADS);
+		for (i = 0; i < model->f.used; i++) {
+			if (model->mats.used > 0) {
+				if (i == 0) {
+					glEnd();
+					loadMaterial(&model->mats.array[model->matsi.array[i]]);
+					glBegin(GL_QUADS);
+				}
+				else if (model->matsi.array[i - 1] != model->matsi.array[i]) {
+					glEnd();
+					loadMaterial(&model->mats.array[model->matsi.array[i]]);
+					glBegin(GL_QUADS);
+				}
 			}
-			else if (model->matsi.array[i - 1] != model->matsi.array[i]) {
-				loadMaterial(&model->mats.array[model->matsi.array[i]]);
+			else if (i == 0) {
+				glEnd();
+				loadDefaultMaterial();
+				glBegin(GL_QUADS);
 			}
-		}
-		else 
-			loadDefaultMaterial();
-
-		glBegin(GL_QUADS);
 			for (j = 0; j < 4; j++) {
 				a = model->f.array[j][i].x; // Index of vertice
 				b = model->f.array[j][i].y; // Index of texture coordonates
@@ -444,8 +508,8 @@ void drawModel(Model * model) {
 					glVertex3f(model->v.array[a].x, model->v.array[a].y, model->v.array[a].z);
 				}
 			}
-		glEnd();
-	}
+		}
+	glEnd();
 	glDisable(GL_TEXTURE_2D);
 }
 
@@ -466,7 +530,7 @@ void loadDefaultMaterial() {
 		defaultMaterial.Tr = 1;
 		defaultMaterial.illum = 2;
 		defaultMaterial.offset.x = defaultMaterial.offset.y = defaultMaterial.offset.z = 0;
-		defaultMaterial.scale.x = defaultMaterial.scale.y = defaultMaterial.scale.z = 0;
+		defaultMaterial.scale.x = defaultMaterial.scale.y = defaultMaterial.scale.z = 1;
 	}
 	loadMaterial(&defaultMaterial);
 }

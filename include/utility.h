@@ -29,3 +29,6 @@ void printv(vector v);
 
 // Fuction to load a .bmp file to a texture
 void loadBMP(char *fileName, Texture *tex);
+
+// Loads two Shaders from files
+void loadShaders(char * path1, GLenum type1, char * path2, GLenum type2);
