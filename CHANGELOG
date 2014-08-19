@@ -5,6 +5,12 @@
 	TODO: Pharse -o and -s options for materials
 	TODO: Universal picture loader that suports AT LEAST .png and .jpg files (nobody uses .bmp)
 
+v0.3.1-alpha
+
+	** Grouped floor, wall and grass texture into terrainMats and created terrain.mtl
+	-- Removed shaders
+	++ lobjder: Added custom flag for pixelated textures: "pixelated"
+
 v0.3.0-alpha
 
 	++ lobjder: Added checks for corrupted files and wrong file structure

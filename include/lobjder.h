@@ -31,10 +31,10 @@
 #include "bitmap.h"
 
 
-// A 3 double vector
+// A 3 float vector
 typedef struct {
-	GLdouble x, y, z;
-} vector3d;
+	GLfloat x, y, z;
+} vector3f;
 
 // A 3 int vector
 typedef struct {
@@ -43,7 +43,7 @@ typedef struct {
 
 // Arrayv is used for vertices, texture coordonates and normals
 typedef struct {
-	vector3d * array;
+	vector3f * array;
 	size_t used;
 	size_t size;
 } Arrayv;
@@ -69,8 +69,8 @@ typedef struct {
 	GLfloat Ks[3]; // Material Specular color
 	GLfloat Ns; // Material Shininess. Ranges form 0 to 1000
 	GLfloat Tr; // Material Transparency. 1 = fully opaque 0 = fully transparent
-	vector3d offset; // Texture offset, not used
-	vector3d scale; // Texture scale, not used
+	vector3f offset; // Texture offset, not used
+	vector3f scale; // Texture scale, not used
 	int illum; // not used
 
 } Material;
@@ -114,8 +114,8 @@ void loadOBJToModel(char * fileName, Model * model);
 // Draws the model to the scene using immediate mode
 void drawModel(Model * model);
 
-// Loads a .mtl file to a material
-void loadMTLToMaterials(char * fileName, Arraym * mat);
+// Loads a .mtl file to a material array
+void loadMTLToMaterials(char * fileName, Arraym * mat, int init); // init = 0 will append all materials found to the array, init = 1 will initialize the array
 
 // Loads a material to be used for drawing
 void loadMaterial(Material * mat);

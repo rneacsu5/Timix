@@ -20,8 +20,9 @@ GLfloat lightSpecular[] = {0.4, 0.4, 0.4, 1};
 
 GLdouble a1 = 0, a2 = 0, r;
 
-// Textures
-Texture floorTex, wallTex, grassTex;
+// Terrain textures
+Arraym terrainMats;
+
 // Models
 Model planeModel, nokiaModel, cubeModel, carModel, nexusModel;
 
@@ -37,8 +38,7 @@ void drawWallsAndFloor(void)
 	// Texture environment
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-	// Binds the floor's texture to GL_TEXTURE_2D
-	glBindTexture(GL_TEXTURE_2D, floorTex.texName);
+	loadMaterial(&terrainMats.array[0]);
 	// Resets the color to white
 	glColor3f(1.0,1.0,1.0);
 	// Draws floor
@@ -58,8 +58,7 @@ void drawWallsAndFloor(void)
 		}
 	glEnd();
 
-	// Binds the wall's texture to GL_TEXTURE_2D
-	glBindTexture(GL_TEXTURE_2D, wallTex.texName);
+	loadMaterial(&terrainMats.array[1]);
 	// Draws walls
 	glBegin(GL_QUADS);
 		for (i = 0; i < 19.99; i += nr) {
@@ -111,8 +110,7 @@ void drawWallsAndFloor(void)
 		}
 	glEnd();
 
-	// Binds the ceiling's texture to GL_TEXTURE_2D
-	glBindTexture(GL_TEXTURE_2D, wallTex.texName);
+	loadMaterial(&terrainMats.array[1]);
 	// Draws ceiling
 	glBegin(GL_QUADS);
 		for (i = 0; i < 19.99; i += nr) {
@@ -139,7 +137,7 @@ void drawGround() {
 	int centerX = (int) motGetEyePos().x, centerY = (int) motGetEyePos().z;
 	int i, j;
 	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, grassTex.texName);
+	loadMaterial(&terrainMats.array[2]);
 	glPushMatrix();
 		glTranslatef(0, -0.01, 0);
 		glBegin(GL_QUADS);
@@ -342,57 +340,14 @@ void initialize(void)
 
 	glShadeModel(GL_SMOOTH);
 
-	// Loads textures
-
-	// Loads the .bmp file
-	loadBMP("./data/textures/floor.bmp", &floorTex);
-	// Generates a texture name
-	glGenTextures(1, &floorTex.texName);
-	// Binds the texture to GL_TEXTURE_2D. All the parameters that we set now will be the same when we bind the texture later
-	glBindTexture(GL_TEXTURE_2D, floorTex.texName);
-	// Sets some parameters
-	// Repeat the image on both axes
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// Sets the interpolation to linear
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	// Sets the image to be used as a texture
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
-				floorTex.texWidth, 
-				floorTex.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 
-				floorTex.texData);
-
-	// Same as above
-	loadBMP("./data/textures/wall.bmp", &wallTex);
-	glGenTextures(1, &wallTex.texName);
-	glBindTexture(GL_TEXTURE_2D, wallTex.texName);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
-				wallTex.texWidth, 
-				wallTex.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 
-				wallTex.texData);
-
-	loadBMP("./data/textures/grass3.bmp", &grassTex); // <<< Not working with grass2.bmp
-	glGenTextures(1, &grassTex.texName);
-	glBindTexture(GL_TEXTURE_2D, grassTex.texName);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // <<< Change to GL_LINEAR if not using a Minecraft texture
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // <<<
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
-				grassTex.texWidth, 
-				grassTex.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 
-				grassTex.texData);
-
+	// Loads terrain materials
+	setPaths("./data/models/", "./data/materials/", "./data/textures/");
+	loadMTLToMaterials("terrain.mtl", &terrainMats, 1);
 
 	// Load models
-	
-	// Plane
 	setPaths("./data/models/", "./data/models/materials/", "./data/models/textures/");
+
+	// Plane
 	loadOBJToModel("SimplePlane.obj", &planeModel);
 
 	// Cube
@@ -431,7 +386,7 @@ void tick(int value)
 
 int main(int argc, char *argv[])
 {
-	printf("\n");
+	printf("===================================================\n");
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 	glutInitWindowSize(800, 600);

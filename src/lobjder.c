@@ -12,7 +12,7 @@ Material defaultMaterial;
 
 // Initializes the Array and allocates memory
 void initArrayv(Arrayv *a, size_t initialSize) {
-	a->array = (vector3d *) malloc(initialSize * sizeof(vector3d));
+	a->array = (vector3f *) malloc(initialSize * sizeof(vector3f));
 	a->used = 0;
 	a->size = initialSize;
 	if (initialSize <= 0)
@@ -20,10 +20,10 @@ void initArrayv(Arrayv *a, size_t initialSize) {
 }
 
 // Adds an element to the array and reallocates memory if needed
-void insertArrayv(Arrayv *a, vector3d element) {
+void insertArrayv(Arrayv *a, vector3f element) {
 	if (a->used == a->size) {
 		a->size *= 2;
-		a->array = (vector3d *) realloc(a->array, a->size * sizeof(vector3d));
+		a->array = (vector3f *) realloc(a->array, a->size * sizeof(vector3f));
 	}
 	a->array[a->used++] = element;
 }
@@ -153,24 +153,24 @@ void loadOBJToModel(char * fileName, Model * model) {
 	// Now we need to read the file line by line
 	char * line = (char *) malloc(128 * sizeof(char));
 	int matIndex = 0;
-	vector3d vect;
+	vector3f vect;
 	while (fgets(line, 128, fp)) {
 		// The v flag is a vertice
 		if (strncmp(line, "v ", 2) == 0) {
-			if (sscanf(line, "%*s %lf %lf %lf", &vect.x, &vect.y, &vect.z) == 3)
+			if (sscanf(line, "%*s %f %f %f", &vect.x, &vect.y, &vect.z) == 3)
 				insertArrayv(&model->v, vect);
 		}
 
 		// The vt flag is a texture coordonate
 		else if (strncmp(line, "vt", 2) == 0) {
 			vect.z = 0;
-			if (sscanf(line, "%*s %lf %lf", &vect.x, &vect.y) == 2)
+			if (sscanf(line, "%*s %f %f", &vect.x, &vect.y) == 2)
 				insertArrayv(&model->vt, vect);
 		}
 
 		// The vn flag is a normal
 		else if (strncmp(line, "vn", 2) == 0) {
-			if (sscanf(line, "%*s %lf %lf %lf", &vect.x, &vect.y, &vect.z) == 3)
+			if (sscanf(line, "%*s %f %f %f", &vect.x, &vect.y, &vect.z) == 3)
 				insertArrayv(&(*model).vn, vect);
 		}
 
@@ -266,7 +266,7 @@ void loadOBJToModel(char * fileName, Model * model) {
 		else if (strncmp(line, "mtllib", 6) == 0){
 			char * name = (char *) malloc(128 * sizeof(char));
 			if (sscanf(line, "%*s %s", name) == 1)
-				loadMTLToMaterials(name, &model->mats);
+				loadMTLToMaterials(name, &model->mats, 0);
 		}
 		// The usemtl flag is a material
 		else if (strncmp(line, "usemtl", 6) == 0) {
@@ -296,9 +296,9 @@ void loadOBJToModel(char * fileName, Model * model) {
 			model->f.used,
 			model->mats.used);
 	printf("Allocated %zd bytes of memory\n", 
-			model->v.size * sizeof(vector3d) + 
-			model->vt.size * sizeof(vector3d) + 
-			model->vn.size * sizeof(vector3d) + 
+			model->v.size * sizeof(vector3f) + 
+			model->vt.size * sizeof(vector3f) + 
+			model->vn.size * sizeof(vector3f) + 
 			model->f.size * sizeof(vector3i) * 4 +
 			model->mats.size * sizeof(Material) +
 			model->matsi.size * sizeof(unsigned int));
@@ -313,7 +313,7 @@ void loadOBJToModel(char * fileName, Model * model) {
 }
 
 
-void loadMTLToMaterials(char * fileName, Arraym * mats) {
+void loadMTLToMaterials(char * fileName, Arraym * mats, int init) {
 	// Opens file in read-text mode
 	char * path;
 	if (materialsPath != NULL) {
@@ -330,125 +330,133 @@ void loadMTLToMaterials(char * fileName, Arraym * mats) {
 	FILE * fp = fopen(path, "rt");
 	if (fp == NULL) {
 		printf("WARNING: Failed to open \"%s\".\n", path);
+		return;
 	}
-	else {
-		// Now we need to read the file line by line
-		int i = 0;
-		Material mat;
-		char * line = (char *) malloc(128 * sizeof(char));
-		while (fgets(line, 128, fp)) {
-			// The newmtl flag is a new material
-			if (strncmp(line, "newmtl", 6) == 0) {
-				if (i != 0) {
-					insertArraym(mats, mat);
-				}
-				i++;
-				loadDefaultMaterial();
-				mat = defaultMaterial;
-				sscanf(line, "%*s %s", mat.matName);
-				glGenTextures(1, &mat.glTexName);
-				glBindTexture(GL_TEXTURE_2D, mat.glTexName);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			}
-			// Material ambient
-			else if (strncmp(line, "Ka", 2) == 0) {
-				sscanf(line, "%*s %f %f %f", &mat.Ka[0], &mat.Ka[1], &mat.Ka[2]);
-			}
-			// Material diffuse
-			else if (strncmp(line, "Kd", 2) == 0) {
-				sscanf(line, "%*s %f %f %f", &mat.Kd[0], &mat.Kd[1], &mat.Kd[2]);
-			}
-			// Material specular
-			else if (strncmp(line, "Ks", 2) == 0) {
-				sscanf(line, "%*s %f %f %f", &mat.Ks[0], &mat.Ks[1], &mat.Ks[2]);
-			}
-			// Material shininess
-			else if (strncmp(line, "Ns", 2) == 0) {
-				sscanf(line, "%*s %f", &mat.Ns);
-			}
-			// Material transparency
-			else if (strncmp(line, "Tr", 2) == 0 || strncmp(line, "d ", 2) == 0) {
-				sscanf(line, "%*s %f", &mat.Tr);
-			}
-			// Material illum
-			else if (strncmp(line, "illum", 5) == 0) {
-				sscanf(line, "%*s %d", &mat.illum);
-			}
-			// Texture file
-			else if (strncmp(line, "map_Kd", 6) == 0) {
-				// There are 2 options that we need to check: -o and -s
-				char * p;
-				p = strstr(line, "-o");
-				if (p != NULL) {
-					// Found -o option. This is texture offset
-					sscanf(p, "%*s %lf %lf", &mat.offset.x, &mat.offset.y);
-				}
-				p = strstr(line, "-s");
-				if (p != NULL) {
-					// Found -s option. This is texture scale
-					sscanf(p, "%*s %lf %lf", &mat.scale.x, &mat.scale.y);
-				}
-				// The file name is the last
-				p = strchr(line, 32);
-				char * p1 = strchr(p + 1, 32);
-				while (p1 != NULL) {
-					p = p1;
-					p1 = strchr(p + 1, 32);
-				}
-				strcpy(mat.fileName, p + 1);
-				if (mat.fileName[strlen(mat.fileName) - 1] == '\n')
-					mat.fileName[strlen(mat.fileName) - 1] = '\0';
+	// Initialize the array if init != 0
+	if (init != 0) {
+		initArraym(mats, 1);
+	}
 
-				// Full path
-				char * path2;
-				if (texturesPath != NULL) {
-					path2 = (char *) malloc((strlen(texturesPath) + strlen(mat.fileName) + 1) * sizeof(char));
-					path2[0] = '\0';
-					strcat(path2, texturesPath);
-					strcat(path2, mat.fileName);
-				}
-				else {
-					path2 = (char *) malloc((strlen(mat.fileName) + 1) * sizeof(char));
-					path2[0] = '\0';
-					strcat(path2, mat.fileName);
-				}
+	// Now we need to read the file line by line
+	int i = 0;
+	Material mat;
+	char * line = (char *) malloc(128 * sizeof(char));
+	while (fgets(line, 128, fp)) {
+		// The newmtl flag is a new material
+		if (strncmp(line, "newmtl", 6) == 0) {
+			if (i != 0) {
+				insertArraym(mats, mat);
+			}
+			i++;
+			loadDefaultMaterial();
+			mat = defaultMaterial;
+			sscanf(line, "%*s %s", mat.matName);
+			glGenTextures(1, &mat.glTexName);
+			glBindTexture(GL_TEXTURE_2D, mat.glTexName);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		}
+		// Material ambient
+		else if (strncmp(line, "Ka", 2) == 0) {
+			sscanf(line, "%*s %f %f %f", &mat.Ka[0], &mat.Ka[1], &mat.Ka[2]);
+		}
+		// Material diffuse
+		else if (strncmp(line, "Kd", 2) == 0) {
+			sscanf(line, "%*s %f %f %f", &mat.Kd[0], &mat.Kd[1], &mat.Kd[2]);
+		}
+		// Material specular
+		else if (strncmp(line, "Ks", 2) == 0) {
+			sscanf(line, "%*s %f %f %f", &mat.Ks[0], &mat.Ks[1], &mat.Ks[2]);
+		}
+		// Material shininess
+		else if (strncmp(line, "Ns", 2) == 0) {
+			sscanf(line, "%*s %f", &mat.Ns);
+		}
+		// Material transparency
+		else if (strncmp(line, "Tr", 2) == 0 || strncmp(line, "d ", 2) == 0) {
+			sscanf(line, "%*s %f", &mat.Tr);
+		}
+		// Material illum
+		else if (strncmp(line, "illum", 5) == 0) {
+			sscanf(line, "%*s %d", &mat.illum);
+		}
+		// Texture file
+		else if (strncmp(line, "map_Kd", 6) == 0) {
+			// There are 2 options that we need to check: -o and -s
+			char * p;
+			p = strstr(line, "-o");
+			if (p != NULL) {
+				// Found -o option. This is texture offset
+				sscanf(p, "%*s %f %f", &mat.offset.x, &mat.offset.y);
+			}
+			p = strstr(line, "-s");
+			if (p != NULL) {
+				// Found -s option. This is texture scale
+				sscanf(p, "%*s %f %f", &mat.scale.x, &mat.scale.y);
+			}
+			// The file name is the last
+			p = strchr(line, 32);
+			char * p1 = strchr(p + 1, 32);
+			while (p1 != NULL) {
+				p = p1;
+				p1 = strchr(p + 1, 32);
+			}
+			strcpy(mat.fileName, p + 1);
+			if (mat.fileName[strlen(mat.fileName) - 1] == '\n')
+				mat.fileName[strlen(mat.fileName) - 1] = '\0';
 
-				// Gets the texture data and texture info
-				mat.texData = LoadDIBitmap(path2, &mat.texInfo);
-				if (mat.texData == NULL) {
-					printf("WARNING: Failed to open \"%s\".\n", path2);
-				}
-				else {
-					// Gets texture width and height from texture info
-					mat.texWidth = mat.texInfo->bmiHeader.biWidth;
-					mat.texHeight = mat.texInfo->bmiHeader.biHeight;
-					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
-								mat.texWidth, 
-								mat.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 
-								mat.texData);
-				}
-				free(path2);
+			// Full path
+			char * path2;
+			if (texturesPath != NULL) {
+				path2 = (char *) malloc((strlen(texturesPath) + strlen(mat.fileName) + 1) * sizeof(char));
+				path2[0] = '\0';
+				strcat(path2, texturesPath);
+				strcat(path2, mat.fileName);
 			}
 			else {
-				// Found something else
+				path2 = (char *) malloc((strlen(mat.fileName) + 1) * sizeof(char));
+				path2[0] = '\0';
+				strcat(path2, mat.fileName);
 			}
-		}
-		if (i != 0) {
-			insertArraym(mats, mat);
-		}
 
-		// Free memory
-		free(line);
-
-		// Close file
-		fclose(fp);
+			// Gets the texture data and texture info
+			mat.texData = LoadDIBitmap(path2, &mat.texInfo);
+			if (mat.texData == NULL) {
+				printf("WARNING: Failed to open \"%s\".\n", path2);
+			}
+			else {
+				// Gets texture width and height from texture info
+				mat.texWidth = mat.texInfo->bmiHeader.biWidth;
+				mat.texHeight = mat.texInfo->bmiHeader.biHeight;
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
+							mat.texWidth, 
+							mat.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 
+							mat.texData);
+			}
+			free(path2);
+		}
+		// Custom flag for pixelated textures
+		else if (strncmp(line, "pixelated", 9) == 0) {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		}
+		else {
+			// Found something else
+		}
+	}
+	if (i != 0) {
+		insertArraym(mats, mat);
 	}
 
-	// Free memory again
+	// Free memory
+	free(line);
 	free(path);
+
+	// Close file
+	fclose(fp);
+
 }
 
 void loadMaterial(Material * mat) {

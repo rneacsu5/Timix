@@ -80,20 +80,6 @@ void printv(vector v) {
 	printf("%f %f %f\n", v.x, v.y, v.z);
 }
 
-void loadBMP(char *fileName, Texture *tex) {
-	// Gets the texture data and texture info
-	(*tex).texData = LoadDIBitmap(fileName, &(*tex).texInfo);
-	
-	if (!(*tex).texData) {
-		printf("ERROR: Failed to load \"%s\".\n", fileName);
-		exit(1);
-	}
-
-	// Gets texture width and height from texture info
-	(*tex).texWidth = (*tex).texInfo->bmiHeader.biWidth;
-	(*tex).texHeight = (*tex).texInfo->bmiHeader.biHeight;
-}
-
 // Reads all the content of file, creates a shader, adds the source and compiles it. Returns shader's id
 GLuint loadShaderFromFile(char * path, GLenum type) {
 	// Creates Shader
@@ -131,7 +117,7 @@ GLuint loadShaderFromFile(char * path, GLenum type) {
 		printf("WARNING: Shader at \"%s\" didn't compile\n", path);
 	}
 	else {
-		//printf("Shader at \"%s\"" compiled successfully\n", path);
+		//printf("Shader at \"%s\" compiled successfully\n", path);
 	}
 	return id;
 }
@@ -147,5 +133,8 @@ GLuint createShadersProgram(GLuint id1, GLuint id2) {
 
 // Loads two Shaders from files
 void loadShaders(char * path1, GLenum type1, char * path2, GLenum type2) {
-	glUseProgram(createShadersProgram(loadShaderFromFile(path1, type1), loadShaderFromFile(path2, type2)));
+	GLuint id1 = loadShaderFromFile(path1, type1);
+	GLuint id2 = loadShaderFromFile(path2, type2);
+	GLuint programID = createShadersProgram(id1, id2);
+	glUseProgram(programID);
 }
