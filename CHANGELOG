@@ -1,9 +1,18 @@
 	TODO: VBO
 	TODO: Shadows
 	TODO: lobjder: Better memory usage
-	TODO: Solve grass2.bmp loading issue. See line 379 in main.c
+	TODO: lobjder: Solve carriage return issue 
 	TODO: Pharse -o and -s options for materials
-	TODO: Universal picture loader that suports AT LEAST .png and .jpg files (nobody uses .bmp)
+	TODO: Test diffrent models with complex texture and make sure they are imported well
+
+v0.3.2-alpha
+
+	++ lobjder: Added std_image library and now many image formats are supported
+	++ Added strange IPhone (the UV wrapping is wrong)
+	** lobjder: Found issue: carriage return character ('\r') is present for some unknown reason in "iphone_4s_home_screen.mtl" and messes up things
+	** lobjder: Some improvments
+	** Solved grass2.bmp issue: std_image reports it as a BMP RLE which is not supported.
+	-- Removed bitmap.c and bitmap.h
 
 v0.3.1-alpha
 

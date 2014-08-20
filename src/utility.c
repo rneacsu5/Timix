@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../include/utility.h"
-#include "../include/bitmap.h"
 
 void normalizev(vector *v) {
 
@@ -88,8 +87,8 @@ GLuint loadShaderFromFile(char * path, GLenum type) {
 	// Opens the file
 	FILE * fp = fopen(path, "rb");
 	if (fp == NULL) {
-		printf("ERROR: Failed to open \"%s\". Aborting.\n", path);
-		exit(1);
+		printf("ERROR: Failed to open \"%s\".\n", path);
+		return id;
 	}
 
 	// Gets file length

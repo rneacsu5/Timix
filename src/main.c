@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <errno.h>
 #include "../include/utility.h"
-#include "../include/bitmap.h"
 #include "../include/lobjder.h"
 #include "../include/motion.h"
 
@@ -24,7 +24,7 @@ GLdouble a1 = 0, a2 = 0, r;
 Arraym terrainMats;
 
 // Models
-Model planeModel, nokiaModel, cubeModel, carModel, nexusModel;
+Model planeModel, nokiaModel, cubeModel, carModel, nexusModel, iphoneModel;
 
 
 void drawWallsAndFloor(void)
@@ -282,11 +282,9 @@ void display(void)
 
 	// Draws Nokia
 	glPushMatrix();
-		glTranslatef(3, 1.7, 3);
-		glRotatef(-45, cos(a1 * DEG_TO_RAD), 0 , -sin(a1 * DEG_TO_RAD)); 
+		glTranslatef(3, 1.5, 3);
 		glRotatef(a1, 0, 1, 0);
-		glRotatef(90, 1, 0, 0);
-		glScalef(0.001, 0.001, 0.001);
+		glScalef(0.1, 0.1, 0.1);
 		drawModel(&nokiaModel);
 	glPopMatrix();
 
@@ -296,6 +294,14 @@ void display(void)
 		glRotatef(a1, 0, 1, 0);
 		glScalef(0.5, 0.5, 0.5);
 		drawModel(&cubeModel);
+	glPopMatrix();
+
+	// Draws IPhone
+	glPushMatrix();
+		glTranslatef(5, 1.5, 3);
+		//glRotatef(a1, 0, 1, 0);
+		glScalef(0.1, 0.1, 0.1);
+		drawModel(&iphoneModel);
 	glPopMatrix();
 
 	// Swap buffers in GPU
@@ -357,10 +363,13 @@ void initialize(void)
 	loadOBJToModel("Nexus.obj", &nexusModel);
 
 	// Nokia
-	// loadOBJToModel("nokia-n82-midres.obj", &nokiaModel);
+	// loadOBJToModel("nokia_5310.obj", &nokiaModel);
 
 	// Car
 	// loadOBJToModel("alfa147.obj", &carModel);
+
+	// IPhone 4S
+	loadOBJToModel("iphone_4s_home_screen.obj", &iphoneModel);
 
 	// Loads the shaders
 	loadShaders("./src/vshader.vsh", GL_VERTEX_SHADER, "./src/fshader.fsh", GL_FRAGMENT_SHADER);

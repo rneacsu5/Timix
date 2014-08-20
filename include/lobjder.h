@@ -19,16 +19,14 @@
 			drawModel(&myModel);
 
 		Done.
-		Note: model.obj must be in "./path/to/model/", model.mtl must be in "./path/to/material/" and other .bmp files in "./path/to/texture/"
+		Note: model.obj must be in "./path/to/model/", model.mtl must be in "./path/to/material/" and other .jpg, .png, .bmp etc. files in "./path/to/texture/"
 
-	IMPORTANT NOTE: Only .bmp files are supported
 	Note: Both triangle and quad faces are supported
 
 */
 
 #include <stdio.h>
 #include <GL/glut.h>
-#include "bitmap.h"
 
 
 // A 3 float vector
@@ -57,13 +55,12 @@ typedef struct {
 
 // Material structure
 typedef struct {
-	char fileName[64]; // .bmp file name
-	GLubyte* texData; // Texture data (extracted from the .bmp file using bitmap.h)
-	BITMAPINFO* texInfo; // Texture info (extracted from the .bmp file using bitmap.h)
+	char * fileName; // File name
+	unsigned char* texData; // Texture data
+	int texWidth; // Texture width
+	int texHeight; // Texture height
 	GLuint glTexName; // Texture name: used with glBindTexture(GL_TEXTURE_2D, texName) to swich to diffrent textures
-	GLsizei texWidth; // Texture width
-	GLsizei texHeight; // Texture height
-	char matName[64]; // Material name
+	char * matName; // Material name
 	GLfloat Ka[3]; // Material Ambient color
 	GLfloat Kd[3]; // Material Diffuse color
 	GLfloat Ks[3]; // Material Specular color

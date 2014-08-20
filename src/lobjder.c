@@ -2,13 +2,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <GL/glut.h>
-#include "../include/bitmap.h"
 #include "../include/lobjder.h"
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_ASSERT(x)
+#include "../include/std_image.h"
 
 char * modelsPath = NULL;
 char * materialsPath = NULL;
 char * texturesPath = NULL;
 Material defaultMaterial;
+int firstUsed = 1;
 
 // Initializes the Array and allocates memory
 void initArrayv(Arrayv *a, size_t initialSize) {
@@ -205,13 +208,13 @@ void loadOBJToModel(char * fileName, Model * model) {
 				p[i + 1] = strchr(p[i] + 1, 32);
 				if (p[i + 1] != NULL) {
 					free(point);
-					point = (char *) malloc(p[i + 1] - p[i]);
+					point = (char *) malloc((p[i + 1] - p[i]) * sizeof(char));
 					strncpy(point, p[i] + 1, p[i + 1] - p[i] - 1); // Take a sequence
 					point[p[i + 1] - p[i] - 1] = '\0'; // Add the null character
 				}
 				else {
 					free(point);
-					point = (char *) malloc(strlen(p[i] + 1) + 1);
+					point = (char *) malloc((strlen(p[i] + 1) + 1) * sizeof(char));
 					strcpy(point, p[i] + 1);
 				}
 				char * c1; // Pointer to first forward-slash
@@ -264,13 +267,14 @@ void loadOBJToModel(char * fileName, Model * model) {
 		}
 		// .mtl file reference
 		else if (strncmp(line, "mtllib", 6) == 0){
-			char * name = (char *) malloc(128 * sizeof(char));
+			char * name = (char *) malloc((strlen(line) - 6) * sizeof(char));
 			if (sscanf(line, "%*s %s", name) == 1)
 				loadMTLToMaterials(name, &model->mats, 0);
+			free(name);
 		}
 		// The usemtl flag is a material
 		else if (strncmp(line, "usemtl", 6) == 0) {
-			char * name = (char *) malloc(128 * sizeof(char));
+			char * name = (char *) malloc((strlen(line) - 6) * sizeof(char));
 			int i;
 			if (sscanf(line, "%*s %s", name) == 1) {
 				for (i = 0; i < model->mats.used; i++) {
@@ -280,6 +284,7 @@ void loadOBJToModel(char * fileName, Model * model) {
 					}
 				}
 			}
+			free(name);
 		}
 		else {
 			// Found something else. Maybe a comment?
@@ -350,6 +355,7 @@ void loadMTLToMaterials(char * fileName, Arraym * mats, int init) {
 			i++;
 			loadDefaultMaterial();
 			mat = defaultMaterial;
+			mat.matName = (char *) malloc((strlen(line) - 6) * sizeof(char));
 			sscanf(line, "%*s %s", mat.matName);
 			glGenTextures(1, &mat.glTexName);
 			glBindTexture(GL_TEXTURE_2D, mat.glTexName);
@@ -403,7 +409,17 @@ void loadMTLToMaterials(char * fileName, Arraym * mats, int init) {
 				p = p1;
 				p1 = strchr(p + 1, 32);
 			}
+			mat.fileName = (char *) malloc((strlen(p + 1) + 1) * sizeof(char));
 			strcpy(mat.fileName, p + 1);
+
+			int k;
+			for (k = 0; k <= strlen(mat.fileName); k++) {
+				if (mat.fileName[k] == '\r') {
+					mat.fileName[k] = '\0';
+					break;
+				}
+			}
+
 			if (mat.fileName[strlen(mat.fileName) - 1] == '\n')
 				mat.fileName[strlen(mat.fileName) - 1] = '\0';
 
@@ -414,6 +430,9 @@ void loadMTLToMaterials(char * fileName, Arraym * mats, int init) {
 				path2[0] = '\0';
 				strcat(path2, texturesPath);
 				strcat(path2, mat.fileName);
+				for (k = 0; k <= strlen(path2); k++) {
+					//printf("%d\n", (int) path2[k]);
+				}
 			}
 			else {
 				path2 = (char *) malloc((strlen(mat.fileName) + 1) * sizeof(char));
@@ -422,19 +441,19 @@ void loadMTLToMaterials(char * fileName, Arraym * mats, int init) {
 			}
 
 			// Gets the texture data and texture info
-			mat.texData = LoadDIBitmap(path2, &mat.texInfo);
+			int n;
+			mat.texData = stbi_load(path2, &mat.texWidth, &mat.texHeight, &n, 3);
 			if (mat.texData == NULL) {
 				printf("WARNING: Failed to open \"%s\".\n", path2);
+				printf("std_image.h says: %s\n", stbi_failure_reason());
 			}
 			else {
-				// Gets texture width and height from texture info
-				mat.texWidth = mat.texInfo->bmiHeader.biWidth;
-				mat.texHeight = mat.texInfo->bmiHeader.biHeight;
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
 							mat.texWidth, 
 							mat.texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 
 							mat.texData);
 			}
+
 			free(path2);
 		}
 		// Custom flag for pixelated textures
@@ -522,7 +541,10 @@ void drawModel(Model * model) {
 }
 
 void loadDefaultMaterial() {
-	if (strcmp(defaultMaterial.matName, "default") != 0) {
+	if (firstUsed) {
+		firstUsed = 0;
+		defaultMaterial.matName = (char *) malloc(8 * sizeof(char));
+		defaultMaterial.fileName = (char *) malloc(5 * sizeof(char));
 		strcpy(defaultMaterial.matName, "default");
 		strcpy(defaultMaterial.fileName, "none");
 		glGenTextures(1, &defaultMaterial.glTexName);
