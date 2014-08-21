@@ -1,9 +1,18 @@
 	TODO: VBO
 	TODO: Shadows
+	TODO: Transparency
 	TODO: lobjder: Better memory usage
 	TODO: lobjder: Solve carriage return issue 
 	TODO: Pharse -o and -s options for materials
 	TODO: Test diffrent models with complex texture and make sure they are imported well
+	TODO: Link libbass32.so or libbass64.so based on OS
+
+v0.3.3-alpha
+
+	++ Added BASS library
+	++ Added music
+	** lobjder: prefixed every funtion and type with the "lbj_" prefix
+	++ lobjder: Added function to flip texture and model
 
 v0.3.2-alpha
 

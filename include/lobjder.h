@@ -32,26 +32,26 @@
 // A 3 float vector
 typedef struct {
 	GLfloat x, y, z;
-} vector3f;
+} lbj_vector3f;
 
 // A 3 int vector
 typedef struct {
 	unsigned int x, y, z;
-} vector3i;
+} lbj_vector3i;
 
-// Arrayv is used for vertices, texture coordonates and normals
+// lbj_Arrayv is used for vertices, texture coordonates and normals
 typedef struct {
-	vector3f * array;
+	lbj_vector3f * array;
 	size_t used;
 	size_t size;
-} Arrayv;
+} lbj_Arrayv;
 
-// Arrayf is used for faces
+// lbj_Arrayf is used for faces
 typedef struct {
-	vector3i* array[4];
+	lbj_vector3i* array[4];
 	size_t used;
 	size_t size;
-} Arrayf;
+} lbj_Arrayf;
 
 // Material structure
 typedef struct {
@@ -66,56 +66,63 @@ typedef struct {
 	GLfloat Ks[3]; // Material Specular color
 	GLfloat Ns; // Material Shininess. Ranges form 0 to 1000
 	GLfloat Tr; // Material Transparency. 1 = fully opaque 0 = fully transparent
-	vector3f offset; // Texture offset, not used
-	vector3f scale; // Texture scale, not used
+	lbj_vector3f offset; // Texture offset, not used
+	lbj_vector3f scale; // Texture scale, not used
 	int illum; // not used
 
-} Material;
+} lbj_Material;
 
 // Material array
 typedef struct {
-	Material * array;
+	lbj_Material * array;
 	size_t used;
 	size_t size;
-} Arraym;
+} lbj_Arraym;
 
 // Material index array
 typedef struct {
 	unsigned int * array;
 	size_t used;
 	size_t size;
-} Arraymi;
+} lbj_Arraymi;
 
 // Model structure
 typedef struct {
 	// List of vertices
-	Arrayv v;
+	lbj_Arrayv v;
 	// Texture coordinates
-	Arrayv vt;
+	lbj_Arrayv vt;
 	// Normals
-	Arrayv vn;
+	lbj_Arrayv vn;
 	// Face Definitions
-	Arrayf f;
+	lbj_Arrayf f;
 	// Materials used
-	Arraym mats;
+	lbj_Arraym mats;
 	// Material index
-	Arraymi matsi;
-} Model;
+	lbj_Arraymi matsi;
+} lbj_Model;
 
 // Sets paths to search for models, textures and materials
-void setPaths(char * modelsFolderPath, char * materialsFolderPath, char * texturesFolderPath);
+void lbj_SetPaths(char * modelsFolderPath, char * materialsFolderPath, char * texturesFolderPath);
 
 // Loads a .obj file to a model
-void loadOBJToModel(char * fileName, Model * model);
+void lbj_LoadOBJToModel(char * fileName, lbj_Model * model);
 
 // Draws the model to the scene using immediate mode
-void drawModel(Model * model);
+void lbj_DrawModel(lbj_Model * model);
 
 // Loads a .mtl file to a material array
-void loadMTLToMaterials(char * fileName, Arraym * mat, int init); // init = 0 will append all materials found to the array, init = 1 will initialize the array
+void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mat, int init); // init = 0 will append all materials found to the array, init = 1 will initialize the array
 
 // Loads a material to be used for drawing
-void loadMaterial(Material * mat);
+void lbj_LoadMaterial(lbj_Material * mat);
 
 // Loads a default material to be used for drawing
-void loadDefaultMaterial();
+void lbj_LoadDefaultMaterial();
+
+// Set up flipping: 1 = flip, 0 = don't flip, other = leave unchanged
+void lbj_SetFlipping(int _flipU,     // Flip texture horizontally
+				int _flipV,     // Flip texture vertically
+				int _flipX,     // Flip model on the x axis
+				int _flipY,     // Flip model on the y axis
+				int _flipZ);    // Flip model on the z axis

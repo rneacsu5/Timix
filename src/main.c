@@ -7,6 +7,7 @@
 #include "../include/utility.h"
 #include "../include/lobjder.h"
 #include "../include/motion.h"
+#include "../include/bass.h"
 
 // C does not support boolean
 #define true 1
@@ -21,10 +22,10 @@ GLfloat lightSpecular[] = {0.4, 0.4, 0.4, 1};
 GLdouble a1 = 0, a2 = 0, r;
 
 // Terrain textures
-Arraym terrainMats;
+lbj_Arraym terrainMats;
 
 // Models
-Model planeModel, nokiaModel, cubeModel, carModel, nexusModel, iphoneModel;
+lbj_Model planeModel, nokiaModel, cubeModel, carModel, nexusModel, iphoneModel;
 
 
 void drawWallsAndFloor(void)
@@ -38,7 +39,7 @@ void drawWallsAndFloor(void)
 	// Texture environment
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-	loadMaterial(&terrainMats.array[0]);
+	lbj_LoadMaterial(&terrainMats.array[0]);
 	// Resets the color to white
 	glColor3f(1.0,1.0,1.0);
 	// Draws floor
@@ -58,7 +59,7 @@ void drawWallsAndFloor(void)
 		}
 	glEnd();
 
-	loadMaterial(&terrainMats.array[1]);
+	lbj_LoadMaterial(&terrainMats.array[1]);
 	// Draws walls
 	glBegin(GL_QUADS);
 		for (i = 0; i < 19.99; i += nr) {
@@ -110,7 +111,7 @@ void drawWallsAndFloor(void)
 		}
 	glEnd();
 
-	loadMaterial(&terrainMats.array[1]);
+	lbj_LoadMaterial(&terrainMats.array[1]);
 	// Draws ceiling
 	glBegin(GL_QUADS);
 		for (i = 0; i < 19.99; i += nr) {
@@ -137,7 +138,7 @@ void drawGround() {
 	int centerX = (int) motGetEyePos().x, centerY = (int) motGetEyePos().z;
 	int i, j;
 	glEnable(GL_TEXTURE_2D);
-	loadMaterial(&terrainMats.array[2]);
+	lbj_LoadMaterial(&terrainMats.array[2]);
 	glPushMatrix();
 		glTranslatef(0, -0.01, 0);
 		glBegin(GL_QUADS);
@@ -221,7 +222,7 @@ void display(void)
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
 	// Loads the default material
-	loadDefaultMaterial();
+	lbj_LoadDefaultMaterial();
 
 	// Draws and rotates a cyan teapot
 	glPushMatrix();
@@ -252,7 +253,7 @@ void display(void)
 		glTranslatef(10 + 7 * sin(r), 4 + 0.5 * sin(r), 10 + 7 * cos(r));
 		glRotatef(a1 - 90, 0, 1, 0);
 		glScalef(0.4, 0.4, 0.4);
-		drawModel(&planeModel);
+		lbj_DrawModel(&planeModel);
 	glPopMatrix();
 
 	// Draws Plane on ground
@@ -260,7 +261,7 @@ void display(void)
 		glTranslatef(17, 1, 3);
 		glRotatef(a1, 0, 1, 0);
 		glScalef(0.4, 0.4, 0.4);
-		drawModel(&planeModel);
+		lbj_DrawModel(&planeModel);
 	glPopMatrix();
 
 	// Draws car
@@ -269,7 +270,7 @@ void display(void)
 		glRotatef(a1, 0 , 1, 0);
 		glRotatef(-90, 1, 0, 0);
 		glScalef(0.03, 0.03, 0.03);
-		drawModel(&carModel);
+		lbj_DrawModel(&carModel);
 	glPopMatrix();
 
 	// Draws Nexus
@@ -277,15 +278,16 @@ void display(void)
 		glTranslatef(17, 1.5, 10);
 		glRotatef(-90, 0, 1, 0);
 		glScalef(0.01, 0.01, 0.01);
-		drawModel(&nexusModel);
+		lbj_DrawModel(&nexusModel);
 	glPopMatrix();
 
 	// Draws Nokia
 	glPushMatrix();
 		glTranslatef(3, 1.5, 3);
 		glRotatef(a1, 0, 1, 0);
-		glScalef(0.1, 0.1, 0.1);
-		drawModel(&nokiaModel);
+		glScalef(0.005, 0.005, 0.005);
+		glRotatef(90, 1, 0, 0);
+		lbj_DrawModel(&nokiaModel);
 	glPopMatrix();
 
 	// Draws cube
@@ -293,15 +295,14 @@ void display(void)
 		glTranslatef(7, 0.5, 3);
 		glRotatef(a1, 0, 1, 0);
 		glScalef(0.5, 0.5, 0.5);
-		drawModel(&cubeModel);
+		lbj_DrawModel(&cubeModel);
 	glPopMatrix();
 
 	// Draws IPhone
 	glPushMatrix();
 		glTranslatef(5, 1.5, 3);
-		//glRotatef(a1, 0, 1, 0);
 		glScalef(0.1, 0.1, 0.1);
-		drawModel(&iphoneModel);
+		lbj_DrawModel(&iphoneModel);
 	glPopMatrix();
 
 	// Swap buffers in GPU
@@ -332,6 +333,9 @@ void initialize(void)
 	glDisable(GL_COLOR_MATERIAL);
 	// Enable normalize 
 	glEnable(GL_NORMALIZE);
+	// Enable Blend and transparency
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// Sets the light
 	glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
@@ -342,34 +346,36 @@ void initialize(void)
 	// Enables the light
 	glEnable(GL_LIGHT0);
 	// Loads the default material
-	loadDefaultMaterial();
+	lbj_LoadDefaultMaterial();
 
 	glShadeModel(GL_SMOOTH);
 
 	// Loads terrain materials
-	setPaths("./data/models/", "./data/materials/", "./data/textures/");
-	loadMTLToMaterials("terrain.mtl", &terrainMats, 1);
+	lbj_SetPaths("./data/models/", "./data/materials/", "./data/textures/");
+	lbj_SetFlipping(0, 1, 0, 0, 0);
+
+	lbj_LoadMTLToMaterials("terrain.mtl", &terrainMats, 1);
 
 	// Load models
-	setPaths("./data/models/", "./data/models/materials/", "./data/models/textures/");
+	lbj_SetPaths("./data/models/", "./data/models/materials/", "./data/models/textures/");
 
 	// Plane
-	loadOBJToModel("SimplePlane.obj", &planeModel);
+	lbj_LoadOBJToModel("SimplePlane.obj", &planeModel);
 
 	// Cube
-	loadOBJToModel("cube2.obj", &cubeModel);
+	lbj_LoadOBJToModel("cube2.obj", &cubeModel);
 
 	// Nexus
-	loadOBJToModel("Nexus.obj", &nexusModel);
+	lbj_LoadOBJToModel("Nexus.obj", &nexusModel);
 
 	// Nokia
-	// loadOBJToModel("nokia_5310.obj", &nokiaModel);
+	// lbj_LoadOBJToModel("sonyericsson-w9600-midres.obj", &nokiaModel);
 
 	// Car
-	// loadOBJToModel("alfa147.obj", &carModel);
+	// lbj_LoadOBJToModel("alfa147.obj", &carModel);
 
 	// IPhone 4S
-	loadOBJToModel("iphone_4s_home_screen.obj", &iphoneModel);
+	lbj_LoadOBJToModel("iphone_4s_home_screen.obj", &iphoneModel);
 
 	// Loads the shaders
 	loadShaders("./src/vshader.vsh", GL_VERTEX_SHADER, "./src/fshader.fsh", GL_FRAGMENT_SHADER);
@@ -393,6 +399,24 @@ void tick(int value)
 	glutTimerFunc(10, tick, value + 1);
 }
 
+// Called when the song ends
+void replayMusic(HSYNC handle, DWORD channel, DWORD data, void *user) {
+	// Replays the song
+	BASS_ChannelPlay(channel, TRUE);
+}
+
+void bass(void) {
+	// Initializes the library
+	BASS_Init(-1, 44100, 0, 0, NULL);
+	// Creates a stream from a file (the stream is some sort of ID)
+	int stream = BASS_StreamCreateFile(FALSE, "data/sound/Tritonal  Paris Blohm ft Sterling Fox - Colors Culture Code Remix.mp3", 0, 0, 0);
+	// Adds an "Event Listener" (it is called sync) to detect when the song ends
+	BASS_ChannelSetSync(stream, BASS_SYNC_MIXTIME | BASS_SYNC_END, 0, replayMusic, 0);
+	// Plays the stream
+	BASS_ChannelPlay(stream, TRUE);
+}
+
+
 int main(int argc, char *argv[])
 {
 	printf("===================================================\n");
@@ -408,6 +432,8 @@ int main(int argc, char *argv[])
 	glutReshapeFunc(reshape);
 	
 	initialize();
+
+	bass();
 
 	// Starts main timer
 	glutTimerFunc(10, tick, 0);

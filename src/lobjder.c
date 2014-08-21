@@ -10,12 +10,13 @@
 char * modelsPath = NULL;
 char * materialsPath = NULL;
 char * texturesPath = NULL;
-Material defaultMaterial;
+lbj_Material defaultMaterial;
 int firstUsed = 1;
+int flipU = 0, flipV = 1, flipX = 0, flipY = 0, flipZ = 0;
 
 // Initializes the Array and allocates memory
-void initArrayv(Arrayv *a, size_t initialSize) {
-	a->array = (vector3f *) malloc(initialSize * sizeof(vector3f));
+void initArrayv(lbj_Arrayv *a, size_t initialSize) {
+	a->array = (lbj_vector3f *) malloc(initialSize * sizeof(lbj_vector3f));
 	a->used = 0;
 	a->size = initialSize;
 	if (initialSize <= 0)
@@ -23,26 +24,26 @@ void initArrayv(Arrayv *a, size_t initialSize) {
 }
 
 // Adds an element to the array and reallocates memory if needed
-void insertArrayv(Arrayv *a, vector3f element) {
+void insertArrayv(lbj_Arrayv *a, lbj_vector3f element) {
 	if (a->used == a->size) {
 		a->size *= 2;
-		a->array = (vector3f *) realloc(a->array, a->size * sizeof(vector3f));
+		a->array = (lbj_vector3f *) realloc(a->array, a->size * sizeof(lbj_vector3f));
 	}
 	a->array[a->used++] = element;
 }
 
 // Frees the memory and resets the array
-void freeArrayv(Arrayv *a) {
+void freeArrayv(lbj_Arrayv *a) {
 	free(a->array);
 	a->array = NULL;
 	a->used = a->size = 0;
 }
 
 // Same as above but for a face array
-void initArrayf(Arrayf *a, size_t initialSize) {
+void initArrayf(lbj_Arrayf *a, size_t initialSize) {
 	int i;
 	for (i = 0; i < 4; i++) {
-		a->array[i] = (vector3i *) malloc(initialSize * sizeof(vector3i));
+		a->array[i] = (lbj_vector3i *) malloc(initialSize * sizeof(lbj_vector3i));
 	}
 	a->used = 0;
 	a->size = initialSize;
@@ -50,12 +51,12 @@ void initArrayf(Arrayf *a, size_t initialSize) {
 		a->size = 1;
 }
 
-void insertArrayf(Arrayf *a, vector3i element[4]) {
+void insertArrayf(lbj_Arrayf *a, lbj_vector3i element[4]) {
 	int i;
 	if (a->used == a->size) {
 		a->size *= 2;
 		for (i = 0; i < 4; i++) {
-			a->array[i] = (vector3i *) realloc(a->array[i], a->size * sizeof(vector3i));
+			a->array[i] = (lbj_vector3i *) realloc(a->array[i], a->size * sizeof(lbj_vector3i));
 		}
 	}
 	for (i = 0; i < 4; i++) {
@@ -64,7 +65,7 @@ void insertArrayf(Arrayf *a, vector3i element[4]) {
 	a->used++;
 }
 
-void freeArrayf(Arrayf *a) {
+void freeArrayf(lbj_Arrayf *a) {
 	int i;
 	for (i = 0; i < 4; i++) {
 		free(a->array[i]);
@@ -73,29 +74,29 @@ void freeArrayf(Arrayf *a) {
 	a->used = a->size = 0;
 }
 
-void initArraym(Arraym *a, size_t initialSize) {
-	a->array = (Material *) malloc(initialSize * sizeof(Material));
+void initArraym(lbj_Arraym *a, size_t initialSize) {
+	a->array = (lbj_Material *) malloc(initialSize * sizeof(lbj_Material));
 	a->used = 0;
 	a->size = initialSize;
 	if (initialSize <= 0)
 		a->size = 1;
 }
 
-void insertArraym(Arraym *a, Material mat) {
+void insertArraym(lbj_Arraym *a, lbj_Material mat) {
 	if (a->used == a->size) {
 		a->size *= 2;
-		a->array = (Material *) realloc(a->array, a->size * sizeof(Material));
+		a->array = (lbj_Material *) realloc(a->array, a->size * sizeof(lbj_Material));
 	}
 	a->array[a->used++] = mat;
 }
 
-void freeArraym(Arraym *a) {
+void freeArraym(lbj_Arraym *a) {
 	free(a->array);
 	a->array = NULL;
 	a->used = a->size = 0;
 }
 
-void initArraymi(Arraymi *a, size_t initialSize) {
+void initArraymi(lbj_Arraymi *a, size_t initialSize) {
 	a->array = (unsigned int *) malloc(initialSize * sizeof(unsigned int));
 	a->used = 0;
 	a->size = initialSize;
@@ -103,7 +104,7 @@ void initArraymi(Arraymi *a, size_t initialSize) {
 		a->size = 1;
 }
 
-void insertArraymi(Arraymi *a, unsigned int mat) {
+void insertArraymi(lbj_Arraymi *a, unsigned int mat) {
 	if (a->used == a->size) {
 		a->size *= 2;
 		a->array = (unsigned int *) realloc(a->array, a->size * sizeof(unsigned int));
@@ -111,21 +112,21 @@ void insertArraymi(Arraymi *a, unsigned int mat) {
 	a->array[a->used++] = mat;
 }
 
-void freeArraymi(Arraymi *a) {
+void freeArraymi(lbj_Arraymi *a) {
 	free(a->array);
 	a->array = NULL;
 	a->used = a->size = 0;
 }
 
 // Sets paths to look for files
-void setPaths(char * modelsFolderPath, char * materialsFolderPath, char * texturesFolderPath) {
+void lbj_SetPaths(char * modelsFolderPath, char * materialsFolderPath, char * texturesFolderPath) {
 	modelsPath = modelsFolderPath;
 	materialsPath = materialsFolderPath;
 	texturesPath = texturesFolderPath;
 }
 
 // Loads a .obj file to a model
-void loadOBJToModel(char * fileName, Model * model) {
+void lbj_LoadOBJToModel(char * fileName, lbj_Model * model) {
 	// Opens file in read-text mode
 	char * path;
 	if (modelsPath != NULL) {
@@ -156,30 +157,41 @@ void loadOBJToModel(char * fileName, Model * model) {
 	// Now we need to read the file line by line
 	char * line = (char *) malloc(128 * sizeof(char));
 	int matIndex = 0;
-	vector3f vect;
+	lbj_vector3f vect;
 	while (fgets(line, 128, fp)) {
 		// The v flag is a vertice
 		if (strncmp(line, "v ", 2) == 0) {
-			if (sscanf(line, "%*s %f %f %f", &vect.x, &vect.y, &vect.z) == 3)
+			if (sscanf(line, "%*s %f %f %f", &vect.x, &vect.y, &vect.z) == 3) {
+				if (flipX) vect.x = -vect.x;
+				if (flipY) vect.y = -vect.y;
+				if (flipZ) vect.z = -vect.z;
 				insertArrayv(&model->v, vect);
+			}
 		}
 
 		// The vt flag is a texture coordonate
 		else if (strncmp(line, "vt", 2) == 0) {
 			vect.z = 0;
-			if (sscanf(line, "%*s %f %f", &vect.x, &vect.y) == 2)
+			if (sscanf(line, "%*s %f %f", &vect.x, &vect.y) == 2) {
+				if (flipU) vect.x = -vect.x;
+				if (flipV) vect.y = -vect.y;
 				insertArrayv(&model->vt, vect);
+			}
 		}
 
 		// The vn flag is a normal
 		else if (strncmp(line, "vn", 2) == 0) {
-			if (sscanf(line, "%*s %f %f %f", &vect.x, &vect.y, &vect.z) == 3)
+			if (sscanf(line, "%*s %f %f %f", &vect.x, &vect.y, &vect.z) == 3) {
+				if (flipX) vect.x = -vect.x;
+				if (flipY) vect.y = -vect.y;
+				if (flipZ) vect.z = -vect.z;
 				insertArrayv(&(*model).vn, vect);
+			}
 		}
 
 		// The f flag is a face
 		else if (strncmp(line, "f ", 2) == 0) {
-			vector3i vct[4]; // Output vector
+			lbj_vector3i vct[4]; // Output vector
 			char * point = NULL; // A vertice/texture/normal sequence
 
 			// Note that there are four formats:
@@ -269,7 +281,7 @@ void loadOBJToModel(char * fileName, Model * model) {
 		else if (strncmp(line, "mtllib", 6) == 0){
 			char * name = (char *) malloc((strlen(line) - 6) * sizeof(char));
 			if (sscanf(line, "%*s %s", name) == 1)
-				loadMTLToMaterials(name, &model->mats, 0);
+				lbj_LoadMTLToMaterials(name, &model->mats, 0);
 			free(name);
 		}
 		// The usemtl flag is a material
@@ -301,11 +313,11 @@ void loadOBJToModel(char * fileName, Model * model) {
 			model->f.used,
 			model->mats.used);
 	printf("Allocated %zd bytes of memory\n", 
-			model->v.size * sizeof(vector3f) + 
-			model->vt.size * sizeof(vector3f) + 
-			model->vn.size * sizeof(vector3f) + 
-			model->f.size * sizeof(vector3i) * 4 +
-			model->mats.size * sizeof(Material) +
+			model->v.size * sizeof(lbj_vector3f) + 
+			model->vt.size * sizeof(lbj_vector3f) + 
+			model->vn.size * sizeof(lbj_vector3f) + 
+			model->f.size * sizeof(lbj_vector3i) * 4 +
+			model->mats.size * sizeof(lbj_Material) +
 			model->matsi.size * sizeof(unsigned int));
 	printf("\n");
 
@@ -318,7 +330,7 @@ void loadOBJToModel(char * fileName, Model * model) {
 }
 
 
-void loadMTLToMaterials(char * fileName, Arraym * mats, int init) {
+void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init) {
 	// Opens file in read-text mode
 	char * path;
 	if (materialsPath != NULL) {
@@ -344,7 +356,7 @@ void loadMTLToMaterials(char * fileName, Arraym * mats, int init) {
 
 	// Now we need to read the file line by line
 	int i = 0;
-	Material mat;
+	lbj_Material mat;
 	char * line = (char *) malloc(128 * sizeof(char));
 	while (fgets(line, 128, fp)) {
 		// The newmtl flag is a new material
@@ -353,7 +365,7 @@ void loadMTLToMaterials(char * fileName, Arraym * mats, int init) {
 				insertArraym(mats, mat);
 			}
 			i++;
-			loadDefaultMaterial();
+			lbj_LoadDefaultMaterial();
 			mat = defaultMaterial;
 			mat.matName = (char *) malloc((strlen(line) - 6) * sizeof(char));
 			sscanf(line, "%*s %s", mat.matName);
@@ -478,9 +490,9 @@ void loadMTLToMaterials(char * fileName, Arraym * mats, int init) {
 
 }
 
-void loadMaterial(Material * mat) {
+void lbj_LoadMaterial(lbj_Material * mat) {
 	GLfloat matAmbient[] = {mat->Ka[0], mat->Ka[1], mat->Ka[2], 1};
-	GLfloat matDiffuse[] = {mat->Kd[0], mat->Kd[1], mat->Kd[2], 1};
+	GLfloat matDiffuse[] = {mat->Kd[0], mat->Kd[1], mat->Kd[2], mat->Tr};
 	GLfloat matSpecular[] = {mat->Ks[0], mat->Ks[1], mat->Ks[2], 1};
 	GLfloat matShininess[] = {mat->Ns * 128 / 1000};
 
@@ -495,7 +507,7 @@ void loadMaterial(Material * mat) {
 }
 
 // Draws model using immediate mode
-void drawModel(Model * model) {
+void lbj_DrawModel(lbj_Model * model) {
 	unsigned int i, j, a, b, c;
 	glEnable(GL_TEXTURE_2D);
 	glBegin(GL_QUADS);
@@ -503,18 +515,18 @@ void drawModel(Model * model) {
 			if (model->mats.used > 0) {
 				if (i == 0) {
 					glEnd();
-					loadMaterial(&model->mats.array[model->matsi.array[i]]);
+					lbj_LoadMaterial(&model->mats.array[model->matsi.array[i]]);
 					glBegin(GL_QUADS);
 				}
 				else if (model->matsi.array[i - 1] != model->matsi.array[i]) {
 					glEnd();
-					loadMaterial(&model->mats.array[model->matsi.array[i]]);
+					lbj_LoadMaterial(&model->mats.array[model->matsi.array[i]]);
 					glBegin(GL_QUADS);
 				}
 			}
 			else if (i == 0) {
 				glEnd();
-				loadDefaultMaterial();
+				lbj_LoadDefaultMaterial();
 				glBegin(GL_QUADS);
 			}
 			for (j = 0; j < 4; j++) {
@@ -540,7 +552,7 @@ void drawModel(Model * model) {
 	glDisable(GL_TEXTURE_2D);
 }
 
-void loadDefaultMaterial() {
+void lbj_LoadDefaultMaterial() {
 	if (firstUsed) {
 		firstUsed = 0;
 		defaultMaterial.matName = (char *) malloc(8 * sizeof(char));
@@ -562,5 +574,13 @@ void loadDefaultMaterial() {
 		defaultMaterial.offset.x = defaultMaterial.offset.y = defaultMaterial.offset.z = 0;
 		defaultMaterial.scale.x = defaultMaterial.scale.y = defaultMaterial.scale.z = 1;
 	}
-	loadMaterial(&defaultMaterial);
+	lbj_LoadMaterial(&defaultMaterial);
+}
+
+void lbj_SetFlipping(int _flipU, int _flipV, int _flipX, int _flipY, int _flipZ) {
+	if (_flipU == 0 || _flipU == 1) flipU = _flipU;
+	if (_flipV == 0 || _flipV == 1) flipV = _flipV;
+	if (_flipX == 0 || _flipX == 1) flipX = _flipX;
+	if (_flipY == 0 || _flipY == 1) flipY = _flipY;
+	if (_flipZ == 0 || _flipZ == 1) flipZ = _flipZ;
 }
