@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include <errno.h>
 #include "../include/utility.h"
 #include "../include/lobjder.h"
 #include "../include/motion.h"
@@ -369,7 +368,7 @@ void initialize(void)
 	lbj_LoadOBJToModel("Nexus.obj", &nexusModel);
 
 	// Nokia
-	// lbj_LoadOBJToModel("sonyericsson-w9600-midres.obj", &nokiaModel);
+	lbj_LoadOBJToModel("sonyericsson-w9600-midres.obj", &nokiaModel);
 
 	// Car
 	// lbj_LoadOBJToModel("alfa147.obj", &carModel);

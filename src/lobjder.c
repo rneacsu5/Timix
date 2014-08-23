@@ -426,30 +426,22 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init) {
 
 			int k;
 			for (k = 0; k <= strlen(mat.fileName); k++) {
-				if (mat.fileName[k] == '\r') {
+				if (mat.fileName[k] == '\r' || mat.fileName[k] == '\n') {
 					mat.fileName[k] = '\0';
 					break;
 				}
 			}
 
-			if (mat.fileName[strlen(mat.fileName) - 1] == '\n')
-				mat.fileName[strlen(mat.fileName) - 1] = '\0';
-
 			// Full path
 			char * path2;
 			if (texturesPath != NULL) {
-				path2 = (char *) malloc((strlen(texturesPath) + strlen(mat.fileName) + 1) * sizeof(char));
-				path2[0] = '\0';
-				strcat(path2, texturesPath);
-				strcat(path2, mat.fileName);
-				for (k = 0; k <= strlen(path2); k++) {
-					//printf("%d\n", (int) path2[k]);
-				}
+				path2 = (char *) malloc((strlen(texturesPath) + k + 1) * sizeof(char));
+				strcpy(path2, texturesPath);
+				memcpy(path2 + strlen(texturesPath), mat.fileName, k + 1);
 			}
 			else {
-				path2 = (char *) malloc((strlen(mat.fileName) + 1) * sizeof(char));
-				path2[0] = '\0';
-				strcat(path2, mat.fileName);
+				path2 = (char *) malloc((k + 1) * sizeof(char));
+				memcpy(path2, mat.fileName, k + 1);
 			}
 
 			// Gets the texture data and texture info
