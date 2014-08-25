@@ -112,7 +112,7 @@ GLuint loadShaderFromFile(char * path, GLenum type) {
 	// Warns the user if the compilation failed
 	GLint success = 0;
 	glGetShaderiv(id, GL_COMPILE_STATUS, &success);
-	if (success == GL_FALSE) {
+	if (success != GL_TRUE) {
 		printf("WARNING: Shader at \"%s\" didn't compile\n", path);
 	}
 	else {

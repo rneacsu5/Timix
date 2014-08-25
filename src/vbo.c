@@ -1,23 +1,41 @@
+
+// Commands
+// gcc vbo.c utility.c motion.c -lglut -lGL -lGLU -lGLEW -lm -o out.x -Wall
+// ./out.x
+
 #define GL_GLEXT_PROTOTYPES
 #include <stdio.h>
 #include <stdlib.h>
 #include <GL/glut.h>
 #include <GL/glext.h>
+#include "../include/utility.h"
+#include "../include/motion.h"
 
 // C does not support boolean
 #define true 1
 #define false 0
 
+#define ELEMENTS 100000
+
 // Ligth parameters
-GLfloat lightPos[] = {10, 4.5, 10, 1};
+GLfloat lightPos[] = {0, 3, 1, 1};
 GLfloat lightAmbient[] = {0.5, 0.5, 0.5, 1};
 GLfloat lightDiffuse[] = {0.8, 0.8, 0.8, 1};
 GLfloat lightSpecular[] = {0.4, 0.4, 0.4, 1};
 
 GLuint vertexBuffID, indexBuffID; 
 
-GLfloat vertices[] = {0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1};
-GLint indices[] = {0, 1, 5, 0, 5, 4, 2, 3, 7, 2, 7, 6, 2, 0, 4, 2, 4, 6, 2, 0, 1, 2, 1, 3, 1, 5, 7, 1, 7, 3, 5, 4, 6, 5, 6, 7};
+typedef struct {
+	GLfloat pos[3];
+	GLfloat color[4];
+	GLfloat normal[3];
+} Vertex;
+
+Vertex vertices[4 * ELEMENTS];
+GLint indices[4 * ELEMENTS];
+GLint numOfVertices = 0;
+GLint numOfIndices = 0;
+
 
 void display(void)
 {
@@ -28,21 +46,26 @@ void display(void)
 	// Set light position
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 	// Set up the camera
-	gluLookAt(5, 5, 5, 0, 0, 0, 0, 1, 0);
+	motMoveCamera();
 
-	glColor3f(0, 0, 0);
-
+	glEnableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
 	glEnableClientState(GL_VERTEX_ARRAY);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffID);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffID);
 
-	glVertexPointer(3, GL_FLOAT, 3 * sizeof(GLfloat), (char *) NULL + 0);
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, indices);
+	glVertexPointer(3, GL_FLOAT, sizeof(Vertex), NULL + 0);
+	glColorPointer(4, GL_FLOAT, sizeof(Vertex), NULL + 3 * sizeof(GLfloat));
+	glNormalPointer(GL_FLOAT, sizeof(Vertex), NULL + 7 * sizeof(GLfloat));
+
+	glDrawElements(GL_QUADS, numOfIndices, GL_UNSIGNED_INT, 0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
+	glDisableClientState(GL_COLOR_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
 	glDisableClientState(GL_VERTEX_ARRAY);
 
 	// Swap buffers in GPU
@@ -65,17 +88,14 @@ void reshape(int width, int height)
 
 void initialize(void)
 {
-	// Set the background to light gray
-	glClearColor(0.8, 0.8, 0.8, 1);
+	// Set the background to black
+	glClearColor(0, 0, 0, 1);
 	// Enables depth test
 	glEnable(GL_DEPTH_TEST);
-	// Disable color material
-	glDisable(GL_COLOR_MATERIAL);
-	// Enable normalize 
+	// Enables color material
+	glEnable(GL_COLOR_MATERIAL);
+	// Enables normalize 
 	glEnable(GL_NORMALIZE);
-	// Enable Blend and transparency
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// Sets the light
 	glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
@@ -85,20 +105,52 @@ void initialize(void)
 	glEnable(GL_LIGHTING);
 	// Enables the light
 	glEnable(GL_LIGHT0);
+
 	glShadeModel(GL_SMOOTH);
 
+	// LAG MAKER
+	// Increase ELEMENTS for more lag
+	int i;
+	for (i = 0; i < ELEMENTS; i++) {
+		vertices[4 * i + 0].pos[0] = 0; vertices[4 * i + 0].pos[1] = 0; vertices[4 * i + 0].pos[2] = i / 10.0;
+		vertices[4 * i + 1].pos[0] = 3; vertices[4 * i + 1].pos[1] = 0; vertices[4 * i + 1].pos[2] = i / 10.0;
+		vertices[4 * i + 2].pos[0] = 3; vertices[4 * i + 2].pos[1] = 3; vertices[4 * i + 2].pos[2] = i / 10.0;
+		vertices[4 * i + 3].pos[0] = 0; vertices[4 * i + 3].pos[1] = 3; vertices[4 * i + 3].pos[2] = i / 10.0;
+
+		vertices[4 * i + 0].color[0] = 0; vertices[4 * i + 0].color[1] = 1; vertices[4 * i + 0].color[2] = 1; vertices[4 * i + 0].color[3] = 1;
+		vertices[4 * i + 1].color[0] = 0; vertices[4 * i + 1].color[1] = 0; vertices[4 * i + 1].color[2] = 1; vertices[4 * i + 1].color[3] = 1;
+		vertices[4 * i + 2].color[0] = 1; vertices[4 * i + 2].color[1] = 0; vertices[4 * i + 2].color[2] = 1; vertices[4 * i + 2].color[3] = 1;
+		vertices[4 * i + 3].color[0] = 0; vertices[4 * i + 3].color[1] = 1; vertices[4 * i + 3].color[2] = 0; vertices[4 * i + 3].color[3] = 1;
+
+		vertices[4 * i + 0].normal[0] = 0; vertices[4 * i + 0].normal[1] = 0; vertices[4 * i + 0].normal[2] = 1; 
+		vertices[4 * i + 1].normal[0] = 0; vertices[4 * i + 1].normal[1] = 0; vertices[4 * i + 1].normal[2] = 1; 
+		vertices[4 * i + 2].normal[0] = 0; vertices[4 * i + 2].normal[1] = 0; vertices[4 * i + 2].normal[2] = 1; 
+		vertices[4 * i + 3].normal[0] = 0; vertices[4 * i + 3].normal[1] = 0; vertices[4 * i + 3].normal[2] = 1; 
+
+		indices[4 * i + 0] = 4 * i + 0;
+		indices[4 * i + 1] = 4 * i + 1;
+		indices[4 * i + 2] = 4 * i + 2;
+		indices[4 * i + 3] = 4 * i + 3;
+
+		numOfVertices += 4;
+		numOfIndices += 4;
+	}
 
 	glGenBuffers(1, &vertexBuffID);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, numOfVertices * sizeof(Vertex), vertices, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glGenBuffers(1, &indexBuffID);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffID);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, numOfIndices * sizeof(GLint), indices, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
+}
 
+void tick (int value) {
+	glutPostRedisplay();
+	glutTimerFunc(10, tick, 0);
 }
 
 int main(int argc, char *argv[])
@@ -107,13 +159,16 @@ int main(int argc, char *argv[])
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 	glutInitWindowSize(800, 600);
-	glutCreateWindow("Epic Game");
+	glutCreateWindow("VBO Test");
+	motionInit();
 
 	// Event listeners
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	
 	initialize();
+
+	glutTimerFunc(10, tick, 0);
 
 	glutMainLoop();
 	return 0;
