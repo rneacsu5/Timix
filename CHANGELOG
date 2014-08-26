@@ -5,6 +5,11 @@
 	TODO: lobjder: Loading screen for loading models
 	TODO: lobjder: Solve the other carriage return issue
 
+v0.4.1-alpha
+
+	++ Now you can pause the game (press p)
+	++ Added fog
+
 v0.4.0-alpha
 
 	++ lobjder: Added VBO

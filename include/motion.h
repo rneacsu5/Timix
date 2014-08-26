@@ -30,3 +30,4 @@ motVector motGetCamForce(void);
 int motGetKeyStatus(int key);
 int motGetJump(void);
 int motGetSprint(void);
+int motGetIsPaused(void);

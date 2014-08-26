@@ -87,6 +87,7 @@ motVector eye, target, cameraForce;
 int keyStates[256];
 int isJumping = false;
 int isSprinting = false;
+int isPaused = false;
 
 void jumpFunc(void) {
 	// The player jumps only if the spacebar is pressed and if he is not jumping
@@ -139,6 +140,13 @@ void jumpFunc(void) {
 
 void motMoveCamera(void) 
 {
+	// If paused
+	if (isPaused) {
+		// Set up camera
+		gluLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, 0, 1, 0);
+		return;
+	}
+
 	GLint v[4];
 	glGetIntegerv(GL_VIEWPORT, v);
 	// Moves mouse to the middle
@@ -248,6 +256,11 @@ void motMoveCamera(void)
 }
 
 void freeCameraHandler (int x, int y) {
+	// If paused, don't do anything
+	if (isPaused) {
+		return;
+	}
+
 	GLint v[4];
 	glGetIntegerv(GL_VIEWPORT, v); // Gets 4 values: X, Y position of window, Width and Heigth of viewport
 	// Determines the angle on each axis based on mouse position
@@ -296,6 +309,14 @@ void normalKeysHandler(unsigned char key, int x, int y)
 		case 'D':
 		case 'd':
 			keyStates['d'] = true;
+			break;
+		case 'P':
+		case 'p':
+			isPaused = !isPaused;
+			if (isPaused)
+				glutSetCursor(GLUT_CURSOR_LEFT_ARROW);
+			else
+				glutSetCursor(GLUT_CURSOR_NONE);
 			break;
 		// Space Key
 		case 32:
@@ -424,4 +445,8 @@ int motGetJump(void) {
 
 int motGetSprint(void) {
 	return isSprinting;
+}
+
+int motGetIsPaused(void) {
+	return isPaused;
 }

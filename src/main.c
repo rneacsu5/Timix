@@ -1,8 +1,9 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <stdio.h>
-#include <math.h>
 #include <stdlib.h>
+#include <string.h>
+#include <math.h>
 #include "../include/utility.h"
 #include "../include/lobjder.h"
 #include "../include/motion.h"
@@ -17,6 +18,8 @@ GLfloat lightPos[] = {10, 4.5, 10, 1};
 GLfloat lightAmbient[] = {0.5, 0.5, 0.5, 1};
 GLfloat lightDiffuse[] = {0.8, 0.8, 0.8, 1};
 GLfloat lightSpecular[] = {0.4, 0.4, 0.4, 1};
+
+GLfloat fogColor[] = {0.8, 0.8, 0.8, 1.0};
 
 GLdouble a1 = 0, a2 = 0;
 
@@ -293,8 +296,23 @@ void initialize(void)
 	glEnable(GL_LIGHT0);
 	// Loads the default material
 	lbj_LoadDefaultMaterial();
-
+	// Select a smooth shading
 	glShadeModel(GL_SMOOTH);
+
+	// Enable fog
+	glEnable(GL_FOG);
+	// Set fog formula
+	glFogi(GL_FOG_MODE, GL_EXP2);
+	// Set fog density
+	glFogf (GL_FOG_DENSITY, 0.04);
+	// Set fog start (only for GL_LINEAR mode)
+	glFogf(GL_FOG_START, 10);
+	// Set fog end (only for GL_LINEAR mode)
+	glFogf(GL_FOG_END, 25);
+	// Set fog color
+	glFogfv(GL_FOG_COLOR, fogColor);
+	// Set fog quality
+	glHint (GL_FOG_HINT, GL_NICEST);
 
 	// Loads terrain materials
 	lbj_SetPaths("./data/models/", "./data/materials/", "./data/textures/");
@@ -367,8 +385,13 @@ void tick(int value)
 		// Reset frame count
 		fpsFrameCount = 0;
 		// Change the window's title
-		char title[30];
-		sprintf(title, "Epic Game | FPS: %f", fps);
+		char title[50];
+		if (motGetIsPaused()){
+			sprintf(title, "Epic Game Paused | FPS: %f", fps);
+		}
+		else {
+			sprintf(title, "Epic Game | FPS: %f", fps);
+		}
 		glutSetWindowTitle(title);
 	}
 }
