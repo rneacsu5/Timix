@@ -1,6 +1,6 @@
 
 // Commands
-// gcc vbo.c utility.c motion.c -lglut -lGL -lGLU -lGLEW -lm -o out.x -Wall
+// gcc vbo.c ../src/utility.c ../src/motion.c -lglut -lGL -lGLU -lGLEW -lm -o out.x -Wall
 // ./out.x
 
 #define GL_GLEXT_PROTOTYPES
@@ -15,7 +15,7 @@
 #define true 1
 #define false 0
 
-#define ELEMENTS 100000
+#define ELEMENTS 200000
 
 // Ligth parameters
 GLfloat lightPos[] = {0, 3, 1, 1};
@@ -59,7 +59,10 @@ void display(void)
 	glColorPointer(4, GL_FLOAT, sizeof(Vertex), NULL + 3 * sizeof(GLfloat));
 	glNormalPointer(GL_FLOAT, sizeof(Vertex), NULL + 7 * sizeof(GLfloat));
 
+	//glRotatef(90, 1, 0, 0);
 	glDrawElements(GL_QUADS, numOfIndices, GL_UNSIGNED_INT, 0);
+	//glRotatef(-90, 1, 0, 0);
+	//glDrawElements(GL_QUADS, numOfIndices, GL_UNSIGNED_INT, 0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

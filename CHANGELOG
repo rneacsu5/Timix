@@ -1,11 +1,21 @@
-	TODO: VBO
 	TODO: Shadows
 	TODO: Transparency
 	TODO: lobjder: Better memory usage
-	TODO: lobjder: Solve carriage return issue 
 	TODO: Pharse -o and -s options for materials
-	TODO: Test diffrent models with complex texture and make sure they are imported well
-	TODO: Link libbass32.so or libbass64.so based on OS
+	TODO: lobjder: Loading screen for loading models
+	TODO: lobjder: Solve the other carriage return issue
+
+v0.4.0-alpha
+
+	++ lobjder: Added VBO
+	** lobjder: Solved carriage return issue
+	++ lobjder: "Loading screen" when creating VBO
+	** lobjder: Another issue with carriage return :(
+	** lobjder: Other changes
+	** motion: Now stand-alone (without the use of utility.h and utility.c)
+	-- Removed lag (thanks to VBO)
+	-- Removed drawCube() function
+	++ Added FPS counter 
 
 v0.3.3-alpha
 

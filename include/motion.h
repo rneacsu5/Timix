@@ -10,15 +10,23 @@
 // The formula is: GFORCE = 2 * heightOfJump / ((timeOfJump / 2) * (timeOfJump / 2 + 1))   where heigthOfJump is in meters and timeOfJump is in milliseconds
 #define GFORCE 0.00583333
 
+#define PI 3.14159265359
+#define DEG_TO_RAD PI / 180
+#define RAD_TO_DEG 180 / PI
+
 // C does not support boolean
 #define true 1
 #define false 0
 
+typedef struct {
+	GLdouble x, y, z;
+} motVector;
+
 void motionInit(void);
 void motMoveCamera(void);
-vector motGetEyePos(void);
-vector motGetTargetPos(void);
-vector motGetCamForce(void);
+motVector motGetEyePos(void);
+motVector motGetTargetPos(void);
+motVector motGetCamForce(void);
 int motGetKeyStatus(int key);
 int motGetJump(void);
 int motGetSprint(void);

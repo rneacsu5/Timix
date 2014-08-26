@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define GL_GLEXT_PROTOTYPES
 #include <GL/glut.h>
+#include <GL/glext.h>
 #include "../include/lobjder.h"
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ASSERT(x)
@@ -151,8 +153,8 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model) {
 	initArrayv(&model->vt, 10);
 	initArrayv(&model->vn, 10);	
 	initArrayf(&model->f, 10);
-	initArraymi(&model->matsi, 10);
-	initArraym(&model->mats, 10);
+	initArraymi(&model->matsi, 5);
+	initArraym(&model->mats, 5);
 
 	// Now we need to read the file line by line
 	char * line = (char *) malloc(128 * sizeof(char));
@@ -231,7 +233,7 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model) {
 				}
 				char * c1; // Pointer to first forward-slash
 				char * c2; // Pointer to second forward-slash
-				// These two poiters can be NULL so this is how we figure out the format used
+				// These two pointers can be NULL so this is how we figure out the format used
 
 				c1 = strchr(point, '/'); // Check for any forward-slash
 				if (c1 == NULL) {
@@ -266,12 +268,6 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model) {
 					}
 				}
 			}
-			/*
-			printf("%d %d %d %d %d %d %d %d %d %d %d %d\n", 
-					vct[0].x, vct[0].y, vct[0].z, vct[1].x, 
-					vct[1].y, vct[1].z, vct[2].x, vct[2].y, 
-					vct[2].z, vct[3].x, vct[3].y, vct[3].z);
-			*/
 			if (fail == 0) {
 				insertArrayf(&(*model).f, vct);
 				insertArraymi(&(*model).matsi, matIndex);
@@ -328,7 +324,6 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model) {
 	// Close file
 	fclose(fp);
 }
-
 
 void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init) {
 	// Opens file in read-text mode
@@ -427,6 +422,7 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init) {
 			int k;
 			for (k = 0; k <= strlen(mat.fileName); k++) {
 				if (mat.fileName[k] == '\r' || mat.fileName[k] == '\n') {
+					// New line caracters found so we remove them
 					mat.fileName[k] = '\0';
 					break;
 				}
@@ -482,61 +478,68 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init) {
 
 }
 
-void lbj_LoadMaterial(lbj_Material * mat) {
-	GLfloat matAmbient[] = {mat->Ka[0], mat->Ka[1], mat->Ka[2], 1};
-	GLfloat matDiffuse[] = {mat->Kd[0], mat->Kd[1], mat->Kd[2], mat->Tr};
-	GLfloat matSpecular[] = {mat->Ks[0], mat->Ks[1], mat->Ks[2], 1};
-	GLfloat matShininess[] = {mat->Ns * 128 / 1000};
+void lbj_LoadMaterial(lbj_Material mat) {
+	GLfloat matAmbient[] = {mat.Ka[0], mat.Ka[1], mat.Ka[2], 1};
+	GLfloat matDiffuse[] = {mat.Kd[0], mat.Kd[1], mat.Kd[2], mat.Tr};
+	GLfloat matSpecular[] = {mat.Ks[0], mat.Ks[1], mat.Ks[2], 1};
+	GLfloat matShininess[] = {mat.Ns * 128 / 1000};
 
 	glMaterialfv(GL_FRONT, GL_AMBIENT, matAmbient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, matDiffuse);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, matSpecular);
 	glMaterialfv(GL_FRONT, GL_SHININESS, matShininess);
 
-	glBindTexture(GL_TEXTURE_2D, mat->glTexName);
+	glBindTexture(GL_TEXTURE_2D, mat.glTexName);
 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
 // Draws model using immediate mode
-void lbj_DrawModel(lbj_Model * model) {
+void lbj_DrawModelIM(lbj_Model model) {
 	unsigned int i, j, a, b, c;
 	glEnable(GL_TEXTURE_2D);
 	glBegin(GL_QUADS);
-		for (i = 0; i < model->f.used; i++) {
-			if (model->mats.used > 0) {
+		// For each face
+		for (i = 0; i < model.f.used; i++) {
+			// Determines whether or not to change the material
+			if (model.mats.used > 0) {
 				if (i == 0) {
+					// This is the first face, load the first material
 					glEnd();
-					lbj_LoadMaterial(&model->mats.array[model->matsi.array[i]]);
+					lbj_LoadMaterial(model.mats.array[model.matsi.array[i]]);
 					glBegin(GL_QUADS);
 				}
-				else if (model->matsi.array[i - 1] != model->matsi.array[i]) {
+				else if (model.matsi.array[i - 1] != model.matsi.array[i]) {
+					// The previous face had a diffrent material, load the next material
 					glEnd();
-					lbj_LoadMaterial(&model->mats.array[model->matsi.array[i]]);
+					lbj_LoadMaterial(model.mats.array[model.matsi.array[i]]);
 					glBegin(GL_QUADS);
 				}
 			}
 			else if (i == 0) {
+				// No materials for this model. Load default material
 				glEnd();
 				lbj_LoadDefaultMaterial();
 				glBegin(GL_QUADS);
 			}
+
+			// Draw the face
 			for (j = 0; j < 4; j++) {
-				a = model->f.array[j][i].x; // Index of vertice
-				b = model->f.array[j][i].y; // Index of texture coordonates
-				c = model->f.array[j][i].z; // Index of normal
+				a = model.f.array[j][i].x; // Index of vertice
+				b = model.f.array[j][i].y; // Index of texture coordonates
+				c = model.f.array[j][i].z; // Index of normal
 
 				if (c > 0) {
 					c--; // Substact one because the first vertice,normal, etc. starts at 1 in an .obj file
-					glNormal3f(model->vn.array[c].x, model->vn.array[c].y, model->vn.array[c].z);
+					glNormal3f(model.vn.array[c].x, model.vn.array[c].y, model.vn.array[c].z);
 				}
 				if (b > 0) {
 					b--;
-					glTexCoord2f(model->vt.array[b].x, model->vt.array[b].y);
+					glTexCoord2f(model.vt.array[b].x, model.vt.array[b].y);
 				}
 				if (a > 0) {
 					a--;
-					glVertex3f(model->v.array[a].x, model->v.array[a].y, model->v.array[a].z);
+					glVertex3f(model.v.array[a].x, model.v.array[a].y, model.v.array[a].z);
 				}
 			}
 		}
@@ -544,9 +547,14 @@ void lbj_DrawModel(lbj_Model * model) {
 	glDisable(GL_TEXTURE_2D);
 }
 
+// Load a default material
 void lbj_LoadDefaultMaterial() {
+	// The first time this function is called, initialize the "defaultMaterial" and load it
+	// The next time the function is called, just load the "defaultMaterial"
+
 	if (firstUsed) {
 		firstUsed = 0;
+		// Initializes the "defaultMaterial"
 		defaultMaterial.matName = (char *) malloc(8 * sizeof(char));
 		defaultMaterial.fileName = (char *) malloc(5 * sizeof(char));
 		strcpy(defaultMaterial.matName, "default");
@@ -566,13 +574,197 @@ void lbj_LoadDefaultMaterial() {
 		defaultMaterial.offset.x = defaultMaterial.offset.y = defaultMaterial.offset.z = 0;
 		defaultMaterial.scale.x = defaultMaterial.scale.y = defaultMaterial.scale.z = 1;
 	}
-	lbj_LoadMaterial(&defaultMaterial);
+
+	// Load the default material
+	lbj_LoadMaterial(defaultMaterial);
 }
 
+// Sets flipping
 void lbj_SetFlipping(int _flipU, int _flipV, int _flipX, int _flipY, int _flipZ) {
+	// If set to 0 : no flipping; 1 : flip; other: leave it unchanged
+
 	if (_flipU == 0 || _flipU == 1) flipU = _flipU;
 	if (_flipV == 0 || _flipV == 1) flipV = _flipV;
 	if (_flipX == 0 || _flipX == 1) flipX = _flipX;
 	if (_flipY == 0 || _flipY == 1) flipY = _flipY;
 	if (_flipZ == 0 || _flipZ == 1) flipZ = _flipZ;
+}
+
+// Creates a VBO for the given model
+void lbj_CreateVBO(lbj_Model * model, int economic) {
+	// Number of used elements in the vertex aryay and the allocated size for the array
+	unsigned int usedVertices = 0, sizeAllocated = 4;
+
+	// The data in the ARRAY BUFFER
+	lbj_VBOVertex * vertices = (lbj_VBOVertex *) malloc (sizeAllocated * sizeof(lbj_VBOVertex));
+
+	// The data in the ELEMENT ARRAY BUFFER
+	GLint * indices = (GLint *) malloc(model->f.used * 4 * sizeof(GLint));
+
+	// Some variables
+	unsigned int i, j, k, a, b, c;
+
+	// Used for displaying the procentage done
+	int lastProcent = 0, procentLoaded = 0;
+
+	// A variable to hold a VBOVertex 
+	lbj_VBOVertex vert;
+
+	printf("Creating VBO...\n");
+
+	for (i = 0; i < model->f.used; i++) {
+		for (j = 0; j < 4; j++) {
+			a = model->f.array[j][i].x; // Index of vertice
+			b = model->f.array[j][i].y; // Index of texture coordonates
+			c = model->f.array[j][i].z; // Index of normal
+
+			if (a > 0) {
+				a--;
+				vert.pos[0] = model->v.array[a].x;
+				vert.pos[1] = model->v.array[a].y;
+				vert.pos[2] = model->v.array[a].z;
+			}
+			if (c > 0) {
+				c--;
+				vert.normal[0] = model->vn.array[c].x;
+				vert.normal[1] = model->vn.array[c].y;
+				vert.normal[2] = model->vn.array[c].z;
+			}
+			if (b > 0) {
+				b--;
+				vert.texCoord[0] = model->vt.array[b].x;
+				vert.texCoord[1] = model->vt.array[b].y;
+			}
+
+			int found = -1;
+
+			// If "economic" we try to find a vertex in "vertices" that is the same as "vert". We reuse vertices therefore the ARRAY BUFFER is smaller
+			// This is why using "economic" is SLOW AS HELL for big models
+			if (economic) {
+				for (k = 0; k < usedVertices; k++) {
+					if (vert.pos[0] == vertices[k].pos[0] && 
+						vert.pos[1] == vertices[k].pos[1] && 
+						vert.pos[2] == vertices[k].pos[2] && 
+						vert.normal[0] == vertices[k].normal[0] && 
+						vert.normal[1] == vertices[k].normal[1] && 
+						vert.normal[2] == vertices[k].normal[2] && 
+						vert.texCoord[0] == vertices[k].texCoord[0] && 
+						vert.texCoord[1] == vertices[k].texCoord[1]) {
+							found = k;
+							break;
+					}
+				}
+			}
+
+			// If not "economic" or the vertex is new we add it to the vertices array
+			if (found == -1) {
+				// Increment number of vertices
+				usedVertices++;
+				// Allocate memory if needed
+				if (usedVertices > sizeAllocated) {
+					sizeAllocated *= 2;
+					vertices = (lbj_VBOVertex *) realloc (vertices, sizeAllocated * sizeof(lbj_VBOVertex));
+				}
+				// Add the vertex
+				vertices[usedVertices - 1] = vert;
+				// Add the index
+				indices[4 * i + j] = usedVertices - 1;
+			}
+			// "vert" was previously added so we just add the index to the indices array
+			else {
+				indices[4 * i + j] = found;
+			}
+		}
+
+		// A simple "loading screen"
+		// Get the procentage done
+		procentLoaded = (int)(i / (float)(model->f.used - 1) * 100);
+		// Print it (the carrage return keeps it on the same line)
+		printf("\rLoaded: %d %%", procentLoaded);
+
+		if (procentLoaded == 100) {
+			printf("\rLoaded: 100 %%\n");
+			printf("\rThere are %u vertices in the vertex buffer and %zd indices in the index buffer\n\n", usedVertices, model->f.used * 4);
+		}
+
+		// This part does not work now so ignore it
+		else if (procentLoaded > lastProcent) {
+			printf("\rLoaded: %d %%", procentLoaded);
+			lastProcent = procentLoaded;
+		}
+	} 
+
+	// Generate a vertex buffer
+	glGenBuffers(1, &model->vertexBuffID);
+	// Bind the buffer
+	glBindBuffer(GL_ARRAY_BUFFER, model->vertexBuffID);
+	// Add data
+	glBufferData(GL_ARRAY_BUFFER, usedVertices * sizeof(lbj_VBOVertex), vertices, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// The same as above
+	glGenBuffers(1, &model->indexBuffID);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model->indexBuffID);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, model->f.used * 4 * sizeof(GLint), indices, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+// Draws the model using VBO
+void lbj_DrawModelVBO(lbj_Model model) {
+	glEnable(GL_TEXTURE_2D);
+
+	// Enables client states
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+	// Binds the buffers
+	glBindBuffer(GL_ARRAY_BUFFER, model.vertexBuffID);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model.indexBuffID);
+
+	// Specifies the vertex, normal, texture coordonates pointers
+	glVertexPointer(3, GL_FLOAT, sizeof(lbj_VBOVertex), NULL + 0);
+	glNormalPointer(GL_FLOAT, sizeof(lbj_VBOVertex), NULL + 3 * sizeof(GLfloat));
+	glTexCoordPointer(2, GL_FLOAT, sizeof(lbj_VBOVertex), NULL + 6 * sizeof(GLfloat));
+
+	// Loads the default material
+	lbj_LoadDefaultMaterial();
+	unsigned int i, j = 0;
+
+	// This handles the change of material
+	if (model.mats.used > 0) {
+		// For each face
+		for (i = 0; i < model.f.used; i++) {
+			if (i == 0) {
+				// Load the fist material
+				lbj_LoadMaterial(model.mats.array[model.matsi.array[i]]);
+			}
+			else if (model.matsi.array[i - 1] != model.matsi.array[i]) {
+				// If the material changes draw the vertices with the current material
+				glDrawElements(GL_QUADS, (i - j) * 4, GL_UNSIGNED_INT, NULL + j * 4 * sizeof(GLint));
+				j = i;
+				// Load the next material
+				lbj_LoadMaterial(model.mats.array[model.matsi.array[i]]);
+			}
+			else if (i == model.f.used - 1) {
+				// If this is the last face, draw the rest of the buffer
+				glDrawElements(GL_QUADS, (i - j + 1) * 4, GL_UNSIGNED_INT, NULL + j * 4 * sizeof(GLint));
+			}
+		}
+	}
+	else {
+		// No material found. Draw the buffer normaly
+		glDrawElements(GL_QUADS, model.f.used * 4, GL_UNSIGNED_INT, 0);
+	}
+
+	// Unbinds the buffers
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	// Disables client states
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+	glDisable(GL_TEXTURE_2D);
 }

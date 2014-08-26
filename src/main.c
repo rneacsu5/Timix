@@ -18,7 +18,10 @@ GLfloat lightAmbient[] = {0.5, 0.5, 0.5, 1};
 GLfloat lightDiffuse[] = {0.8, 0.8, 0.8, 1};
 GLfloat lightSpecular[] = {0.4, 0.4, 0.4, 1};
 
-GLdouble a1 = 0, a2 = 0, r;
+GLdouble a1 = 0, a2 = 0;
+
+GLfloat fps = 0;
+int fpsCurrentTime = 0, fpsPreviousTime = 0, fpsFrameCount = 0;
 
 // Terrain textures
 lbj_Arraym terrainMats;
@@ -35,13 +38,9 @@ void drawWallsAndFloor(void)
 
 	// Enables textures
 	glEnable(GL_TEXTURE_2D);
-	// Texture environment
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-	lbj_LoadMaterial(&terrainMats.array[0]);
-	// Resets the color to white
-	glColor3f(1.0,1.0,1.0);
 	// Draws floor
+	lbj_LoadMaterial(terrainMats.array[0]);
 	glBegin(GL_QUADS);
 		for (i = 0; i < 19.99; i += nr) {
 			for (j = 0; j < 19.99; j += nr) {
@@ -58,8 +57,8 @@ void drawWallsAndFloor(void)
 		}
 	glEnd();
 
-	lbj_LoadMaterial(&terrainMats.array[1]);
 	// Draws walls
+	lbj_LoadMaterial(terrainMats.array[1]);
 	glBegin(GL_QUADS);
 		for (i = 0; i < 19.99; i += nr) {
 			for (j = 0; j < 19.99; j += nr) {
@@ -110,8 +109,8 @@ void drawWallsAndFloor(void)
 		}
 	glEnd();
 
-	lbj_LoadMaterial(&terrainMats.array[1]);
 	// Draws ceiling
+	lbj_LoadMaterial(terrainMats.array[1]);
 	glBegin(GL_QUADS);
 		for (i = 0; i < 19.99; i += nr) {
 			for (j = 0; j < 19.99; j += nr) {
@@ -137,11 +136,11 @@ void drawGround() {
 	int centerX = (int) motGetEyePos().x, centerY = (int) motGetEyePos().z;
 	int i, j;
 	glEnable(GL_TEXTURE_2D);
-	lbj_LoadMaterial(&terrainMats.array[2]);
+	lbj_LoadMaterial(terrainMats.array[2]);
 	glPushMatrix();
 		glTranslatef(0, -0.01, 0);
 		glBegin(GL_QUADS);
-		glNormal3f(0, 1, 0);
+			glNormal3f(0, 1, 0);
 			for (i = 0; i < 100; i++) {
 				for (j = 0; j < 100; j++) {
 					glTexCoord2f(1, 0);
@@ -159,56 +158,6 @@ void drawGround() {
 	glDisable(GL_TEXTURE_2D);
 }
 
-void drawCube(GLdouble size) 
-{
-	int i, j;
-	GLdouble s = size / 10;
-	glPushMatrix();
-		glTranslatef(-size / 2, -size / 2, -size / 2);
-		glBegin(GL_QUADS);
-			for (i = 0; i < 10; i++) {
-				for (j = 0; j < 10; j++) {
-					glNormal3f(0, -1, 0);
-					glVertex3f(s * i, 0 , s * j);
-					glVertex3f(s * (i + 1), 0 , s * j);
-					glVertex3f(s * (i + 1) , 0 , s * (j + 1));
-					glVertex3f(s * i, 0 , s * (j + 1));
-
-					glNormal3f(0, 0, -1);
-					glVertex3f(s * i, s * j, 0);
-					glVertex3f(s * (i + 1), s * j, 0);
-					glVertex3f(s * (i + 1) , s * (j + 1), 0);
-					glVertex3f(s * i, s * (j + 1), 0);
-
-					glNormal3f(1, 0, 0);
-					glVertex3f(size, s * i, s * j);
-					glVertex3f(size, s * i, s * (j + 1));
-					glVertex3f(size, s * (i + 1), s * (j + 1));
-					glVertex3f(size, s * (i + 1), s * j);
-
-					glNormal3f(0, 0, 1);
-					glVertex3f(s * i, s * j, size);
-					glVertex3f(s * i, s * (j + 1), size);
-					glVertex3f(s * (i + 1), s * (j + 1), size);
-					glVertex3f(s * (i + 1), s * j, size);
-
-					glNormal3f(-1, 0, 0);
-					glVertex3f(0, s * i, s * j);
-					glVertex3f(0, s * i, s * (j + 1));
-					glVertex3f(0, s * (i + 1), s * (j + 1));
-					glVertex3f(0, s * (i + 1), s * j);
-
-					glNormal3f(0, 1, 0);
-					glVertex3f(s * i, size , s * j);
-					glVertex3f(s * (i + 1), size , s * j);
-					glVertex3f(s * (i + 1) , size , s * (j + 1));
-					glVertex3f(s * i, size , s * (j + 1));
-				}
-			}
-		glEnd();
-	glPopMatrix();
-}
-
 void display(void)
 {
 	// Clear the color buffer, restore the background
@@ -223,22 +172,20 @@ void display(void)
 	// Loads the default material
 	lbj_LoadDefaultMaterial();
 
-	// Draws and rotates a cyan teapot
+	// Draws and rotates a teapot
 	glPushMatrix();
 		glTranslatef(3, 0.6, 15);
 		glRotatef(a2, 0, 1, 0);
-		glColor3f(0, 1, 1);
 		glutSolidTeapot(1);
 	glPopMatrix();
 
-	// Draws and animates a green cube
+	// Draws and animates a cube
 	glPushMatrix();
 		GLdouble k = (a2 - ((int) a2 / 90) * 90) * 2 * DEG_TO_RAD;
-		glTranslatef(5 + 4 * sin(r), 0.5 + sin(k) * (sqrt(2) / 2 - 0.5), 5 + 4 * cos(r));
-		glRotatef(a2, -sin(r), 0, -cos(r));
+		glTranslatef(5 + 4 * sin(a1 * DEG_TO_RAD), 0.5 + sin(k) * (sqrt(2) / 2 - 0.5), 5 + 4 * cos(a1 * DEG_TO_RAD));
+		glRotatef(a2, -sin(a1 * DEG_TO_RAD), 0, -cos(a1 * DEG_TO_RAD));
 		glRotatef(a1, 0, 1, 0);
-		glColor3f(0,0.5,0);
-		drawCube(1);
+		glutSolidCube(1);
 	glPopMatrix();
 
 	// Draws the room
@@ -247,20 +194,20 @@ void display(void)
 	// Draws ground
 	drawGround();
 
-	// Draws Plane that flies
-	glPushMatrix();
-		glTranslatef(10 + 7 * sin(r), 4 + 0.5 * sin(r), 10 + 7 * cos(r));
-		glRotatef(a1 - 90, 0, 1, 0);
-		glScalef(0.4, 0.4, 0.4);
-		lbj_DrawModel(&planeModel);
-	glPopMatrix();
-
 	// Draws Plane on ground
 	glPushMatrix();
 		glTranslatef(17, 1, 3);
 		glRotatef(a1, 0, 1, 0);
 		glScalef(0.4, 0.4, 0.4);
-		lbj_DrawModel(&planeModel);
+		lbj_DrawModelVBO(planeModel);
+	glPopMatrix();
+
+	// Draws Plane that flies
+	glPushMatrix();
+		glTranslatef(10 + 7 * sin(a1 * DEG_TO_RAD), 4 + 0.5 * sin(a1 * DEG_TO_RAD), 10 + 7 * cos(a1 * DEG_TO_RAD));
+		glRotatef(a1 - 90, 0, 1, 0);
+		glScalef(0.4, 0.4, 0.4);
+		lbj_DrawModelVBO(planeModel);
 	glPopMatrix();
 
 	// Draws car
@@ -269,7 +216,7 @@ void display(void)
 		glRotatef(a1, 0 , 1, 0);
 		glRotatef(-90, 1, 0, 0);
 		glScalef(0.03, 0.03, 0.03);
-		lbj_DrawModel(&carModel);
+		lbj_DrawModelVBO(carModel);
 	glPopMatrix();
 
 	// Draws Nexus
@@ -277,7 +224,7 @@ void display(void)
 		glTranslatef(17, 1.5, 10);
 		glRotatef(-90, 0, 1, 0);
 		glScalef(0.01, 0.01, 0.01);
-		lbj_DrawModel(&nexusModel);
+		lbj_DrawModelVBO(nexusModel);
 	glPopMatrix();
 
 	// Draws Nokia
@@ -286,22 +233,22 @@ void display(void)
 		glRotatef(a1, 0, 1, 0);
 		glScalef(0.005, 0.005, 0.005);
 		glRotatef(90, 1, 0, 0);
-		lbj_DrawModel(&nokiaModel);
+		lbj_DrawModelVBO(nokiaModel);
 	glPopMatrix();
 
-	// Draws cube
+	// Draws Cube
 	glPushMatrix();
 		glTranslatef(7, 0.5, 3);
 		glRotatef(a1, 0, 1, 0);
 		glScalef(0.5, 0.5, 0.5);
-		lbj_DrawModel(&cubeModel);
+		lbj_DrawModelVBO(cubeModel);
 	glPopMatrix();
 
 	// Draws IPhone
 	glPushMatrix();
 		glTranslatef(5, 1.5, 3);
 		glScalef(0.1, 0.1, 0.1);
-		lbj_DrawModel(&iphoneModel);
+		lbj_DrawModelVBO(iphoneModel);
 	glPopMatrix();
 
 	// Swap buffers in GPU
@@ -360,21 +307,27 @@ void initialize(void)
 
 	// Plane
 	lbj_LoadOBJToModel("SimplePlane.obj", &planeModel);
+	lbj_CreateVBO(&planeModel, 1);
 
 	// Cube
 	lbj_LoadOBJToModel("cube2.obj", &cubeModel);
+	lbj_CreateVBO(&cubeModel, 1);
 
 	// Nexus
 	lbj_LoadOBJToModel("Nexus.obj", &nexusModel);
+	lbj_CreateVBO(&nexusModel, 1);
 
 	// Nokia
 	lbj_LoadOBJToModel("sonyericsson-w9600-midres.obj", &nokiaModel);
+	lbj_CreateVBO(&nokiaModel, 0);
 
 	// Car
-	// lbj_LoadOBJToModel("alfa147.obj", &carModel);
+	lbj_LoadOBJToModel("alfa147.obj", &carModel);
+	lbj_CreateVBO(&carModel, 0);
 
 	// IPhone 4S
 	lbj_LoadOBJToModel("iphone_4s_home_screen.obj", &iphoneModel);
+	lbj_CreateVBO(&iphoneModel, 1);
 
 	// Loads the shaders
 	loadShaders("./src/vshader.vsh", GL_VERTEX_SHADER, "./src/fshader.fsh", GL_FRAGMENT_SHADER);
@@ -385,7 +338,6 @@ void tick(int value)
 	a1+= 5 * 0.1;
 	if (a1 >= 360)
 		a1 -= 360;
-	r = a1 * DEG_TO_RAD;
 
 	a2 += 5 * 0.62831;
 	if (a2 >= 360)
@@ -396,6 +348,29 @@ void tick(int value)
 
 	// Waits 10 ms
 	glutTimerFunc(10, tick, value + 1);
+
+	// FPS calculus
+
+	// Increase frame count
+	fpsFrameCount++;
+	// Get the number of milliseconds since glutInit called (or first call to glutGet(GLUT ELAPSED TIME))
+	fpsCurrentTime = glutGet(GLUT_ELAPSED_TIME);
+	// Calculate time passed
+	int timeInterval = fpsCurrentTime - fpsPreviousTime;
+
+	if (timeInterval > 1000)
+	{
+		// Calculate the number of frames per second
+		fps = fpsFrameCount / (float) timeInterval * 1000;
+		// Set time
+		fpsPreviousTime = fpsCurrentTime;
+		// Reset frame count
+		fpsFrameCount = 0;
+		// Change the window's title
+		char title[30];
+		sprintf(title, "Epic Game | FPS: %f", fps);
+		glutSetWindowTitle(title);
+	}
 }
 
 // Called when the song ends
