@@ -175,13 +175,6 @@ void display(void)
 	// Loads the default material
 	lbj_LoadDefaultMaterial();
 
-	// Draws and rotates a teapot
-	glPushMatrix();
-		glTranslatef(3, 0.6, 15);
-		glRotatef(a2, 0, 1, 0);
-		glutSolidTeapot(1);
-	glPopMatrix();
-
 	// Draws and animates a cube
 	glPushMatrix();
 		GLdouble k = (a2 - ((int) a2 / 90) * 90) * 2 * DEG_TO_RAD;
@@ -213,12 +206,20 @@ void display(void)
 		lbj_DrawModelVBO(planeModel);
 	glPopMatrix();
 
+	// // Draws car
+	// glPushMatrix();
+	// 	glTranslatef(3, 0, 7);
+	// 	glRotatef(a1, 0 , 1, 0);
+	// 	glRotatef(-90, 1, 0, 0);
+	// 	glScalef(0.03, 0.03, 0.03);
+	// 	lbj_DrawModelVBO(carModel);
+	// glPopMatrix();
+
 	// Draws car
 	glPushMatrix();
-		glTranslatef(3, 0, 7);
+		glTranslatef(5, 0, 15);
 		glRotatef(a1, 0 , 1, 0);
-		glRotatef(-90, 1, 0, 0);
-		glScalef(0.03, 0.03, 0.03);
+		glScalef(1.5, 1.5, 1.5);
 		lbj_DrawModelVBO(carModel);
 	glPopMatrix();
 
@@ -340,12 +341,15 @@ void initialize(void)
 	lbj_CreateVBO(&nokiaModel, 0);
 
 	// Car
-	lbj_LoadOBJToModel("alfa147.obj", &carModel);
+	// lbj_LoadOBJToModel("alfa147.obj", &carModel);
+	lbj_SetFlipping(0, 1, 1, 0, 0);
+	lbj_LoadOBJToModel("Avent.obj", &carModel);
+	lbj_SetFlipping(0, 1, 0, 0, 0);
 	lbj_CreateVBO(&carModel, 0);
 
 	// IPhone 4S
-	lbj_LoadOBJToModel("iphone_4s_home_screen.obj", &iphoneModel);
-	lbj_CreateVBO(&iphoneModel, 1);
+	// lbj_LoadOBJToModel("iphone_4s_home_screen.obj", &iphoneModel);
+	// lbj_CreateVBO(&iphoneModel, 1);
 
 	// Loads the shaders
 	loadShaders("./src/vshader.vsh", GL_VERTEX_SHADER, "./src/fshader.fsh", GL_FRAGMENT_SHADER);
@@ -410,7 +414,7 @@ void bass(void) {
 	// Adds an "Event Listener" (it is called sync) to detect when the song ends
 	BASS_ChannelSetSync(stream, BASS_SYNC_MIXTIME | BASS_SYNC_END, 0, replayMusic, 0);
 	// Plays the stream
-	BASS_ChannelPlay(stream, TRUE);
+	// BASS_ChannelPlay(stream, TRUE);
 }
 
 

@@ -679,17 +679,15 @@ void lbj_CreateVBO(lbj_Model * model, int economic) {
 		// A simple "loading screen"
 		// Get the procentage done
 		procentLoaded = (int)(i / (float)(model->f.used - 1) * 100);
-		// Print it (the carrage return keeps it on the same line)
-		printf("\rLoaded: %d %%", procentLoaded);
 
+		// Print it (the carrage return keeps it on the same line)
 		if (procentLoaded == 100) {
 			printf("\rLoaded: 100 %%\n");
 			printf("\rThere are %u vertices in the vertex buffer and %zd indices in the index buffer\n\n", usedVertices, model->f.used * 4);
 		}
-
-		// This part does not work now so ignore it
 		else if (procentLoaded > lastProcent) {
 			printf("\rLoaded: %d %%", procentLoaded);
+			fflush(stdout);
 			lastProcent = procentLoaded;
 		}
 	} 
@@ -741,14 +739,18 @@ void lbj_DrawModelVBO(lbj_Model model) {
 			}
 			else if (model.matsi.array[i - 1] != model.matsi.array[i]) {
 				// If the material changes draw the vertices with the current material
-				glDrawElements(GL_QUADS, (i - j) * 4, GL_UNSIGNED_INT, NULL + j * 4 * sizeof(GLint));
+				// Don't draw translucent materials
+				if (model.mats.array[model.matsi.array[i - 1]].Tr == 1)
+					glDrawElements(GL_QUADS, (i - j) * 4, GL_UNSIGNED_INT, NULL + j * 4 * sizeof(GLint));
 				j = i;
 				// Load the next material
 				lbj_LoadMaterial(model.mats.array[model.matsi.array[i]]);
 			}
 			else if (i == model.f.used - 1) {
 				// If this is the last face, draw the rest of the buffer
-				glDrawElements(GL_QUADS, (i - j + 1) * 4, GL_UNSIGNED_INT, NULL + j * 4 * sizeof(GLint));
+				// Don't draw translucent materials
+				if (model.mats.array[model.matsi.array[i]].Tr == 1)
+					glDrawElements(GL_QUADS, (i - j + 1) * 4, GL_UNSIGNED_INT, NULL + j * 4 * sizeof(GLint));
 			}
 		}
 	}

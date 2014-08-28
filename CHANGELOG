@@ -3,7 +3,13 @@
 	TODO: lobjder: Better memory usage
 	TODO: Pharse -o and -s options for materials
 	TODO: lobjder: Loading screen for loading models
-	TODO: lobjder: Solve the other carriage return issue
+
+v0.4.2-alpha
+
+	++ Added Lamborghini Aventador
+	** lobjder: Display loaded procent bug fixed
+	** lobjder: Translucent materials are not drawn
+	-- Removed IPhone and teapot
 
 v0.4.1-alpha
 
