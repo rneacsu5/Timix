@@ -3,6 +3,15 @@
 	TODO: lobjder: Better memory usage
 	TODO: Pharse -o and -s options for materials
 	TODO: lobjder: Loading screen for loading models
+	TODO: motion: Crouch and prone
+	TODO: motion: Change "mot" prefix to "mot_" for functions
+
+v0.4.3-alpha
+
+	** motion: Many changes and improvements (rewritten most of the code)
+	++ motion: Teleport function
+	** motion: Prefixed every function and constant with "mot"
+	++ Added copyright to lobjder and motion
 
 v0.4.2-alpha
 
@@ -32,7 +41,7 @@ v0.3.3-alpha
 
 	++ Added BASS library
 	++ Added music
-	** lobjder: prefixed every funtion and type with the "lbj_" prefix
+	** lobjder: Prefixed every funtion and type with the "lbj_" prefix
 	++ lobjder: Added function to flip texture and model
 
 v0.3.2-alpha

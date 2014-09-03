@@ -301,7 +301,7 @@ void initialize(void)
 	glShadeModel(GL_SMOOTH);
 
 	// Enable fog
-	glEnable(GL_FOG);
+	//glEnable(GL_FOG);
 	// Set fog formula
 	glFogi(GL_FOG_MODE, GL_EXP2);
 	// Set fog density
@@ -314,6 +314,9 @@ void initialize(void)
 	glFogfv(GL_FOG_COLOR, fogColor);
 	// Set fog quality
 	glHint (GL_FOG_HINT, GL_NICEST);
+
+	// Teleport camera
+	motTeleportCamera(5, MOT_EYE_HEIGHT, 5);
 
 	// Loads terrain materials
 	lbj_SetPaths("./data/models/", "./data/materials/", "./data/textures/");

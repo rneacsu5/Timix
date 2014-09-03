@@ -1,5 +1,9 @@
 /*
-	A simple OpenGL library to load .obj files and display them without texture
+
+	lobjder library 
+	Copyright (c) 2014 Neacsu Razvan
+
+	A simple OpenGL library to load .obj files and display them
 	Usage:
 	
 		Declare a variable that contains the model
@@ -13,12 +17,13 @@
 		Load the file
 
 			lbj_LoadOBJToModel("model.obj", &myModel);
+			lbj_CreateVBO(&myModel, 0); // << Optional if you don't want to use VBOs
 
 		Then display the model using immediate mode
 
 			lbj_DrawModelIM(myModel);
 
-		or using VBO
+		or using VBO (must create the VBO before)
 
 			lbj_DrawModelVBO(myModel);
 
@@ -26,6 +31,7 @@
 		Note: model.obj must be in "./path/to/model/", model.mtl must be in "./path/to/material/" and other .jpg, .png, .bmp etc. files in "./path/to/texture/"
 
 	Note: Triangle and quad faces are supported. N-GONS are NOT supported
+	Note: stb_image is used for loading textures. See http://nothings.org/stb_image.c for more info
 
 */
 

@@ -1,11 +1,14 @@
-/* 
-	This handles camera movement
+/*
+	motion library 
+	Realistic camera movement for OpenGL
+	Copyright (c) 2014 Neacsu Razvan
 */
 
 #include <GL/glut.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <time.h> 
 #include "../include/motion.h"
 
 motVector motCreatev(GLdouble x, GLdouble y, GLdouble z) 
@@ -27,11 +30,13 @@ void motNormalizev(motVector *v) {
 	}
 }
 
-void motMultiplyv(motVector *v, GLdouble factor) 
+motVector motMultiplyv(motVector v, GLdouble factor) 
 {
-	(*v).x *= factor;
-	(*v).y *= factor;
-	(*v).z *= factor;
+	motVector out = v;
+	out.x *= factor;
+	out.y *= factor;
+	out.z *= factor;
+	return out;
 }
 
 motVector motAddv(motVector v1, motVector v2) 
@@ -61,7 +66,7 @@ motVector motRotatev(motVector v, GLdouble angle, GLdouble x, GLdouble y, GLdoub
 	y = n.y;
 	z = n.z;
 
-	GLdouble r = angle * DEG_TO_RAD;
+	GLdouble r = angle * MOT_DEG_TO_RAD;
 	GLdouble c = cos(r);
 	GLdouble s = sin(r);
 
@@ -82,12 +87,19 @@ GLdouble motvLength(motVector v) {
 // Camerea pitch and yaw
 GLdouble cameraYaw = 0, cameraPitch = 0;
 // Vectors
-motVector eye, target, cameraForce;
+motVector eye, target, speed;
 // Key state: true if the key is pressed and false if not
 int keyStates[256];
 int isJumping = false;
 int isSprinting = false;
 int isPaused = false;
+
+// The time interval between callbacks in seconds
+GLfloat deltaT;
+
+// Not used
+clock_t currentTime;
+int firstTime = 1;
 
 void jumpFunc(void) {
 	// The player jumps only if the spacebar is pressed and if he is not jumping
@@ -95,7 +107,7 @@ void jumpFunc(void) {
 		isJumping = true;
 
 		// Makes a push motVector based on input and direction (this allows sprint jumping)
-		motVector direction = motSubstractv(motCreatev(target.x, EYE_HEIGHT, target.z), eye);
+		motVector direction = motSubstractv(motCreatev(target.x, eye.y, target.z), eye);
 		motNormalizev(&direction);
 		motVector push = motCreatev(0, 0, 0);
 		if (keyStates['w']) {
@@ -113,33 +125,30 @@ void jumpFunc(void) {
 
 		// Makes the push motVector the right length
 		motNormalizev(&push);
-		motMultiplyv(&push, ACCELERATION * 7);
+		push = motMultiplyv(push, 5 * MOT_ACCELERATION * deltaT);
 
-		// Adds the push motVector to the camera force and limits its speed
-		if (!isSprinting && motvLength(motAddv(cameraForce, push)) <= MAX_SPEED)
-			cameraForce = motAddv(cameraForce, push);
-		else if (!isSprinting && motvLength(motAddv(cameraForce, push)) > MAX_SPEED && motvLength(cameraForce) <= MAX_SPEED) {
-			cameraForce = motAddv(cameraForce, push);
-			motNormalizev(&cameraForce);
-			motMultiplyv(&cameraForce, MAX_SPEED);
+		// Adds the push motVector to the camera speed and limits its speed
+		if (!isSprinting && motvLength(motAddv(motCreatev(speed.x, 0, speed.z), push)) <= MOT_JUMP_MAX_SPEED) {
+			speed = motAddv(speed, push);
 		}
-		if (isSprinting && motvLength(motAddv(cameraForce, push)) <= MAX_SPEED + SPRINT_BOOST)
-			cameraForce = motAddv(cameraForce, push);
-		else if (isSprinting && motvLength(motAddv(cameraForce, push)) > MAX_SPEED + SPRINT_BOOST && motvLength(cameraForce) <= MAX_SPEED + SPRINT_BOOST) {
-			cameraForce = motAddv(cameraForce, push);
-			motNormalizev(&cameraForce);
-			motMultiplyv(&cameraForce, MAX_SPEED + SPRINT_BOOST);
+		else if (!isSprinting && motvLength(motAddv(motCreatev(speed.x, 0, speed.z), push)) > MOT_JUMP_MAX_SPEED && motvLength(motCreatev(speed.x, 0, speed.z)) <= MOT_JUMP_MAX_SPEED) {
+			speed = motAddv(speed, push);
+			motNormalizev(&speed);
+			speed = motMultiplyv(speed, MOT_JUMP_MAX_SPEED);
+		}
+		if (isSprinting && motvLength(motAddv(motCreatev(speed.x, 0, speed.z), push)) <= MOT_JUMP_SPRINT_MAX_SPEED)
+			speed = motAddv(speed, push);
+		else if (isSprinting && motvLength(motAddv(motCreatev(speed.x, 0, speed.z), push)) > MOT_JUMP_SPRINT_MAX_SPEED && motvLength(motCreatev(speed.x, 0, speed.z)) <= MOT_JUMP_SPRINT_MAX_SPEED) {
+			speed = motAddv(speed, push);
+			motNormalizev(&speed);
+			speed = motMultiplyv(speed, MOT_JUMP_SPRINT_MAX_SPEED);
 		}
 
-		// Adds the jump motVector to the camera force
-		//                                  GFORCE * (timeOfJump / 2 + 1)
-		//                                               ||
-		cameraForce = motAddv(cameraForce, motCreatev(0, GFORCE * 16, 0));
+		speed = motAddv(speed, motCreatev(0, MOT_JUMP_SPEED, 0));
 	}
 }
 
-void motMoveCamera(void) 
-{
+void motMoveCamera(void) {
 	// If paused
 	if (isPaused) {
 		// Set up camera
@@ -147,110 +156,153 @@ void motMoveCamera(void)
 		return;
 	}
 
+	// Moves mouse to the middle
 	GLint v[4];
 	glGetIntegerv(GL_VIEWPORT, v);
-	// Moves mouse to the middle
 	glutWarpPointer(v[2] / 2, v[3] / 2);
+ 
+	// clock_t oldTime = currentTime;
+	// currentTime = clock();
+	// if (firstTime) {
+	// 	firstTime = 0;
+	// 	deltaT = 0;
+	// }
+	// else
+	// 	deltaT = ((GLfloat) currentTime - oldTime) / CLOCKS_PER_SEC;
+	// printf("%f\n", deltaT);
+
+	// The following two kinematic equations are used: d = v0 * deltaT + (a * deltaT ^ 2) / 2 and v = v0 + a * deltaT
+	// where v0 is the initial speed, v is the final speed, a is the acceleration, deltaT is the time interval and d is the distance traveled
+	// Note that the previous are applied for 3D vectors (v0, v, d and a are 3D vectors)
+
+	// Time interval is hardcoded for my computer
+	deltaT = 1 / 60.0;
+
+	// Initial speed
+	motVector speed0 = speed;
+
+	// Brake acceleration  (opposite to the speed and parallel to the ground)
+	motVector drag = motCreatev(speed0.x, 0, speed0.z);
+	motNormalizev(&drag);
+	drag = motMultiplyv(drag, -MOT_BRAKE_ACCELERATION);
+	if (!isJumping) {
+		if (motvLength(speed) > motvLength(motMultiplyv(drag, deltaT))) {
+			speed = motAddv(speed, motMultiplyv(drag, deltaT));
+		}
+		else {
+			speed = motCreatev(0, 0, 0);
+		}
+	}
 
 	// Checks whether to jump or not
 	jumpFunc();
-	
-	// Aplys drag to the camera force if he isn't jumping
-	if (!isJumping) {
-		motVector drag = cameraForce;
-		motNormalizev(&drag);
-		if (motvLength(cameraForce) - DRAG > 0) {
-			motMultiplyv(&drag, motvLength(cameraForce) - DRAG);
-		}
-		else {
-			drag = motCreatev(0, 0, 0);
-		}
-		cameraForce = drag;
-	}
 
-	// Aplys air drag to the camera force if he is jumping
+	// Air drag acceleration (opposite to the speed)
+	motVector airDrag = speed0;
+	motNormalizev(&airDrag);
+	// Air drag is proportional to the speed
+	airDrag = motMultiplyv(airDrag, - motvLength(speed0) * MOT_AIR_DRAG);
+	if (motvLength(speed) > motvLength(motMultiplyv(airDrag, deltaT))) {
+		speed = motAddv(speed, motMultiplyv(airDrag, deltaT));
+	}
 	else {
-		motVector drag = motCreatev(cameraForce.x, 0, cameraForce.z);
-		motNormalizev(&drag);
-		if (motvLength(motCreatev(cameraForce.x, 0, cameraForce.z)) - AIR_DRAG > 0) {
-			motMultiplyv(&drag, motvLength(motCreatev(cameraForce.x, 0, cameraForce.z)) - AIR_DRAG);
-		}
-		else {
-			drag = motCreatev(0, 0, 0);
-		}
-		cameraForce = motCreatev(drag.x, cameraForce.y, drag.z);
-	}
-
-	// Makes the acceleration motVector based on input and direction
-	motVector direction = motSubstractv(motCreatev(target.x, EYE_HEIGHT, target.z), eye);
-	motNormalizev(&direction);
-	motVector acc = motCreatev(0, 0, 0);
-	if (keyStates['w']) {
-		acc = motAddv(acc, direction);
-	}
-	if (keyStates['s']) {
-		acc = motSubstractv(acc, direction);
-	}
-	if (keyStates['a']) {
-		acc = motAddv(acc, motRotatev(direction, 90, 0, 1, 0));
-	}
-	if (keyStates['d']) {
-		acc = motAddv(acc, motRotatev(direction, -90, 0, 1, 0));
-	}
-
-	// Makes the acceleration motVector the right length
-	motNormalizev(&acc);
-	motMultiplyv(&acc, ACCELERATION);
-
-	// Makes the sprint motVector
-	motVector sprint = acc;
-	motNormalizev(&sprint);
-	motMultiplyv(&sprint, 2 * ACCELERATION);
-
-	// Adds the acceleration or the sprint motVector to the camera force if he isn't jumping and limits its speed
-	if (!isJumping) {
-		if (!isSprinting && motvLength(motAddv(cameraForce, acc)) <= MAX_SPEED)
-			cameraForce = motAddv(cameraForce, acc);
-		else if (!isSprinting && motvLength(motAddv(cameraForce, acc)) > MAX_SPEED && motvLength(cameraForce) <= MAX_SPEED) {
-			cameraForce = motAddv(cameraForce, acc);
-			motNormalizev(&cameraForce);
-			motMultiplyv(&cameraForce, MAX_SPEED);
-		}
-		else if (!isSprinting && motvLength(motAddv(cameraForce, acc)) > MAX_SPEED && motvLength(cameraForce) > MAX_SPEED) {
-			GLdouble length = motvLength(cameraForce);
-			cameraForce = motAddv(cameraForce, acc);
-			motNormalizev(&cameraForce);
-			motMultiplyv(&cameraForce, length);
-		}
-		if (isSprinting && motvLength(motAddv(cameraForce, sprint)) <= MAX_SPEED + SPRINT_BOOST) 
-			cameraForce = motAddv(cameraForce, sprint);
-		else if (isSprinting && motvLength(motAddv(cameraForce, sprint)) > MAX_SPEED + SPRINT_BOOST && motvLength(cameraForce) <= MAX_SPEED + SPRINT_BOOST) {
-			cameraForce = motAddv(cameraForce, sprint);
-			motNormalizev(&cameraForce);
-			motMultiplyv(&cameraForce, MAX_SPEED + SPRINT_BOOST);
-		}
-		else if (isSprinting && motvLength(motAddv(cameraForce, sprint)) > MAX_SPEED + SPRINT_BOOST && motvLength(cameraForce) > MAX_SPEED + SPRINT_BOOST) {
-			GLdouble length = motvLength(cameraForce);
-			cameraForce = motAddv(cameraForce, sprint);
-			motNormalizev(&cameraForce);
-			motMultiplyv(&cameraForce, length);
-		}
+		speed = motCreatev(0, 0, 0);
 	}
 
 	// Gravity
-	cameraForce = motAddv(cameraForce, motCreatev(0, - GFORCE, 0));
+	speed = motAddv(speed, motMultiplyv(motCreatev(0, - MOT_GFORCE, 0), deltaT));
 
-	// Check for floor
-	if (eye.y + cameraForce.y < EYE_HEIGHT) {
-		target.y += EYE_HEIGHT - eye.y;
-		eye.y = EYE_HEIGHT;
-		cameraForce = motCreatev(cameraForce.x, 0, cameraForce.z);
-		isJumping = false;
+	// Makes the acceleration based on input and direction
+	motVector direction = motSubstractv(motCreatev(target.x, eye.y, target.z), eye);
+	motNormalizev(&direction);
+	motVector acc = motCreatev(0, 0, 0);
+	if (!isJumping) {
+		if (keyStates['w']) {
+			acc = motAddv(acc, direction);
+		}
+		if (keyStates['s']) {
+			acc = motSubstractv(acc, direction);
+		}
+		if (keyStates['a']) {
+			acc = motAddv(acc, motRotatev(direction, 90, 0, 1, 0));
+		}
+		if (keyStates['d']) {
+			acc = motAddv(acc, motRotatev(direction, -90, 0, 1, 0));
+		}
 	}
 
+	// Makes the acceleration the right length
+	motNormalizev(&acc);
+	acc = motMultiplyv(acc, MOT_ACCELERATION);
+
+	// If sprinting, resize the acceleration
+	if (isSprinting) {
+		motNormalizev(&acc);
+		acc = motMultiplyv(acc, MOT_SPRINT_ACCELERATION);
+	}
+
+	speed = motAddv(speed, motMultiplyv(acc, deltaT));
+
+	int isMoving = keyStates['w'] || keyStates['a'] || keyStates['s'] || keyStates['d'];
+
+	// This part limits the speed of the camera
+	if (!isJumping && isMoving) {
+		if (!isSprinting && motvLength(motCreatev(speed0.x, 0, speed0.z)) < MOT_MAX_SPEED && motvLength(motCreatev(speed.x, 0, speed.z)) > MOT_MAX_SPEED) {
+			motVector s = motCreatev(speed.x, 0, speed.z);
+			motNormalizev(&s);
+			s = motMultiplyv(s, MOT_MAX_SPEED);
+			speed = motCreatev(s.x, speed.y, s.z);
+		}
+		else if (!isSprinting && motvLength(motCreatev(speed0.x, 0, speed0.z)) >= MOT_MAX_SPEED) {
+			motVector speed1 = speed0;
+			speed1 = motAddv(speed1, motMultiplyv(drag, deltaT));
+			speed1 = motAddv(speed1, motMultiplyv(airDrag, deltaT));
+			GLdouble length = motvLength(speed1);
+			motNormalizev(&speed);
+			speed = motMultiplyv(speed, length);
+			if (motvLength(motCreatev(speed.x, 0, speed.z)) < MOT_MAX_SPEED) {
+				motVector s = motCreatev(speed.x, 0, speed.z);
+				motNormalizev(&s);
+				s = motMultiplyv(s, MOT_MAX_SPEED);
+				speed = motCreatev(s.x, speed.y, s.z);
+			}
+		}
+		if (isSprinting && motvLength(motCreatev(speed0.x, 0, speed0.z)) < MOT_SPRINT_MAX_SPEED && motvLength(motCreatev(speed.x, 0, speed.z)) > MOT_SPRINT_MAX_SPEED) {
+			motVector s = motCreatev(speed.x, 0, speed.z);
+			motNormalizev(&s);
+			s = motMultiplyv(s, MOT_SPRINT_MAX_SPEED);
+			speed = motCreatev(s.x, speed.y, s.z);
+		}
+		else if (isSprinting && motvLength(motCreatev(speed0.x, 0, speed0.z)) >= MOT_SPRINT_MAX_SPEED) {
+			motVector speed1 = speed0;
+			speed1 = motAddv(speed1, motMultiplyv(drag, deltaT));
+			speed1 = motAddv(speed1, motMultiplyv(airDrag, deltaT));
+			GLdouble length = motvLength(speed1);
+			motNormalizev(&speed);
+			speed = motMultiplyv(speed, length);
+			if (motvLength(motCreatev(speed.x, 0, speed.z)) < MOT_SPRINT_MAX_SPEED) {
+				motVector s = motCreatev(speed.x, 0, speed.z);
+				motNormalizev(&s);
+				s = motMultiplyv(s, MOT_SPRINT_MAX_SPEED);
+				speed = motCreatev(s.x, speed.y, s.z);
+			}
+		}
+	}
+
+	// The distance traveled
+	motVector d = motAddv(motMultiplyv(speed0, deltaT), motMultiplyv(motSubstractv(speed, speed0), deltaT / 2.0));
+
 	// Moves eye and target
-	eye = motAddv(eye, cameraForce);
-	target = motAddv(target, cameraForce);
+	eye = motAddv(eye, d);
+	target = motAddv(target, d);
+
+	// Check for floor
+	if (eye.y < MOT_EYE_HEIGHT) {
+		target.y += MOT_EYE_HEIGHT - eye.y;
+		eye.y = MOT_EYE_HEIGHT;
+		isJumping = false;
+		speed = motCreatev(speed.x, 0, speed.z);
+	}
 
 	gluLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, 0, 1, 0);
 }
@@ -270,24 +322,35 @@ void freeCameraHandler (int x, int y) {
 	// cameraYaw must not exeed 360 or be below -360 degrees
 	cameraYaw -= ((int) cameraYaw / 360) * 360;
 
-	// cameraPitch must not exeed 90 degrees or be below -90 degrees
-	if (cameraPitch > 89) 
+	// cameraPitch must not exeed 89 degrees or be below -89 degrees
+	if (cameraPitch > 89) {
 		cameraPitch = 89;
-	if (cameraPitch < -89) 
+	}
+	if (cameraPitch < -89) {
 		cameraPitch = -89;
+	}
 
 	// Some notations
-	GLdouble sinY = sin(-cameraPitch * DEG_TO_RAD);
-	GLdouble sinX = sin(cameraYaw * DEG_TO_RAD);
-	GLdouble cosX = cos(cameraYaw * DEG_TO_RAD);
+	GLdouble sinY = sin(-cameraPitch * MOT_DEG_TO_RAD);
+	GLdouble sinX = sin(cameraYaw * MOT_DEG_TO_RAD);
+	GLdouble cosX = cos(cameraYaw * MOT_DEG_TO_RAD);
 
-	// Makes the target motVector based on cameraYaw and cameraPitch (rotating the motVector using motRotatev() was a bit buggy)
+	// Makes the target vector based on cameraYaw and cameraPitch (rotating the vector using motRotatev() is a bit buggy)
 	target = motCreatev(cosX, 0, sinX);
-	motMultiplyv(&target, sqrt(1 - sinY * sinY));
+	target = motMultiplyv(target, sqrt(1 - sinY * sinY));
 	target = motAddv(target, motCreatev(0, sinY, 0));
 
 	// Adds the eye position so that the camera points to the right place
 	target = motAddv(target, eye);	
+}
+
+void motTeleportCamera(GLdouble x, GLdouble y, GLdouble z) {
+	target.x -= eye.x - x;
+	target.y -= eye.y - y;
+	target.z -= eye.z - z;
+	eye.x = x;
+	eye.y = y;
+	eye.z = z;
 }
 
 // Handles normal key presses (arrow, function and other keys not included)
@@ -313,10 +376,14 @@ void normalKeysHandler(unsigned char key, int x, int y)
 		case 'P':
 		case 'p':
 			isPaused = !isPaused;
-			if (isPaused)
+			if (isPaused) {
+				// Normal cursor
 				glutSetCursor(GLUT_CURSOR_LEFT_ARROW);
-			else
+			}
+			else {
+				// Hidden cursor
 				glutSetCursor(GLUT_CURSOR_NONE);
+			}
 			break;
 		// Space Key
 		case 32:
@@ -411,13 +478,13 @@ void motionInit(void) {
 	glutMotionFunc(freeCameraHandler);
 
 	// Represents the camera position
-	eye = motCreatev(5, EYE_HEIGHT, 5);
+	eye = motCreatev(0, MOT_EYE_HEIGHT, 0);
 
 	// Represents the point where the camera looks
-	target = motCreatev(0, EYE_HEIGHT, 0);
+	target = motCreatev(0, MOT_EYE_HEIGHT, 0);
 
-	// A motVector that moves the camera
-	cameraForce = motCreatev(0, 0, 0);
+	// The camera speed
+	speed = motCreatev(0, 0, 0);
 
 	// Hides the mouse cursor
 	glutSetCursor(GLUT_CURSOR_NONE);
@@ -431,19 +498,15 @@ motVector motGetTargetPos(void) {
 	return target;
 }
 
-motVector motGetCamForce(void) {
-	return cameraForce;
-}
-
 int motGetKeyStatus(int key) {
 	return keyStates[key];
 }
 
-int motGetJump(void) {
+int motGetIsJumping(void) {
 	return isJumping;
 }
 
-int motGetSprint(void) {
+int motGetIsSprinting(void) {
 	return isSprinting;
 }
 

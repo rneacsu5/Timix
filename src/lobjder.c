@@ -1,3 +1,8 @@
+/*
+	lobjder library 
+	Copyright (c) 2014 Neacsu Razvan
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
