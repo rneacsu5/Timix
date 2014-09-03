@@ -299,6 +299,19 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model) {
 			}
 			free(name);
 		}
+		// Custom hitbox flag
+		else if (strncmp(line, "hitbox", 6) == 0) {
+			lbj_vector3f box[4];
+			if (sscanf(line, "%*s %f %f %f %f %f %f %f %f %f %f %f %f", &box[0].x, &box[0].y, &box[0].z, &box[1].x, &box[1].y, &box[1].z, &box[2].x, &box[2].y, &box[2].z, &box[3].x, &box[3].y, &box[3].z) == 12) {
+				int i;
+				for (i = 0; i < 4; i++) {
+					if (flipX) box[i].x = -box[i].x;
+					if (flipY) box[i].y = -box[i].y;
+					if (flipZ) box[i].z = -box[i].z;
+					model->hitboxInitial[i] = box[i];
+				}
+			}
+		}
 		else {
 			// Found something else. Maybe a comment?
 		}
@@ -774,4 +787,8 @@ void lbj_DrawModelVBO(lbj_Model model) {
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
 	glDisable(GL_TEXTURE_2D);
+
+	// Hitbox
+	GLfloat mat[16];
+	glGetFloatv(GL_MODELVIEW_MATRIX, mat);
 }

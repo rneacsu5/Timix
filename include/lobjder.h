@@ -114,6 +114,9 @@ typedef struct {
 	GLuint vertexBuffID;
 	// VBO index Buffer ID
 	GLuint indexBuffID;
+	// Hitbox
+	lbj_vector3f hitboxInitial[4];
+	lbj_vector3f hitbox[4];
 } lbj_Model;
 
 // A vertex structure used for VBO
