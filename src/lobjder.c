@@ -165,7 +165,6 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model) {
 	char * line = (char *) malloc(128 * sizeof(char));
 	int matIndex = 0;
 	lbj_vector3f vect;
-	int x = 0;
 	while (fgets(line, 128, fp)) {
 		// The v flag is a vertice
 		if (strncmp(line, "v ", 2) == 0) {
