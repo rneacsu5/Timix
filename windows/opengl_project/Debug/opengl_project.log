@@ -1,4 +1,7 @@
-﻿  main.c
+﻿  utility.c
+  motion.c
+  main.c
   lobjder.c
+  collision.c
   Generating Code...
   opengl_project.vcxproj -> E:\Nexus\Programs\Visual Studio Ultimate 2013\Projects\opengl_project\windows\bin\Debug\opengl_project.exe
