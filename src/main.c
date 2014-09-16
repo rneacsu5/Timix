@@ -20,7 +20,6 @@
 #endif // _WIN32
 
 
-
 // C does not support boolean
 #define true 1
 #define false 0
