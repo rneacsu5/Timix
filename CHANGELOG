@@ -6,6 +6,10 @@
 	TODO: motion: Crouch and prone
 	TODO: motion: Change "mot" prefix to "mot_" for functions
 
+v0.5.0-alpha
+
+	** Migrated to Windows Visual Studio
+
 v0.4.3-alpha
 
 	** motion: Many changes and improvements (rewritten most of the code)

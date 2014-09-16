@@ -9,4 +9,4 @@ typedef struct
 	GLfloat x, y, z;
 }col_Vector;
 
-int detectCollision(col_Vector[4] v1, col_Vector[4] v1);
+int detectCollision(col_Vector v1[4], col_Vector v2[4]);

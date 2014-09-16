@@ -4,11 +4,13 @@
 	Copyright (c) 2014 Neacsu Razvan
 */
 
-#include <GL/glut.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include <time.h> 
+#include <time.h>
+
+#include <GL/glut.h>
+
 #include "../include/motion.h"
 
 motVector motCreatev(GLdouble x, GLdouble y, GLdouble z) 

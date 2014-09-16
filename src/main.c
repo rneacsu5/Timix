@@ -1,13 +1,25 @@
-#include <GL/glew.h>
-#include <GL/glut.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+
+#include <GL/glew.h>
+#include <GL/glut.h>
+
 #include "../include/utility.h"
 #include "../include/lobjder.h"
 #include "../include/motion.h"
+#ifdef _WIN32
+
+#include <bass.h>
+
+#else
+
 #include "../include/bass.h"
+
+#endif // _WIN32
+
+
 
 // C does not support boolean
 #define true 1
@@ -189,7 +201,7 @@ void display(void)
 
 	// Draws ground
 	drawGround();
-/*
+
 	// Draws Plane on ground
 	glPushMatrix();
 		glTranslatef(17, 1, 3);
@@ -205,15 +217,6 @@ void display(void)
 		glScalef(0.4, 0.4, 0.4);
 		lbj_DrawModelVBO(planeModel);
 	glPopMatrix();
-
-	// // Draws car
-	// glPushMatrix();
-	// 	glTranslatef(3, 0, 7);
-	// 	glRotatef(a1, 0 , 1, 0);
-	// 	glRotatef(-90, 1, 0, 0);
-	// 	glScalef(0.03, 0.03, 0.03);
-	// 	lbj_DrawModelVBO(carModel);
-	// glPopMatrix();
 
 	// Draws car
 	glPushMatrix();
@@ -239,7 +242,7 @@ void display(void)
 		glRotatef(90, 1, 0, 0);
 		lbj_DrawModelVBO(nokiaModel);
 	glPopMatrix();
-*/
+
 	// Draws Cube
 	glPushMatrix();
 		glTranslatef(7, 0.5, 3);
@@ -247,14 +250,14 @@ void display(void)
 		glScalef(0.5, 0.5, 0.5);
 		lbj_DrawModelVBO(cubeModel);
 	glPopMatrix();
-/*
+
 	// Draws IPhone
 	glPushMatrix();
 		glTranslatef(5, 1.5, 3);
 		glScalef(0.1, 0.1, 0.1);
 		lbj_DrawModelVBO(iphoneModel);
 	glPopMatrix();
-*/
+
 	// Swap buffers in GPU
 	glutSwapBuffers();
 }
@@ -301,7 +304,7 @@ void initialize(void)
 	glShadeModel(GL_SMOOTH);
 
 	// Enable fog
-	//glEnable(GL_FOG);
+	// glEnable(GL_FOG);
 	// Set fog formula
 	glFogi(GL_FOG_MODE, GL_EXP2);
 	// Set fog density
@@ -320,6 +323,7 @@ void initialize(void)
 
 	// Loads terrain materials
 	lbj_SetPaths("./data/models/", "./data/materials/", "./data/textures/");
+
 	lbj_SetFlipping(0, 1, 0, 0, 0);
 
 	lbj_LoadMTLToMaterials("terrain.mtl", &terrainMats, 1);
@@ -327,28 +331,27 @@ void initialize(void)
 	// Load models
 	lbj_SetPaths("./data/models/", "./data/models/materials/", "./data/models/textures/");
 
-	// // Plane
-	// lbj_LoadOBJToModel("SimplePlane.obj", &planeModel);
-	// lbj_CreateVBO(&planeModel, 1);
+	 // Plane
+	lbj_LoadOBJToModel("SimplePlane.obj", &planeModel);
+	lbj_CreateVBO(&planeModel, 1);
 
 	// Cube
 	lbj_LoadOBJToModel("cube2.obj", &cubeModel);
 	lbj_CreateVBO(&cubeModel, 1);
 
-	// // Nexus
-	// lbj_LoadOBJToModel("Nexus.obj", &nexusModel);
-	// lbj_CreateVBO(&nexusModel, 1);
+	// Nexus
+	lbj_LoadOBJToModel("Nexus.obj", &nexusModel);
+	lbj_CreateVBO(&nexusModel, 1);
 
-	// // Nokia
+	// Nokia
 	// lbj_LoadOBJToModel("sonyericsson-w9600-midres.obj", &nokiaModel);
 	// lbj_CreateVBO(&nokiaModel, 0);
 
-	// // Car
-	// // lbj_LoadOBJToModel("alfa147.obj", &carModel);
-	// lbj_SetFlipping(0, 1, 1, 0, 0);
+	// Car
+	lbj_SetFlipping(0, 1, 1, 0, 0);
 	// lbj_LoadOBJToModel("Avent.obj", &carModel);
-	// lbj_SetFlipping(0, 1, 0, 0, 0);
-	// lbj_CreateVBO(&carModel, 0);
+	lbj_SetFlipping(0, 1, 0, 0, 0);
+	lbj_CreateVBO(&carModel, 0);
 
 	// IPhone 4S
 	// lbj_LoadOBJToModel("iphone_4s_home_screen.obj", &iphoneModel);
@@ -404,7 +407,7 @@ void tick(int value)
 }
 
 // Called when the song ends
-void replayMusic(HSYNC handle, DWORD channel, DWORD data, void *user) {
+void CALLBACK replayMusic(HSYNC handle, DWORD channel, DWORD data, void *user) {
 	// Replays the song
 	BASS_ChannelPlay(channel, TRUE);
 }
@@ -417,7 +420,7 @@ void bass(void) {
 	// Adds an "Event Listener" (it is called sync) to detect when the song ends
 	BASS_ChannelSetSync(stream, BASS_SYNC_MIXTIME | BASS_SYNC_END, 0, replayMusic, 0);
 	// Plays the stream
-	// BASS_ChannelPlay(stream, TRUE);
+	 BASS_ChannelPlay(stream, TRUE);
 }
 
 

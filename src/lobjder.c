@@ -6,9 +6,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <GL/glew.h>
 #define GL_GLEXT_PROTOTYPES
 #include <GL/glut.h>
-#include <GL/glext.h>
 #include "../include/lobjder.h"
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ASSERT(x)
@@ -165,6 +165,7 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model) {
 	char * line = (char *) malloc(128 * sizeof(char));
 	int matIndex = 0;
 	lbj_vector3f vect;
+	int x = 0;
 	while (fgets(line, 128, fp)) {
 		// The v flag is a vertice
 		if (strncmp(line, "v ", 2) == 0) {
@@ -288,7 +289,7 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model) {
 		// The usemtl flag is a material
 		else if (strncmp(line, "usemtl", 6) == 0) {
 			char * name = (char *) malloc((strlen(line) - 6) * sizeof(char));
-			int i;
+			unsigned int i;
 			if (sscanf(line, "%*s %s", name) == 1) {
 				for (i = 0; i < model->mats.used; i++) {
 					if (strcmp(name, model->mats.array[i].matName) == 0) {
@@ -437,7 +438,7 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init) {
 			mat.fileName = (char *) malloc((strlen(p + 1) + 1) * sizeof(char));
 			strcpy(mat.fileName, p + 1);
 
-			int k;
+			unsigned int k;
 			for (k = 0; k <= strlen(mat.fileName); k++) {
 				if (mat.fileName[k] == '\r' || mat.fileName[k] == '\n') {
 					// New line caracters found so we remove them
@@ -739,9 +740,9 @@ void lbj_DrawModelVBO(lbj_Model model) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model.indexBuffID);
 
 	// Specifies the vertex, normal, texture coordonates pointers
-	glVertexPointer(3, GL_FLOAT, sizeof(lbj_VBOVertex), NULL + 0);
-	glNormalPointer(GL_FLOAT, sizeof(lbj_VBOVertex), NULL + 3 * sizeof(GLfloat));
-	glTexCoordPointer(2, GL_FLOAT, sizeof(lbj_VBOVertex), NULL + 6 * sizeof(GLfloat));
+	glVertexPointer(3, GL_FLOAT, sizeof(lbj_VBOVertex), (char*)NULL + 0);
+	glNormalPointer(GL_FLOAT, sizeof(lbj_VBOVertex), (char*)NULL + 3 * sizeof(GLfloat));
+	glTexCoordPointer(2, GL_FLOAT, sizeof(lbj_VBOVertex), (char*)NULL + 6 * sizeof(GLfloat));
 
 	// Loads the default material
 	lbj_LoadDefaultMaterial();
@@ -759,7 +760,7 @@ void lbj_DrawModelVBO(lbj_Model model) {
 				// If the material changes draw the vertices with the current material
 				// Don't draw translucent materials
 				if (model.mats.array[model.matsi.array[i - 1]].Tr == 1)
-					glDrawElements(GL_QUADS, (i - j) * 4, GL_UNSIGNED_INT, NULL + j * 4 * sizeof(GLint));
+					glDrawElements(GL_QUADS, (i - j) * 4, GL_UNSIGNED_INT, (char*)NULL + j * 4 * sizeof(GLint));
 				j = i;
 				// Load the next material
 				lbj_LoadMaterial(model.mats.array[model.matsi.array[i]]);
@@ -768,7 +769,7 @@ void lbj_DrawModelVBO(lbj_Model model) {
 				// If this is the last face, draw the rest of the buffer
 				// Don't draw translucent materials
 				if (model.mats.array[model.matsi.array[i]].Tr == 1)
-					glDrawElements(GL_QUADS, (i - j + 1) * 4, GL_UNSIGNED_INT, NULL + j * 4 * sizeof(GLint));
+					glDrawElements(GL_QUADS, (i - j + 1) * 4, GL_UNSIGNED_INT, (char*)NULL + j * 4 * sizeof(GLint));
 			}
 		}
 	}
