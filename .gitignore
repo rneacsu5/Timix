@@ -156,12 +156,16 @@ $RECYCLE.BIN/
 .DS_Store
 
 
-
 # Custom for this project
 
-# The data folder must be included
-!data/*.*
-!data/*/*.*
-!data/*/*/*.*
-!data/*/*/*/*.*
-!data/*/*/*/*/*.*
+# The part above was created by Visual Studio. It's OK but for now we only need 3 files
+windows/*
+!windows/*.sln
+!windows/*.vcxproj
+!windows/*.vcxproj.filters
+
+# The "data" folder must be included
+!data/*
+!data/*/*
+!data/*/*/*
+!data/*/*/*/*

@@ -19,27 +19,27 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\CHANGELOG" />
-    <None Include="..\..\LICENCE" />
-    <None Include="..\..\Makefile" />
-    <None Include="..\..\README.md" />
-    <None Include="..\..\src\fshader.fsh" />
-    <None Include="..\..\src\vshader.vsh" />
+    <None Include="..\.gitignore" />
+    <None Include="..\CHANGELOG" />
+    <None Include="..\LICENCE" />
+    <None Include="..\README.md" />
+    <None Include="..\src\fshader.fsh" />
+    <None Include="..\src\vshader.vsh" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\bass.h" />
-    <ClInclude Include="..\..\include\collision.h" />
-    <ClInclude Include="..\..\include\lobjder.h" />
-    <ClInclude Include="..\..\include\motion.h" />
-    <ClInclude Include="..\..\include\std_image.h" />
-    <ClInclude Include="..\..\include\utility.h" />
+    <ClInclude Include="..\include\bass.h" />
+    <ClInclude Include="..\include\collision.h" />
+    <ClInclude Include="..\include\lobjder.h" />
+    <ClInclude Include="..\include\motion.h" />
+    <ClInclude Include="..\include\std_image.h" />
+    <ClInclude Include="..\include\utility.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\collision.c" />
-    <ClCompile Include="..\..\src\lobjder.c" />
-    <ClCompile Include="..\..\src\main.c" />
-    <ClCompile Include="..\..\src\motion.c" />
-    <ClCompile Include="..\..\src\utility.c" />
+    <ClCompile Include="..\src\collision.c" />
+    <ClCompile Include="..\src\lobjder.c" />
+    <ClCompile Include="..\src\main.c" />
+    <ClCompile Include="..\src\motion.c" />
+    <ClCompile Include="..\src\utility.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{33B39174-4B2C-4024-B9E2-94D7D523F442}</ProjectGuid>

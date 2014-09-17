@@ -15,51 +15,51 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\src\fshader.fsh">
+    <None Include="..\src\fshader.fsh">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="..\..\src\vshader.vsh">
+    <None Include="..\src\vshader.vsh">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="..\..\CHANGELOG" />
-    <None Include="..\..\LICENCE" />
-    <None Include="..\..\Makefile" />
-    <None Include="..\..\README.md" />
+    <None Include="..\CHANGELOG" />
+    <None Include="..\LICENCE" />
+    <None Include="..\README.md" />
+    <None Include="..\.gitignore" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\bass.h">
+    <ClInclude Include="..\include\bass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\collision.h">
+    <ClInclude Include="..\include\collision.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\lobjder.h">
+    <ClInclude Include="..\include\lobjder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\motion.h">
+    <ClInclude Include="..\include\motion.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\std_image.h">
+    <ClInclude Include="..\include\std_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\utility.h">
+    <ClInclude Include="..\include\utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\collision.c">
+    <ClCompile Include="..\src\collision.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\lobjder.c">
+    <ClCompile Include="..\src\lobjder.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\main.c">
+    <ClCompile Include="..\src\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\motion.c">
+    <ClCompile Include="..\src\motion.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\utility.c">
+    <ClCompile Include="..\src\utility.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
