@@ -4,7 +4,14 @@
 	TODO: Pharse -o and -s options for materials
 	TODO: lobjder: Loading screen for loading models
 	TODO: motion: Crouch and prone
-	TODO: motion: Change "mot" prefix to "mot_" for functions
+	TODO: motion: Sprint for Windows
+
+v0.5.1-alpha
+
+	** motion: Minor changes (changed prefix)
+	** lobjder: Minor changes
+	++ Toggle music with M
+	-- Removed some models
 
 v0.5.0-alpha
 

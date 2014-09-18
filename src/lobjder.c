@@ -299,19 +299,6 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model) {
 			}
 			free(name);
 		}
-		// Custom hitbox flag
-		else if (strncmp(line, "hitbox", 6) == 0) {
-			lbj_vector3f box[4];
-			if (sscanf(line, "%*s %f %f %f %f %f %f %f %f %f %f %f %f", &box[0].x, &box[0].y, &box[0].z, &box[1].x, &box[1].y, &box[1].z, &box[2].x, &box[2].y, &box[2].z, &box[3].x, &box[3].y, &box[3].z) == 12) {
-				int i;
-				for (i = 0; i < 4; i++) {
-					if (flipX) box[i].x = -box[i].x;
-					if (flipY) box[i].y = -box[i].y;
-					if (flipZ) box[i].z = -box[i].z;
-					model->hitboxInitial[i] = box[i];
-				}
-			}
-		}
 		else {
 			// Found something else. Maybe a comment?
 		}
@@ -610,7 +597,7 @@ void lbj_SetFlipping(int _flipU, int _flipV, int _flipX, int _flipY, int _flipZ)
 
 // Creates a VBO for the given model
 void lbj_CreateVBO(lbj_Model * model, int economic) {
-	// Number of used elements in the vertex aryay and the allocated size for the array
+	// Number of used elements in the vertex array and the allocated size for the array
 	unsigned int usedVertices = 0, sizeAllocated = 4;
 
 	// The data in the ARRAY BUFFER
@@ -787,8 +774,4 @@ void lbj_DrawModelVBO(lbj_Model model) {
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
 	glDisable(GL_TEXTURE_2D);
-
-	// Hitbox
-	GLfloat mat[16];
-	glGetFloatv(GL_MODELVIEW_MATRIX, mat);
 }

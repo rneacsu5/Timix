@@ -28,35 +28,35 @@
 // The jump up speed
 #define MOT_JUMP_SPEED 3.13
 // Gravitational acceleration
-#define MOT_GFORCE 9.8
+#define MOT_GFORCE 9.81
 
 #define MOT_PI 3.14159265359
 #define MOT_DEG_TO_RAD MOT_PI / 180
 
 // C does not support boolean
-#define true 1
-#define false 0
+#define mot_true 1
+#define mot_false 0
 
 // Vector structure
 typedef struct {
 	GLdouble x, y, z;
-} motVector;
+} mot_Vector;
 
 // Initializes the library
-void motionInit(void);
-// Main function that needs to be called in "display" function
-void motMoveCamera(void);
+void mot_Init(GLdouble step);
+// Main function that needs to be called in "display" function to step the player
+void mot_MoveCamera(void);
 // Returns the camera position
-motVector motGetEyePos(void);
+mot_Vector mot_GetEyePos(void);
 // Returns the point where the camera looks
-motVector motGetTargetPos(void);
+mot_Vector mot_GetTargetPos(void);
 // Returns the key state for the given key
-int motGetKeyStatus(int key);
+int mot_GetKeyStatus(int key);
 // Returns true if he is jumping or returns false if not
-int motGetIsJumping(void);
+int mot_GetIsJumping(void);
 // Returns true if he is sprinting or returns false if not
-int motGetIsSprinting(void);
+int mot_GetIsSprinting(void);
 // Returns true if the game is paused or returns false if not
-int motGetIsPaused(void);
+int mot_GetIsPaused(void);
 // Teleports the camera
-void motTeleportCamera(GLdouble x, GLdouble y, GLdouble z);
+void mot_TeleportCamera(GLdouble x, GLdouble y, GLdouble z);

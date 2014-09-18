@@ -19,12 +19,11 @@
 
 #endif // _WIN32
 
-
 // C does not support boolean
 #define true 1
 #define false 0
 
-// Ligth parameters
+// Light parameters
 GLfloat lightPos[] = {10, 4.5, 10, 1};
 GLfloat lightAmbient[] = {0.5, 0.5, 0.5, 1};
 GLfloat lightDiffuse[] = {0.8, 0.8, 0.8, 1};
@@ -34,6 +33,7 @@ GLfloat fogColor[] = {0.8, 0.8, 0.8, 1.0};
 
 GLdouble a1 = 0, a2 = 0;
 
+// FPS related variables
 GLfloat fps = 0;
 int fpsCurrentTime = 0, fpsPreviousTime = 0, fpsFrameCount = 0;
 
@@ -41,8 +41,12 @@ int fpsCurrentTime = 0, fpsPreviousTime = 0, fpsFrameCount = 0;
 lbj_Arraym terrainMats;
 
 // Models
-lbj_Model planeModel, nokiaModel, cubeModel, carModel, nexusModel, iphoneModel;
+lbj_Model planeModel, nokiaModel, carModel, nexusModel;
 
+// Music stream
+int musicStream;
+int musicIsPlaying = true;
+int musicButtonWasPressed = false;
 
 void drawWallsAndFloor(void)
 {
@@ -147,7 +151,7 @@ void drawWallsAndFloor(void)
 
 // This will draw a 100 by 100 plane, the camera being always in the middle of it. Gives the impression of an infinite world
 void drawGround() {
-	int centerX = (int) motGetEyePos().x, centerY = (int) motGetEyePos().z;
+	int centerX = (int) mot_GetEyePos().x, centerY = (int) mot_GetEyePos().z;
 	int i, j;
 	glEnable(GL_TEXTURE_2D);
 	lbj_LoadMaterial(terrainMats.array[2]);
@@ -179,7 +183,7 @@ void display(void)
 	// Load the identity matrix, clear all the previous transformations
 	glLoadIdentity();
 	// Set up the camera
-	motMoveCamera();
+	mot_MoveCamera();
 	// Set light position
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
@@ -242,28 +246,13 @@ void display(void)
 		lbj_DrawModelVBO(nokiaModel);
 	glPopMatrix();
 
-	// Draws Cube
-	glPushMatrix();
-		glTranslatef(7, 0.5, 3);
-		glRotatef(a1, 0, 1, 0);
-		glScalef(0.5, 0.5, 0.5);
-		lbj_DrawModelVBO(cubeModel);
-	glPopMatrix();
-
-	// Draws IPhone
-	glPushMatrix();
-		glTranslatef(5, 1.5, 3);
-		glScalef(0.1, 0.1, 0.1);
-		lbj_DrawModelVBO(iphoneModel);
-	glPopMatrix();
-
 	// Swap buffers in GPU
 	glutSwapBuffers();
 }
 
 void reshape(int width, int height)
 {
-	// Set the viewport to the full window size
+	// Set the view-port to the full window size
 	glViewport(0, 0, (GLsizei) width, (GLsizei) height);
 	// Load the projection matrix
 	glMatrixMode(GL_PROJECTION);
@@ -271,7 +260,7 @@ void reshape(int width, int height)
 	glLoadIdentity();
 	// Set the perspective according to the window size
 	gluPerspective(70, (GLdouble) width / (GLdouble) height, 0.1, 60000);
-	// Load back the modelview matrix
+	// Load back the model-view matrix
 	glMatrixMode(GL_MODELVIEW);
 }
 
@@ -297,10 +286,10 @@ void initialize(void)
 	glEnable(GL_LIGHTING);
 	// Enables the light
 	glEnable(GL_LIGHT0);
-	// Loads the default material
-	lbj_LoadDefaultMaterial();
 	// Select a smooth shading
 	glShadeModel(GL_SMOOTH);
+	// Loads the default material
+	lbj_LoadDefaultMaterial();
 
 	// Enable fog
 	// glEnable(GL_FOG);
@@ -315,28 +304,22 @@ void initialize(void)
 	// Set fog color
 	glFogfv(GL_FOG_COLOR, fogColor);
 	// Set fog quality
-	glHint (GL_FOG_HINT, GL_NICEST);
+	glHint(GL_FOG_HINT, GL_NICEST);
 
 	// Teleport camera
-	motTeleportCamera(5, MOT_EYE_HEIGHT, 5);
+	mot_TeleportCamera(5, MOT_EYE_HEIGHT, 5);
 
 	// Loads terrain materials
 	lbj_SetPaths("./data/models/", "./data/materials/", "./data/textures/");
-
 	lbj_SetFlipping(0, 1, 0, 0, 0);
-
 	lbj_LoadMTLToMaterials("terrain.mtl", &terrainMats, 1);
 
 	// Load models
 	lbj_SetPaths("./data/models/", "./data/models/materials/", "./data/models/textures/");
 
-	 // Plane
+	// Plane
 	lbj_LoadOBJToModel("SimplePlane.obj", &planeModel);
 	lbj_CreateVBO(&planeModel, 1);
-
-	// Cube
-	lbj_LoadOBJToModel("cube2.obj", &cubeModel);
-	lbj_CreateVBO(&cubeModel, 1);
 
 	// Nexus
 	lbj_LoadOBJToModel("Nexus.obj", &nexusModel);
@@ -349,12 +332,8 @@ void initialize(void)
 	// Car
 	lbj_SetFlipping(0, 1, 1, 0, 0);
 	// lbj_LoadOBJToModel("Avent.obj", &carModel);
+	// lbj_CreateVBO(&carModel, 0);
 	lbj_SetFlipping(0, 1, 0, 0, 0);
-	lbj_CreateVBO(&carModel, 0);
-
-	// IPhone 4S
-	// lbj_LoadOBJToModel("iphone_4s_home_screen.obj", &iphoneModel);
-	// lbj_CreateVBO(&iphoneModel, 1);
 
 	// Loads the shaders
 	loadShaders("./src/vshader.vsh", GL_VERTEX_SHADER, "./src/fshader.fsh", GL_FRAGMENT_SHADER);
@@ -370,11 +349,21 @@ void tick(int value)
 	if (a2 >= 360)
 		a2 -= 360;
 	
+	// Pauses or unpauses music
+	int isPressed = mot_GetKeyStatus('m') || mot_GetKeyStatus('M');
+	if (isPressed && musicButtonWasPressed != isPressed) {
+		musicIsPlaying = !musicIsPlaying;
+		if (musicIsPlaying) {
+			BASS_ChannelPlay(musicStream, FALSE);
+		}
+		else {
+			BASS_ChannelPause(musicStream);
+		}
+	}
+	musicButtonWasPressed = isPressed;
+
 	// Calls the display() function
 	glutPostRedisplay();
-
-	// Waits 10 ms
-	glutTimerFunc(10, tick, value + 1);
 
 	// FPS calculus
 
@@ -395,7 +384,7 @@ void tick(int value)
 		fpsFrameCount = 0;
 		// Change the window's title
 		char title[50];
-		if (motGetIsPaused()){
+		if (mot_GetIsPaused()){
 			sprintf(title, "Epic Game Paused | FPS: %f", fps);
 		}
 		else {
@@ -403,6 +392,9 @@ void tick(int value)
 		}
 		glutSetWindowTitle(title);
 	}
+
+	// Waits 10 ms
+	glutTimerFunc(10, tick, value + 1);
 }
 
 // Called when the song ends
@@ -411,17 +403,17 @@ void CALLBACK replayMusic(HSYNC handle, DWORD channel, DWORD data, void *user) {
 	BASS_ChannelPlay(channel, TRUE);
 }
 
+// A simple function to load the BASS library and play a song
 void bass(void) {
 	// Initializes the library
 	BASS_Init(-1, 44100, 0, 0, NULL);
 	// Creates a stream from a file (the stream is some sort of ID)
-	int stream = BASS_StreamCreateFile(FALSE, "data/sound/Tritonal  Paris Blohm ft Sterling Fox - Colors Culture Code Remix.mp3", 0, 0, 0);
+	musicStream = BASS_StreamCreateFile(FALSE, "data/sound/Tritonal  Paris Blohm ft Sterling Fox - Colors Culture Code Remix.mp3", 0, 0, 0);
 	// Adds an "Event Listener" (it is called sync) to detect when the song ends
-	BASS_ChannelSetSync(stream, BASS_SYNC_MIXTIME | BASS_SYNC_END, 0, replayMusic, 0);
+	BASS_ChannelSetSync(musicStream, BASS_SYNC_MIXTIME | BASS_SYNC_END, 0, replayMusic, 0);
 	// Plays the stream
-	 BASS_ChannelPlay(stream, TRUE);
+	BASS_ChannelPlay(musicStream, TRUE);
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -432,7 +424,9 @@ int main(int argc, char *argv[])
 	glutCreateWindow("Epic Game");
 	glewExperimental = GL_TRUE;
 	glewInit();
-	motionInit();
+
+	// The parameter should be 1 / AverageFPS
+	mot_Init(1 / 90.0);
 
 	// Event listeners
 	glutDisplayFunc(display);

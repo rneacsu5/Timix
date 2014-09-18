@@ -7,24 +7,24 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include <time.h>
 
 #include <GL/glut.h>
 
 #include "../include/motion.h"
 
-motVector motCreatev(GLdouble x, GLdouble y, GLdouble z) 
+// Some basic vector operations
+mot_Vector motCreatev(GLdouble x, GLdouble y, GLdouble z) 
 {
-	motVector v;
+	mot_Vector v;
 	v.x = x;
 	v.y = y;
 	v.z = z;
 	return v;
 }
 
-void motNormalizev(motVector *v) {
+void motNormalizev(mot_Vector *v) {
 
-	GLdouble modul = sqrt((*v).x * (*v).x + (*v).y * (*v).y + (*v).z * (*v).z);
+	GLdouble modul = sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
 	if (modul != 0) {
 		(*v).x /= modul;
 		(*v).y /= modul;
@@ -32,37 +32,37 @@ void motNormalizev(motVector *v) {
 	}
 }
 
-motVector motMultiplyv(motVector v, GLdouble factor) 
+mot_Vector motMultiplyv(mot_Vector v, GLdouble factor) 
 {
-	motVector out = v;
+	mot_Vector out = v;
 	out.x *= factor;
 	out.y *= factor;
 	out.z *= factor;
 	return out;
 }
 
-motVector motAddv(motVector v1, motVector v2) 
+mot_Vector motAddv(mot_Vector v1, mot_Vector v2) 
 {
-	motVector sum;
+	mot_Vector sum;
 	sum.x = v1.x + v2.x;
 	sum.y = v1.y + v2.y;
 	sum.z = v1.z + v2.z;
 	return sum;
 }
 
-motVector motSubstractv(motVector v1, motVector v2) 
+mot_Vector motSubstractv(mot_Vector v1, mot_Vector v2) 
 {
-	motVector diff;
+	mot_Vector diff;
 	diff.x = v1.x - v2.x;
 	diff.y = v1.y - v2.y;
 	diff.z = v1.z - v2.z;
 	return diff;
 }
 
-motVector motRotatev(motVector v, GLdouble angle, GLdouble x, GLdouble y, GLdouble z) 
+mot_Vector motRotatev(mot_Vector v, GLdouble angle, GLdouble x, GLdouble y, GLdouble z) 
 {
 	// Normalizes the rotation motVector
-	motVector n = motCreatev(x, y, z);
+	mot_Vector n = motCreatev(x, y, z);
 	motNormalizev(&n);
 	x = n.x;
 	y = n.y;
@@ -73,7 +73,7 @@ motVector motRotatev(motVector v, GLdouble angle, GLdouble x, GLdouble y, GLdoub
 	GLdouble s = sin(r);
 
 	// Rotates the motVector
-	motVector out;
+	mot_Vector out;
 	out.x = (x * x * (1 - c) + c) * v.x + (x * y * (1 - c) - z * s) * v.y + (x * z * (1 - c) + y * s) * v.z;
 	out.y = (y * x * (1 - c) + z * s) * v.x + (y * y * (1 - c) + c) * v.y + (y * z * (1 - c) - x * s) * v.z;
 	out.z = (x * z * (1 - c) - y * s) * v.x + (y * z * (1 - c) + x * s) * v.y + (z * z * (1 - c) + c) * v.z;
@@ -81,37 +81,36 @@ motVector motRotatev(motVector v, GLdouble angle, GLdouble x, GLdouble y, GLdoub
 	return out;
 }
 
-
-GLdouble motvLength(motVector v) {
+GLdouble motvLength(mot_Vector v) {
 	return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
 // Camerea pitch and yaw
 GLdouble cameraYaw = 0, cameraPitch = 0;
 // Vectors
-motVector eye, target, speed;
-// Key state: true if the key is pressed and false if not
+mot_Vector eye, target, speed;
+// Key states for moving and pausing the game: true if the key is pressed and false if not
 int keyStates[256];
-int isJumping = false;
-int isSprinting = false;
-int isPaused = false;
+// All the key states, used with mot_GetKeyState()
+int globalKeyStates[256];
+// Other states
+int isJumping = mot_false;
+int isSprinting = mot_false;
+int isPaused = mot_false;
 
 // The time interval between callbacks in seconds
 GLfloat deltaT;
 
-// Not used
-clock_t currentTime;
-int firstTime = 1;
-
+// Checks for the space bar being pressed amd jumps if needed
 void jumpFunc(void) {
 	// The player jumps only if the spacebar is pressed and if he is not jumping
 	if (!isJumping && keyStates[32]) {
-		isJumping = true;
+		isJumping = mot_true;
 
 		// Makes a push motVector based on input and direction (this allows sprint jumping)
-		motVector direction = motSubstractv(motCreatev(target.x, eye.y, target.z), eye);
+		mot_Vector direction = motSubstractv(motCreatev(target.x, eye.y, target.z), eye);
 		motNormalizev(&direction);
-		motVector push = motCreatev(0, 0, 0);
+		mot_Vector push = motCreatev(0, 0, 0);
 		if (keyStates['w']) {
 			push = motAddv(push, direction);
 		}
@@ -150,7 +149,8 @@ void jumpFunc(void) {
 	}
 }
 
-void motMoveCamera(void) {
+// Moves the camera one step
+void mot_MoveCamera(void) {
 	// If paused
 	if (isPaused) {
 		// Set up camera
@@ -162,29 +162,16 @@ void motMoveCamera(void) {
 	GLint v[4];
 	glGetIntegerv(GL_VIEWPORT, v);
 	glutWarpPointer(v[2] / 2, v[3] / 2);
- 
-	// clock_t oldTime = currentTime;
-	// currentTime = clock();
-	// if (firstTime) {
-	// 	firstTime = 0;
-	// 	deltaT = 0;
-	// }
-	// else
-	// 	deltaT = ((GLfloat) currentTime - oldTime) / CLOCKS_PER_SEC;
-	// printf("%f\n", deltaT);
 
 	// The following two kinematic equations are used: d = v0 * deltaT + (a * deltaT ^ 2) / 2 and v = v0 + a * deltaT
 	// where v0 is the initial speed, v is the final speed, a is the acceleration, deltaT is the time interval and d is the distance traveled
 	// Note that the previous are applied for 3D vectors (v0, v, d and a are 3D vectors)
 
-	// Time interval is hardcoded for my computer
-	deltaT = 1 / 60.0;
-
 	// Initial speed
-	motVector speed0 = speed;
+	mot_Vector speed0 = speed;
 
 	// Brake acceleration  (opposite to the speed and parallel to the ground)
-	motVector drag = motCreatev(speed0.x, 0, speed0.z);
+	mot_Vector drag = motCreatev(speed0.x, 0, speed0.z);
 	motNormalizev(&drag);
 	drag = motMultiplyv(drag, -MOT_BRAKE_ACCELERATION);
 	if (!isJumping) {
@@ -200,7 +187,7 @@ void motMoveCamera(void) {
 	jumpFunc();
 
 	// Air drag acceleration (opposite to the speed)
-	motVector airDrag = speed0;
+	mot_Vector airDrag = speed0;
 	motNormalizev(&airDrag);
 	// Air drag is proportional to the speed
 	airDrag = motMultiplyv(airDrag, - motvLength(speed0) * MOT_AIR_DRAG);
@@ -215,9 +202,9 @@ void motMoveCamera(void) {
 	speed = motAddv(speed, motMultiplyv(motCreatev(0, - MOT_GFORCE, 0), deltaT));
 
 	// Makes the acceleration based on input and direction
-	motVector direction = motSubstractv(motCreatev(target.x, eye.y, target.z), eye);
+	mot_Vector direction = motSubstractv(motCreatev(target.x, eye.y, target.z), eye);
 	motNormalizev(&direction);
-	motVector acc = motCreatev(0, 0, 0);
+	mot_Vector acc = motCreatev(0, 0, 0);
 	if (!isJumping) {
 		if (keyStates['w']) {
 			acc = motAddv(acc, direction);
@@ -250,40 +237,40 @@ void motMoveCamera(void) {
 	// This part limits the speed of the camera
 	if (!isJumping && isMoving) {
 		if (!isSprinting && motvLength(motCreatev(speed0.x, 0, speed0.z)) < MOT_MAX_SPEED && motvLength(motCreatev(speed.x, 0, speed.z)) > MOT_MAX_SPEED) {
-			motVector s = motCreatev(speed.x, 0, speed.z);
+			mot_Vector s = motCreatev(speed.x, 0, speed.z);
 			motNormalizev(&s);
 			s = motMultiplyv(s, MOT_MAX_SPEED);
 			speed = motCreatev(s.x, speed.y, s.z);
 		}
 		else if (!isSprinting && motvLength(motCreatev(speed0.x, 0, speed0.z)) >= MOT_MAX_SPEED) {
-			motVector speed1 = speed0;
+			mot_Vector speed1 = speed0;
 			speed1 = motAddv(speed1, motMultiplyv(drag, deltaT));
 			speed1 = motAddv(speed1, motMultiplyv(airDrag, deltaT));
 			GLdouble length = motvLength(speed1);
 			motNormalizev(&speed);
 			speed = motMultiplyv(speed, length);
 			if (motvLength(motCreatev(speed.x, 0, speed.z)) < MOT_MAX_SPEED) {
-				motVector s = motCreatev(speed.x, 0, speed.z);
+				mot_Vector s = motCreatev(speed.x, 0, speed.z);
 				motNormalizev(&s);
 				s = motMultiplyv(s, MOT_MAX_SPEED);
 				speed = motCreatev(s.x, speed.y, s.z);
 			}
 		}
 		if (isSprinting && motvLength(motCreatev(speed0.x, 0, speed0.z)) < MOT_SPRINT_MAX_SPEED && motvLength(motCreatev(speed.x, 0, speed.z)) > MOT_SPRINT_MAX_SPEED) {
-			motVector s = motCreatev(speed.x, 0, speed.z);
+			mot_Vector s = motCreatev(speed.x, 0, speed.z);
 			motNormalizev(&s);
 			s = motMultiplyv(s, MOT_SPRINT_MAX_SPEED);
 			speed = motCreatev(s.x, speed.y, s.z);
 		}
 		else if (isSprinting && motvLength(motCreatev(speed0.x, 0, speed0.z)) >= MOT_SPRINT_MAX_SPEED) {
-			motVector speed1 = speed0;
+			mot_Vector speed1 = speed0;
 			speed1 = motAddv(speed1, motMultiplyv(drag, deltaT));
 			speed1 = motAddv(speed1, motMultiplyv(airDrag, deltaT));
 			GLdouble length = motvLength(speed1);
 			motNormalizev(&speed);
 			speed = motMultiplyv(speed, length);
 			if (motvLength(motCreatev(speed.x, 0, speed.z)) < MOT_SPRINT_MAX_SPEED) {
-				motVector s = motCreatev(speed.x, 0, speed.z);
+				mot_Vector s = motCreatev(speed.x, 0, speed.z);
 				motNormalizev(&s);
 				s = motMultiplyv(s, MOT_SPRINT_MAX_SPEED);
 				speed = motCreatev(s.x, speed.y, s.z);
@@ -292,7 +279,7 @@ void motMoveCamera(void) {
 	}
 
 	// The distance traveled
-	motVector d = motAddv(motMultiplyv(speed0, deltaT), motMultiplyv(motSubstractv(speed, speed0), deltaT / 2.0));
+	mot_Vector d = motAddv(motMultiplyv(speed0, deltaT), motMultiplyv(motSubstractv(speed, speed0), deltaT / 2.0));
 
 	// Moves eye and target
 	eye = motAddv(eye, d);
@@ -302,13 +289,14 @@ void motMoveCamera(void) {
 	if (eye.y < MOT_EYE_HEIGHT) {
 		target.y += MOT_EYE_HEIGHT - eye.y;
 		eye.y = MOT_EYE_HEIGHT;
-		isJumping = false;
+		isJumping = mot_false;
 		speed = motCreatev(speed.x, 0, speed.z);
 	}
 
 	gluLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, 0, 1, 0);
 }
 
+// Handels mouse movements
 void freeCameraHandler (int x, int y) {
 	// If paused, don't do anything
 	if (isPaused) {
@@ -346,7 +334,8 @@ void freeCameraHandler (int x, int y) {
 	target = motAddv(target, eye);	
 }
 
-void motTeleportCamera(GLdouble x, GLdouble y, GLdouble z) {
+// Teleports the camera
+void mot_TeleportCamera(GLdouble x, GLdouble y, GLdouble z) {
 	target.x -= eye.x - x;
 	target.y -= eye.y - y;
 	target.z -= eye.z - z;
@@ -358,22 +347,23 @@ void motTeleportCamera(GLdouble x, GLdouble y, GLdouble z) {
 // Handles normal key presses (arrow, function and other keys not included)
 void normalKeysHandler(unsigned char key, int x, int y) 
 {
+	globalKeyStates[key] = mot_true;
 	switch(key) {
 		case 'W':
 		case 'w':
-			keyStates['w'] = true;
+			keyStates['w'] = mot_true;
 			break;
 		case 'S':
 		case 's':
-			keyStates['s'] = true;
+			keyStates['s'] = mot_true;
 			break;
 		case 'A':
 		case 'a':
-			keyStates['a'] = true;
+			keyStates['a'] = mot_true;
 			break;
 		case 'D':
 		case 'd':
-			keyStates['d'] = true;
+			keyStates['d'] = mot_true;
 			break;
 		case 'P':
 		case 'p':
@@ -389,7 +379,7 @@ void normalKeysHandler(unsigned char key, int x, int y)
 			break;
 		// Space Key
 		case 32:
-			keyStates[32] = true;
+			keyStates[32] = mot_true;
 			break;
 		// Esc Key
 		case 27:
@@ -403,20 +393,20 @@ void specialKeysHandler(int key, int x, int y)
 {
 	switch(key) {
 		case GLUT_KEY_UP:
-			keyStates['w'] = true;
+			keyStates['w'] = mot_true;
 			break;
 		case GLUT_KEY_DOWN:
-			keyStates['s'] = true;
+			keyStates['s'] = mot_true;
 			break;
 		case GLUT_KEY_LEFT:
-			keyStates['a'] = true;
+			keyStates['a'] = mot_true;
 			break;
 		case GLUT_KEY_RIGHT:
-			keyStates['d'] = true;
+			keyStates['d'] = mot_true;
 			break;
 		// Shift key
 		case 112:
-			isSprinting = true;
+			isSprinting = mot_true;
 			break;
 	}
 }
@@ -424,26 +414,27 @@ void specialKeysHandler(int key, int x, int y)
 // Handles normal keys releases (arrow, function and other keys not included)
 void normalKeysUpHandler (unsigned char key, int x, int y) 
 {
+	globalKeyStates[key] = mot_false;
 	switch(key) {
 		case 'W':
 		case 'w':
-			keyStates['w'] = false;
+			keyStates['w'] = mot_false;
 			break;
 		case 'S':
 		case 's':
-			keyStates['s'] = false;
+			keyStates['s'] = mot_false;
 			break;
 		case 'A':
 		case 'a':
-			keyStates['a'] = false;
+			keyStates['a'] = mot_false;
 			break;
 		case 'D':
 		case 'd':
-			keyStates['d'] = false;
+			keyStates['d'] = mot_false;
 			break;
 		// Space Key
 		case 32:
-			keyStates[32] = false;
+			keyStates[32] = mot_false;
 			break;
 	}
 }
@@ -453,25 +444,26 @@ void specialKeysUpHandler(int key, int x, int y)
 {
 	switch(key) {
 		case GLUT_KEY_UP:
-			keyStates['w'] = false;
+			keyStates['w'] = mot_false;
 			break;
 		case GLUT_KEY_DOWN:
-			keyStates['s'] = false;
+			keyStates['s'] = mot_false;
 			break;
 		case GLUT_KEY_LEFT:
-			keyStates['a'] = false;
+			keyStates['a'] = mot_false;
 			break;
 		case GLUT_KEY_RIGHT:
-			keyStates['d'] = false;
+			keyStates['d'] = mot_false;
 			break;
 		// Shift key
 		case 112:
-			isSprinting = false;
+			isSprinting = mot_false;
 			break;
 	}
 }
 
-void motionInit(void) {
+// Initializes the library
+void mot_Init(GLdouble step) {
 	glutKeyboardFunc(normalKeysHandler);
 	glutKeyboardUpFunc(normalKeysUpHandler);
 	glutSpecialFunc(specialKeysHandler);
@@ -483,35 +475,48 @@ void motionInit(void) {
 	eye = motCreatev(0, MOT_EYE_HEIGHT, 0);
 
 	// Represents the point where the camera looks
-	target = motCreatev(0, MOT_EYE_HEIGHT, 0);
+	target = motCreatev(1, MOT_EYE_HEIGHT, 0);
+
+	// Camerea pitch and yaw
+	cameraPitch = 0;
+	cameraYaw = 0; 
 
 	// The camera speed
 	speed = motCreatev(0, 0, 0);
+
+	// The time interval between callbacks in seconds
+	deltaT = step;
 
 	// Hides the mouse cursor
 	glutSetCursor(GLUT_CURSOR_NONE);
 }
 
-motVector motGetEyePos(void) {
+// Teleports the camera
+mot_Vector mot_GetEyePos(void) {
 	return eye;
 }
 
-motVector motGetTargetPos(void) {
+// Returns the point where the camera looks
+mot_Vector mot_GetTargetPos(void) {
 	return target;
 }
 
-int motGetKeyStatus(int key) {
-	return keyStates[key];
+// Returns the key state for the given key
+int mot_GetKeyStatus(int key) {
+	return globalKeyStates[key];
 }
 
-int motGetIsJumping(void) {
+// Returns true if he is jumping or returns false if not
+int mot_GetIsJumping(void) {
 	return isJumping;
 }
 
-int motGetIsSprinting(void) {
+// Returns true if he is sprinting or returns false if not
+int mot_GetIsSprinting(void) {
 	return isSprinting;
 }
 
-int motGetIsPaused(void) {
+// Returns true if the game is paused or returns false if not
+int mot_GetIsPaused(void) {
 	return isPaused;
 }
