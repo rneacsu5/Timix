@@ -11,7 +11,7 @@ See CHANGELOG for info about the current version.
 How to play
 ---
 ###Windows
-Download this repository, open `windows/opengl_project.sln` and build. You need `glut32`, `glew32` and `bass` libraries.
+Download this repository, open `windows/opengl_project.sln` and build.
 ###Linux
 Download this repository, navigate with your terminal to it (using cd) and enter this command:
 ```
