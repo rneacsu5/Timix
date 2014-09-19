@@ -165,7 +165,9 @@ windows/*
 !windows/*.vcxproj.filters
 
 # The "data" folder must be included
-!data/*
-!data/*/*
-!data/*/*/*
-!data/*/*/*/*
+!/data/
+!/data/*/*
+!/data/*/*/*
+!/data/*/*/*/*
+!/libs/*
+!/libs/*/*
