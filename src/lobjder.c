@@ -6,19 +6,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <GL/glew.h>
 #define GL_GLEXT_PROTOTYPES
 #include <GL/glut.h>
+
 #include "../include/lobjder.h"
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ASSERT(x)
 #include "../include/std_image.h"
 
+// Paths
 char * modelsPath = NULL;
 char * materialsPath = NULL;
 char * texturesPath = NULL;
+// A neutral, gray material
 lbj_Material defaultMaterial;
 int firstUsed = 1;
+// Used for flipping the model or texture
 int flipU = 0, flipV = 1, flipX = 0, flipY = 0, flipZ = 0;
 
 // Initializes the Array and allocates memory
@@ -81,6 +86,7 @@ void freeArrayf(lbj_Arrayf *a) {
 	a->used = a->size = 0;
 }
 
+// For a materials array
 void initArraym(lbj_Arraym *a, size_t initialSize) {
 	a->array = (lbj_Material *) malloc(initialSize * sizeof(lbj_Material));
 	a->used = 0;
@@ -103,6 +109,7 @@ void freeArraym(lbj_Arraym *a) {
 	a->used = a->size = 0;
 }
 
+// For a material indexes array
 void initArraymi(lbj_Arraymi *a, size_t initialSize) {
 	a->array = (unsigned int *) malloc(initialSize * sizeof(unsigned int));
 	a->used = 0;
@@ -130,6 +137,17 @@ void lbj_SetPaths(char * modelsFolderPath, char * materialsFolderPath, char * te
 	modelsPath = modelsFolderPath;
 	materialsPath = materialsFolderPath;
 	texturesPath = texturesFolderPath;
+}
+
+// Sets flipping
+void lbj_SetFlipping(int _flipU, int _flipV, int _flipX, int _flipY, int _flipZ) {
+	// If set to 0 : no flipping; 1 : flip; other: leave it unchanged
+
+	if (_flipU == 0 || _flipU == 1) flipU = _flipU;
+	if (_flipV == 0 || _flipV == 1) flipV = _flipV;
+	if (_flipX == 0 || _flipX == 1) flipX = _flipX;
+	if (_flipY == 0 || _flipY == 1) flipY = _flipY;
+	if (_flipZ == 0 || _flipZ == 1) flipZ = _flipZ;
 }
 
 // Loads a .obj file to a model
@@ -301,7 +319,7 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model) {
 		}
 		else {
 			// Found something else. Maybe a comment?
-		}
+		} 
 	}
 
 	// Print Stats
@@ -330,6 +348,7 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model) {
 	fclose(fp);
 }
 
+// Loads a .mtl file to a material array
 void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init) {
 	// Opens file in read-text mode
 	char * path;
@@ -438,11 +457,11 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init) {
 			if (texturesPath != NULL) {
 				path2 = (char *) malloc((strlen(texturesPath) + k + 1) * sizeof(char));
 				strcpy(path2, texturesPath);
-				memcpy(path2 + strlen(texturesPath), mat.fileName, k + 1);
+				strcat(path2, mat.fileName);
 			}
 			else {
 				path2 = (char *) malloc((k + 1) * sizeof(char));
-				memcpy(path2, mat.fileName, k + 1);
+				strcpy(path2, mat.fileName);
 			}
 
 			// Gets the texture data and texture info
@@ -483,6 +502,7 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init) {
 
 }
 
+// Loads a material to be used for drawing
 void lbj_LoadMaterial(lbj_Material mat) {
 	GLfloat matAmbient[] = {mat.Ka[0], mat.Ka[1], mat.Ka[2], 1};
 	GLfloat matDiffuse[] = {mat.Kd[0], mat.Kd[1], mat.Kd[2], mat.Tr};
@@ -497,6 +517,38 @@ void lbj_LoadMaterial(lbj_Material mat) {
 	glBindTexture(GL_TEXTURE_2D, mat.glTexName);
 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+}
+
+// Load a default material
+void lbj_LoadDefaultMaterial() {
+	// The first time this function is called, initialize the "defaultMaterial" and load it
+	// The next time the function is called, just load the "defaultMaterial"
+
+	if (firstUsed) {
+		firstUsed = 0;
+		// Initializes the "defaultMaterial"
+		defaultMaterial.matName = (char *) malloc(8 * sizeof(char));
+		defaultMaterial.fileName = (char *) malloc(5 * sizeof(char));
+		strcpy(defaultMaterial.matName, "default");
+		strcpy(defaultMaterial.fileName, "none");
+		glGenTextures(1, &defaultMaterial.glTexName);
+		glBindTexture(GL_TEXTURE_2D, defaultMaterial.glTexName);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		defaultMaterial.Ka[0] = defaultMaterial.Ka[1] = defaultMaterial.Ka[2] = 0.2;
+		defaultMaterial.Kd[0] = defaultMaterial.Kd[1] = defaultMaterial.Kd[2] = 0.8;
+		defaultMaterial.Ks[0] = defaultMaterial.Ks[1] = defaultMaterial.Ks[2] = 1.0;
+		defaultMaterial.Ns = 50;
+		defaultMaterial.Tr = 1;
+		defaultMaterial.illum = 2;
+		defaultMaterial.offset.x = defaultMaterial.offset.y = defaultMaterial.offset.z = 0;
+		defaultMaterial.scale.x = defaultMaterial.scale.y = defaultMaterial.scale.z = 1;
+	}
+
+	// Load the default material
+	lbj_LoadMaterial(defaultMaterial);
 }
 
 // Draws model using immediate mode
@@ -550,49 +602,6 @@ void lbj_DrawModelIM(lbj_Model model) {
 		}
 	glEnd();
 	glDisable(GL_TEXTURE_2D);
-}
-
-// Load a default material
-void lbj_LoadDefaultMaterial() {
-	// The first time this function is called, initialize the "defaultMaterial" and load it
-	// The next time the function is called, just load the "defaultMaterial"
-
-	if (firstUsed) {
-		firstUsed = 0;
-		// Initializes the "defaultMaterial"
-		defaultMaterial.matName = (char *) malloc(8 * sizeof(char));
-		defaultMaterial.fileName = (char *) malloc(5 * sizeof(char));
-		strcpy(defaultMaterial.matName, "default");
-		strcpy(defaultMaterial.fileName, "none");
-		glGenTextures(1, &defaultMaterial.glTexName);
-		glBindTexture(GL_TEXTURE_2D, defaultMaterial.glTexName);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		defaultMaterial.Ka[0] = defaultMaterial.Ka[1] = defaultMaterial.Ka[2] = 0.2;
-		defaultMaterial.Kd[0] = defaultMaterial.Kd[1] = defaultMaterial.Kd[2] = 0.8;
-		defaultMaterial.Ks[0] = defaultMaterial.Ks[1] = defaultMaterial.Ks[2] = 1.0;
-		defaultMaterial.Ns = 50;
-		defaultMaterial.Tr = 1;
-		defaultMaterial.illum = 2;
-		defaultMaterial.offset.x = defaultMaterial.offset.y = defaultMaterial.offset.z = 0;
-		defaultMaterial.scale.x = defaultMaterial.scale.y = defaultMaterial.scale.z = 1;
-	}
-
-	// Load the default material
-	lbj_LoadMaterial(defaultMaterial);
-}
-
-// Sets flipping
-void lbj_SetFlipping(int _flipU, int _flipV, int _flipX, int _flipY, int _flipZ) {
-	// If set to 0 : no flipping; 1 : flip; other: leave it unchanged
-
-	if (_flipU == 0 || _flipU == 1) flipU = _flipU;
-	if (_flipV == 0 || _flipV == 1) flipV = _flipV;
-	if (_flipX == 0 || _flipX == 1) flipX = _flipX;
-	if (_flipY == 0 || _flipY == 1) flipY = _flipY;
-	if (_flipZ == 0 || _flipZ == 1) flipZ = _flipZ;
 }
 
 // Creates a VBO for the given model

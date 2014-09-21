@@ -326,13 +326,13 @@ void initialize(void)
 	lbj_CreateVBO(&nexusModel, 1);
 
 	// Nokia
-	// lbj_LoadOBJToModel("sonyericsson-w9600-midres.obj", &nokiaModel);
-	// lbj_CreateVBO(&nokiaModel, 0);
+	lbj_LoadOBJToModel("sonyericsson-w9600-midres.obj", &nokiaModel);
+	lbj_CreateVBO(&nokiaModel, 0);
 
 	// Car
 	lbj_SetFlipping(0, 1, 1, 0, 0);
-	// lbj_LoadOBJToModel("Avent.obj", &carModel);
-	// lbj_CreateVBO(&carModel, 0);
+	lbj_LoadOBJToModel("Avent.obj", &carModel);
+	lbj_CreateVBO(&carModel, 0);
 	lbj_SetFlipping(0, 1, 0, 0, 0);
 
 	// Loads the shaders
