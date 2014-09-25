@@ -97,9 +97,48 @@ int globalKeyStates[256];
 int isJumping = mot_false;
 int isSprinting = mot_false;
 int isPaused = mot_false;
+int isOP = mot_true;
 
 // The time interval between callbacks in seconds
 GLfloat deltaT;
+
+// Moves camera freely with no gravity
+void moveOPCamera(void)
+{
+	// Moves mouse to the middle
+	GLint v[4];
+	glGetIntegerv(GL_VIEWPORT, v);
+	glutWarpPointer(v[2] / 2, v[3] / 2);
+
+	// Direction in which the camera looks
+	mot_Vector direction = motSubstractv(target, eye);
+	// Same direction but parallel to the ground
+	mot_Vector direction2 = motSubstractv(motCreatev(target.x, eye.y, target.z), eye);
+	motNormalizev(&direction);
+	motNormalizev(&direction2);
+	mot_Vector speed = motCreatev(0, 0, 0);
+	if (keyStates['w']) {
+		speed = motAddv(speed, direction);
+	}
+	if (keyStates['s']) {
+		speed = motSubstractv(speed, direction);
+	}
+	if (keyStates['a']) {
+		speed = motAddv(speed, motRotatev(direction2, 90, 0, 1, 0));
+	}
+	if (keyStates['d']) {
+		speed = motAddv(speed, motRotatev(direction2, -90, 0, 1, 0));
+	}
+
+	// Makes the acceleration the right length
+	motNormalizev(&speed);
+	speed = motMultiplyv(speed, MOT_MAX_SPEED);
+
+	// Moves eye and target
+	eye = motAddv(eye, motMultiplyv(speed, deltaT));
+	target = motAddv(target, motMultiplyv(speed, deltaT));
+	gluLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, 0, 1, 0);
+}
 
 // Checks for the space bar being pressed amd jumps if needed
 void jumpFunc(void) {
@@ -155,6 +194,10 @@ void mot_MoveCamera(void) {
 	if (isPaused) {
 		// Set up camera
 		gluLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, 0, 1, 0);
+		return;
+	}
+	if (isOP) {
+		moveOPCamera();
 		return;
 	}
 
