@@ -12,7 +12,7 @@ How to play
 ---
 ###Windows
 Download this repository, open `windows/opengl_project.sln` and build.
-###Linux
+###Linux [OUTDATED]
 Download this repository, navigate with your terminal to it (using cd) and enter this command:
 ```
 make
