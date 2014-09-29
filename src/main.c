@@ -45,7 +45,7 @@ lbj_Model planeModel, nokiaModel, carModel, nexusModel;
 
 // Music stream
 int musicStream;
-int musicIsPlaying = true;
+int musicIsPlaying = false;
 int musicButtonWasPressed = false;
 
 void drawWallsAndFloor(void)
@@ -412,7 +412,9 @@ void bass(void) {
 	// Adds an "Event Listener" (it is called sync) to detect when the song ends
 	BASS_ChannelSetSync(musicStream, BASS_SYNC_MIXTIME | BASS_SYNC_END, 0, replayMusic, 0);
 	// Plays the stream
-	BASS_ChannelPlay(musicStream, TRUE);
+	if (musicIsPlaying) {
+		BASS_ChannelPlay(musicStream, TRUE);
+	}
 }
 
 int main(int argc, char *argv[])
@@ -427,6 +429,8 @@ int main(int argc, char *argv[])
 
 	// The parameter should be 1 / AverageFPS
 	mot_Init(1 / 90.0);
+	mot_SetIsOP(true);
+	lbj_PrintStats(true);
 
 	// Event listeners
 	glutDisplayFunc(display);

@@ -27,15 +27,49 @@ int fpsCurrentTime = 0, fpsPreviousTime = 0, fpsFrameCount = 0;
 
 typedef struct
 {
-	int i;
-	// TODO: Create structure
-}MAP;
+	// Number of cubes on the respective axis
+	int numberOfCubesX;
+	int numberOfCubesY;
+	int numberOfCubesZ;
+}MAP_FileHeader;
 
+typedef struct
+{
+	// The type of the cube
+	int type;
+}MAP_Cube;
+
+typedef struct
+{
+	MAP_Cube* array[3];
+	size_t used;
+	size_t size;
+}MAP_Data;
+
+void initArrayData(MAP_Data* a, size_t initialSize)
+{
+	if (initialSize <= 0)
+		a->size = 1;
+	else 
+		a->size = initialSize;
+	int i;
+	for (i = 0; i < 3; i++) {
+		a->array[i] = (MAP_Cube*)malloc(a->size * sizeof(MAP_Cube));
+	}
+	a->used = 0;
+}
+
+// Folder where to store and load maps files
 char * mapFolder = "./data/maps/";
+// The file name with extension
 char * fileName;
+// The full path to the file
 char * filePath;
+// File pointer to the file 
 FILE * fp;
-MAP mainMap;
+// Main map file header
+MAP_FileHeader mainMapHeader;
+MAP_Data mainMapData;
 
 
 void display(void)
@@ -152,10 +186,12 @@ void tick(int value)
 
 int openMapFile(void)
 {
-	// TODO: Documentation and explanation
 	printf("Enter file name: %s", mapFolder);
+	// Input entered
 	char * fileN = (char*)malloc(32 * sizeof(char));
 	if (scanf("%s", fileN) == 1) {
+		// Lets extract the extension
+		// Pointer to the last dot
 		char * p = NULL;
 		char * p1 = strchr(fileN, '.');
 		while (p1 != NULL) {
@@ -164,34 +200,47 @@ int openMapFile(void)
 		}
 		if (p != NULL) {
 			if (strstr(p + 1, "map") != NULL && strlen(p + 1) == 3) {
+				// File path is folder path + file name
 				filePath = (char *)malloc((strlen(mapFolder) + strlen(fileN) + 1) * sizeof(char));
 				strcpy(filePath, mapFolder);
 				strcat(filePath, fileN);
+				// File name
 				fileName = (char *)malloc((strlen(fileN) + 1) * sizeof(char));
 				strcpy(fileName, fileN);
+				// Try to open file in read-binay mode
 				fp = fopen(filePath, "rb");
 				if (fp != NULL) {
-					if (fread(&mainMap, sizeof(MAP), 1, fp) != 1)
+					// File already exists, lets try to read its content
+					if (fread(&mainMapHeader, sizeof(MAP_FileHeader), 1, fp) != 1)
+						// Failed
 						printf("Error loading map from file \"%s\". Invalid or corrupted .map file\n", filePath);
 					else
+						// Succeeded
 						printf("Successfully loaded map from file\n");
 					fclose(fp);
 				}
 				else
+					// No file found
 					printf("No such vaid file found, creating one: \"%s\"\n", filePath);
+				// Open the file in write-binary mode (this also creates the file if it doesn't exist)
 				fp = fopen(filePath, "wb");
 				if (fp != NULL) {
+					// Everything went well
 					printf("Done opening map file for writing\n");
 					return 0;
 				}
+				// Something quite bad happened
 				printf("Could not open file \"%s\"\n", filePath);
 				return 1;
 			}
+			// Extension found but it's not .map
 			printf("Invalid file extension: \"%s\"\n", p);
 			return 1;
 		}
+		// No dot found so there is no extension
 		printf("No file extension in given name\n");
 	}
+	// Input failed?
 	return 1;
 }
 
@@ -199,7 +248,7 @@ int main(int argc, char *argv[])
 {
 	printf("===================================================\n");
 	while (openMapFile()) {
-		// Tryes to open a file
+		// Tries to open a file
 	}
 	printf("Starting OpenGL...");
 	glutInit(&argc, argv);
@@ -208,6 +257,7 @@ int main(int argc, char *argv[])
 	glutCreateWindow("Epic Game");
 	glewExperimental = GL_TRUE;
 	glewInit();
+	mot_SetIsOP(true);
 
 	// The parameter should be 1 / AverageFPS
 	mot_Init(1 / 90.0);

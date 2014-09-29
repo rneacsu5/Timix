@@ -134,7 +134,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;glut32.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;user32.lib;glut32.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
@@ -155,7 +155,7 @@ copy /Y "%%a" "$(TargetDir)"
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;glut64.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;user32.lib;glut64.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\x64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
@@ -180,7 +180,7 @@ copy /Y "%%a" "$(TargetDir)"
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;glut32.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;user32.lib;glut32.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
@@ -205,7 +205,7 @@ copy /Y "%%a" "$(TargetDir)"
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;glut64.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;user32.lib;glut64.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\x64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>

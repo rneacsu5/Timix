@@ -20,7 +20,7 @@
 // Maximum running speed
 #define MOT_MAX_SPEED 5
 // Maximum sprinting speed
-#define MOT_SPRINT_MAX_SPEED 10
+#define MOT_SPRINT_MAX_SPEED 7.5
 // Maximum forward speed while jumping
 #define MOT_JUMP_MAX_SPEED MOT_MAX_SPEED / 1.3
 // Maximum forward speed while jumping and sprinting
@@ -60,3 +60,5 @@ int mot_GetIsSprinting(void);
 int mot_GetIsPaused(void);
 // Teleports the camera
 void mot_TeleportCamera(GLdouble x, GLdouble y, GLdouble z);
+// Set if OP (over-powered). If set to true, the player can fly in any direction
+void mot_SetIsOP(int state);

@@ -158,3 +158,6 @@ void lbj_CreateVBO(lbj_Model * model, int economic);
 
 // Draws the model using VBO
 void lbj_DrawModelVBO(lbj_Model model);
+
+// Whether to print stats about the model or just warnings
+void lbj_PrintStats(int value);

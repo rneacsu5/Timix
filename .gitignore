@@ -158,11 +158,12 @@ $RECYCLE.BIN/
 
 # Custom for this project
 
-# The part above was created by Visual Studio. It's OK but for now we only need 3 files
+# The part above was created by Visual Studio. It's OK but for now we only need 4 files
 windows/*
 !windows/*.sln
 !windows/*.vcxproj
 !windows/*.vcxproj.filters
+!windows/*.vcxproj.user
 
 # The "data" and "libs" folder must be included
 !/data/

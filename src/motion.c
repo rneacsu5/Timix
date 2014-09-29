@@ -9,6 +9,10 @@
 #include <stdlib.h>
 
 #include <GL/glut.h>
+#ifdef _WIN32
+#include <Windows.h>
+#endif // _WIN32
+
 
 #include "../include/motion.h"
 
@@ -97,7 +101,7 @@ int globalKeyStates[256];
 int isJumping = mot_false;
 int isSprinting = mot_false;
 int isPaused = mot_false;
-int isOP = mot_true;
+int isOP = mot_false;
 
 // The time interval between callbacks in seconds
 GLfloat deltaT;
@@ -110,13 +114,12 @@ void moveOPCamera(void)
 	glGetIntegerv(GL_VIEWPORT, v);
 	glutWarpPointer(v[2] / 2, v[3] / 2);
 
-	// Direction in which the camera looks
-	mot_Vector direction = motSubstractv(target, eye);
-	// Same direction but parallel to the ground
-	mot_Vector direction2 = motSubstractv(motCreatev(target.x, eye.y, target.z), eye);
+	// Direction in which the camera looks parallel to the ground
+	mot_Vector direction = motSubstractv(motCreatev(target.x, eye.y, target.z), eye);
 	motNormalizev(&direction);
-	motNormalizev(&direction2);
+
 	mot_Vector speed = motCreatev(0, 0, 0);
+
 	if (keyStates['w']) {
 		speed = motAddv(speed, direction);
 	}
@@ -124,15 +127,24 @@ void moveOPCamera(void)
 		speed = motSubstractv(speed, direction);
 	}
 	if (keyStates['a']) {
-		speed = motAddv(speed, motRotatev(direction2, 90, 0, 1, 0));
+		speed = motAddv(speed, motRotatev(direction, 90, 0, 1, 0));
 	}
 	if (keyStates['d']) {
-		speed = motAddv(speed, motRotatev(direction2, -90, 0, 1, 0));
+		speed = motAddv(speed, motRotatev(direction, -90, 0, 1, 0));
 	}
 
 	// Makes the acceleration the right length
 	motNormalizev(&speed);
-	speed = motMultiplyv(speed, MOT_MAX_SPEED);
+	speed = motMultiplyv(speed, MOT_MAX_SPEED * 1.5);
+
+	// Moves up or down
+	if (keyStates[32]) {
+		speed = motAddv(speed, motCreatev(0, MOT_MAX_SPEED, 0));
+	}
+	if (isSprinting) {
+		speed = motAddv(speed, motCreatev(0, -MOT_MAX_SPEED, 0));
+	}
+
 
 	// Moves eye and target
 	eye = motAddv(eye, motMultiplyv(speed, deltaT));
@@ -196,15 +208,25 @@ void mot_MoveCamera(void) {
 		gluLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, 0, 1, 0);
 		return;
 	}
-	if (isOP) {
-		moveOPCamera();
-		return;
-	}
 
 	// Moves mouse to the middle
 	GLint v[4];
 	glGetIntegerv(GL_VIEWPORT, v);
 	glutWarpPointer(v[2] / 2, v[3] / 2);
+
+#ifdef _WIN32
+	// Check for shift key if on Windows
+	// On Linux there is a code for the shift key
+	if ((GetKeyState(VK_LSHIFT) | GetKeyState(VK_RSHIFT)) < 0)
+		isSprinting = mot_true;
+	else
+		isSprinting = mot_false;
+#endif // _WIN32
+
+	if (isOP) {
+		moveOPCamera();
+		return;
+	}
 
 	// The following two kinematic equations are used: d = v0 * deltaT + (a * deltaT ^ 2) / 2 and v = v0 + a * deltaT
 	// where v0 is the initial speed, v is the final speed, a is the acceleration, deltaT is the time interval and d is the distance traveled
@@ -562,4 +584,11 @@ int mot_GetIsSprinting(void) {
 // Returns true if the game is paused or returns false if not
 int mot_GetIsPaused(void) {
 	return isPaused;
+}
+
+// Set if OP (over-powered). If set to true, the player can fly in any direction
+void mot_SetIsOP(int state)
+{
+	if (state) isOP = mot_true;
+	else isOP = mot_false;
 }

@@ -25,14 +25,17 @@ lbj_Material defaultMaterial;
 int firstUsed = 1;
 // Used for flipping the model or texture
 int flipU = 0, flipV = 1, flipX = 0, flipY = 0, flipZ = 0;
+// Print stats or not
+int printStats = 0;
 
 // Initializes the Array and allocates memory
 void initArrayv(lbj_Arrayv *a, size_t initialSize) {
-	a->array = (lbj_vector3f *) malloc(initialSize * sizeof(lbj_vector3f));
-	a->used = 0;
-	a->size = initialSize;
 	if (initialSize <= 0)
 		a->size = 1;
+	else 
+		a->size = initialSize;
+	a->array = (lbj_vector3f *) malloc(a->size * sizeof(lbj_vector3f));
+	a->used = 0;
 }
 
 // Adds an element to the array and reallocates memory if needed
@@ -54,13 +57,14 @@ void freeArrayv(lbj_Arrayv *a) {
 // Same as above but for a face array
 void initArrayf(lbj_Arrayf *a, size_t initialSize) {
 	int i;
-	for (i = 0; i < 4; i++) {
-		a->array[i] = (lbj_vector3i *) malloc(initialSize * sizeof(lbj_vector3i));
-	}
-	a->used = 0;
-	a->size = initialSize;
 	if (initialSize <= 0)
 		a->size = 1;
+	else
+		a->size = initialSize;
+	for (i = 0; i < 4; i++) {
+		a->array[i] = (lbj_vector3i *) malloc(a->size * sizeof(lbj_vector3i));
+	}
+	a->used = 0;
 }
 
 void insertArrayf(lbj_Arrayf *a, lbj_vector3i element[4]) {
@@ -88,11 +92,12 @@ void freeArrayf(lbj_Arrayf *a) {
 
 // For a materials array
 void initArraym(lbj_Arraym *a, size_t initialSize) {
-	a->array = (lbj_Material *) malloc(initialSize * sizeof(lbj_Material));
-	a->used = 0;
-	a->size = initialSize;
 	if (initialSize <= 0)
 		a->size = 1;
+	else 
+		a->size = initialSize;
+	a->array = (lbj_Material *) malloc(a->size * sizeof(lbj_Material));
+	a->used = 0;
 }
 
 void insertArraym(lbj_Arraym *a, lbj_Material mat) {
@@ -111,11 +116,12 @@ void freeArraym(lbj_Arraym *a) {
 
 // For a material indexes array
 void initArraymi(lbj_Arraymi *a, size_t initialSize) {
-	a->array = (unsigned int *) malloc(initialSize * sizeof(unsigned int));
-	a->used = 0;
-	a->size = initialSize;
 	if (initialSize <= 0)
 		a->size = 1;
+	else 
+		a->size = initialSize;
+	a->array = (unsigned int *) malloc(a->size * sizeof(unsigned int));
+	a->used = 0;
 }
 
 void insertArraymi(lbj_Arraymi *a, unsigned int mat) {
@@ -322,23 +328,25 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model) {
 		} 
 	}
 
-	// Print Stats
-	printf("MODEL:\n");
-	printf("Loaded \"%s\".\n", path);
-	printf("Contained: %zd vertice, %zd texture coord, %zd normals, %zd faces, %zd materials\n", 
-			model->v.used, 
-			model->vt.used, 
-			model->vn.used, 
-			model->f.used,
-			model->mats.used);
-	printf("Allocated %zd bytes of memory\n", 
-			model->v.size * sizeof(lbj_vector3f) + 
-			model->vt.size * sizeof(lbj_vector3f) + 
-			model->vn.size * sizeof(lbj_vector3f) + 
-			model->f.size * sizeof(lbj_vector3i) * 4 +
-			model->mats.size * sizeof(lbj_Material) +
-			model->matsi.size * sizeof(unsigned int));
-	printf("\n");
+	if (printStats) {
+		// Print Stats
+		printf("MODEL:\n");
+		printf("Loaded \"%s\".\n", path);
+		printf("Contained: %zd vertice, %zd texture coord, %zd normals, %zd faces, %zd materials\n",
+			   model->v.used,
+			   model->vt.used,
+			   model->vn.used,
+			   model->f.used,
+			   model->mats.used);
+		printf("Allocated %zd bytes of memory\n",
+			   model->v.size * sizeof(lbj_vector3f)+
+			   model->vt.size * sizeof(lbj_vector3f)+
+			   model->vn.size * sizeof(lbj_vector3f)+
+			   model->f.size * sizeof(lbj_vector3i)* 4 +
+			   model->mats.size * sizeof(lbj_Material)+
+			   model->matsi.size * sizeof(unsigned int));
+		printf("\n");
+	}
 
 	// Free memory
 	free(line);
@@ -520,7 +528,7 @@ void lbj_LoadMaterial(lbj_Material mat) {
 }
 
 // Load a default material
-void lbj_LoadDefaultMaterial() {
+void lbj_LoadDefaultMaterial(void) {
 	// The first time this function is called, initialize the "defaultMaterial" and load it
 	// The next time the function is called, just load the "defaultMaterial"
 
@@ -624,7 +632,7 @@ void lbj_CreateVBO(lbj_Model * model, int economic) {
 	// A variable to hold a VBOVertex 
 	lbj_VBOVertex vert;
 
-	printf("Creating VBO...\n");
+	if (printStats) printf("Creating VBO...\n");
 
 	for (i = 0; i < model->f.used; i++) {
 		for (j = 0; j < 4; j++) {
@@ -689,20 +697,21 @@ void lbj_CreateVBO(lbj_Model * model, int economic) {
 				indices[4 * i + j] = found;
 			}
 		}
+		if (printStats) {
+			// A simple "loading screen"
+			// Get the procentage done
+			procentLoaded = (int)(i / (float)(model->f.used - 1) * 100);
 
-		// A simple "loading screen"
-		// Get the procentage done
-		procentLoaded = (int)(i / (float)(model->f.used - 1) * 100);
-
-		// Print it (the carrage return keeps it on the same line)
-		if (procentLoaded == 100) {
-			printf("\rLoaded: 100 %%\n");
-			printf("\rThere are %u vertices in the vertex buffer and %zd indices in the index buffer\n\n", usedVertices, model->f.used * 4);
-		}
-		else if (procentLoaded > lastProcent) {
-			printf("\rLoaded: %d %%", procentLoaded);
-			fflush(stdout);
-			lastProcent = procentLoaded;
+			// Print it (the carrage return keeps it on the same line)
+			if (procentLoaded == 100) {
+				printf("\rLoaded: 100 %%\n");
+				printf("\rThere are %u vertices in the vertex buffer and %zd indices in the index buffer\n\n", usedVertices, model->f.used * 4);
+			}
+			else if (procentLoaded > lastProcent) {
+				printf("\rLoaded: %d %%", procentLoaded);
+				fflush(stdout);
+				lastProcent = procentLoaded;
+			}
 		}
 	} 
 
@@ -783,4 +792,11 @@ void lbj_DrawModelVBO(lbj_Model model) {
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
 	glDisable(GL_TEXTURE_2D);
+}
+
+// Whether to print stats about the model or just warnings
+void lbj_PrintStats(int value)
+{
+	if (value) printStats = 1;
+	else printStats = 0;
 }

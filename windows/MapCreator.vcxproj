@@ -114,7 +114,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;glut32.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;user32.lib;glut32.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>for %%a in ("$(SolutionDir)..\libs\bin\*.*") do (
@@ -134,7 +134,7 @@ copy /Y "%%a" "$(TargetDir)"
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\x64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;glut64.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;user32.lib;glut64.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do (
@@ -158,7 +158,7 @@ copy /Y "%%a" "$(TargetDir)"
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;glut32.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;user32.lib;glut32.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>for %%a in ("$(SolutionDir)..\libs\bin\*.*") do (
@@ -182,7 +182,7 @@ copy /Y "%%a" "$(TargetDir)"
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\x64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;glut64.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;user32.lib;glut64.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do (

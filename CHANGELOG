@@ -1,10 +1,18 @@
+	TODO: Change Name
+	TODO: MapCreator
+	TODO: motion: Crouch and prone
 	TODO: Shadows
 	TODO: Transparency
-	TODO: lobjder: Better memory usage
-	TODO: Pharse -o and -s options for materials
-	TODO: lobjder: Loading screen for loading models
-	TODO: motion: Crouch and prone
-	TODO: motion: Sprint for Windows
+
+v0.6.0-alpha
+
+	** motion: Fixed Shift issue
+	++ motion: OP flying mode
+	++ lobjder: You can disable the stats for models
+	** lobjder: Small fixes
+	++ MapCreator: Created project and basic stuff
+	++ Included .vcxproj.user files (contain some debugger settings)
+	++ Other unstated commits
 
 v0.5.1-alpha
 
