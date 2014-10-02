@@ -1,4 +1,4 @@
-Epic Game
+Timix
 ===
 Info
 ---
@@ -11,7 +11,7 @@ See CHANGELOG for info about the current version.
 How to play
 ---
 ###Windows
-Download this repository, open `windows/opengl_project.sln` and build.
+Download this repository, open `windows/Timix.sln` and build.
 ###Linux [OUTDATED]
 Download this repository, navigate with your terminal to it (using cd) and enter this command:
 ```

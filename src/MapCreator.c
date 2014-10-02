@@ -25,6 +25,23 @@ GLfloat fogColor[] = {0.8, 0.8, 0.8, 1.0};
 GLfloat fps = 0;
 int fpsCurrentTime = 0, fpsPreviousTime = 0, fpsFrameCount = 0;
 
+/* 
+	The game will have multiple puzzle levels (or worlds) that comprise only of cubes (1 x 1 x 1 cubes)
+	Because our world is made out of cubes, this will simplify the collision tests and creation of levels
+	We will use the MapCreator to create this levels and save them in a ".map" file 
+
+	So lets explain the .map file format ant the world format
+		The file starts with a header (MAP_FileHeader) that contains basic stuffs about the world
+		Then a chain of cubes (MAP_FileCube) follows
+		After that a series of special triggers and animations
+		Note the "MAP_File..." format
+	Then we need to take all the cubes and create a tri-dimensional array (MAP_Data) an put this among others (MAP_Info, MAP_Triggers, etc.) inside a map (MAP_Map)
+	For example myMap.Data.array[5][7][2] will represent the cube located at (5, 7, 2). All coordonates must and will be positive.
+
+
+*/
+
+// A header containing information about the file. It is located at the begining of the .map file
 typedef struct
 {
 	// Number of cubes on the respective axis
@@ -33,30 +50,69 @@ typedef struct
 	int numberOfCubesZ;
 }MAP_FileHeader;
 
+// Represents a single cube loaded from the file
+typedef struct
+{
+	// Coordonates
+	int x, y, z;
+	// The type of the cube
+	int type;
+}MAP_FileCube;
+
+// Represents a single cube from the world
 typedef struct
 {
 	// The type of the cube
 	int type;
 }MAP_Cube;
 
+// Contains all the cubes from the world
 typedef struct
 {
 	MAP_Cube* array[3];
-	size_t used;
-	size_t size;
+	size_t used[3];
+	size_t size[3];
 }MAP_Data;
 
-void initArrayData(MAP_Data* a, size_t initialSize)
+// Some info about the world 
+typedef struct
 {
-	if (initialSize <= 0)
-		a->size = 1;
-	else 
-		a->size = initialSize;
+	// Number of cubes on each axis
+	int numOfCubes[3];
+}MAP_Info;
+
+typedef struct
+{
+	// Info about the world
+	MAP_Info Info;
+	// All the cubes
+	MAP_Data Data;
+}MAP_Map;
+
+void initArrayData(MAP_Data* a, size_t initialSize[3])
+{
 	int i;
 	for (i = 0; i < 3; i++) {
-		a->array[i] = (MAP_Cube*)malloc(a->size * sizeof(MAP_Cube));
+		if (initialSize[i] <= 0)
+			a->size[i] = 1;
+		else 
+			a->size[i] = initialSize[i];
+		a->array[i] = (MAP_Cube*)malloc(a->size[i] * sizeof(MAP_Cube));
+		a->used[i] = 0;
 	}
-	a->used = 0;
+}
+
+void resizeArrayData(MAP_Data* a, size_t size[3])
+{
+	int i;
+	for (i = 0; i < 3; i++) {
+		if (size[i] <= 0)
+			a->size[i] = 1;
+		else
+			a->size[i] = size[i];
+		a->array[i] = (MAP_Cube*)realloc(a->array[i], a->size[i] * sizeof(MAP_Cube));
+		a->used[i] = 0;
+	}
 }
 
 // Folder where to store and load maps files
