@@ -8,6 +8,7 @@
 
 #include "../include/utility.h"
 #include "../include/motion.h"
+#include "../include/MapCreator.h"
 
 // C does not support boolean
 #define true 1
@@ -35,71 +36,23 @@ int fpsCurrentTime = 0, fpsPreviousTime = 0, fpsFrameCount = 0;
 		Then a chain of cubes (MAP_FileCube) follows
 		After that a series of special triggers and animations
 		Note the "MAP_File..." format
-	Then we need to take all the cubes and create a tri-dimensional array (MAP_Data) an put this among others (MAP_Info, MAP_Triggers, etc.) inside a map (MAP_Map)
-	For example myMap.Data.array[5][7][2] will represent the cube located at (5, 7, 2). All coordonates must and will be positive.
-
+	Then we need to take all the cubes and create a tri-dimensional array (MAP_Data) and put this among others (MAP_Info, MAP_Triggers, etc.) inside a map (MAP_Map)
+	For example myMap.Data.array[getIndex(myMap.Data, 5, 7, 2)] will represent the cube located at (5, 7, 2). All coordonates must and will be positive.
 
 */
 
-// A header containing information about the file. It is located at the begining of the .map file
-typedef struct
-{
-	// Number of cubes on the respective axis
-	int numberOfCubesX;
-	int numberOfCubesY;
-	int numberOfCubesZ;
-}MAP_FileHeader;
-
-// Represents a single cube loaded from the file
-typedef struct
-{
-	// Coordonates
-	int x, y, z;
-	// The type of the cube
-	int type;
-}MAP_FileCube;
-
-// Represents a single cube from the world
-typedef struct
-{
-	// The type of the cube
-	int type;
-}MAP_Cube;
-
-// Contains all the cubes from the world
-typedef struct
-{
-	MAP_Cube* array[3];
-	size_t used[3];
-	size_t size[3];
-}MAP_Data;
-
-// Some info about the world 
-typedef struct
-{
-	// Number of cubes on each axis
-	int numOfCubes[3];
-}MAP_Info;
-
-typedef struct
-{
-	// Info about the world
-	MAP_Info Info;
-	// All the cubes
-	MAP_Data Data;
-}MAP_Map;
-
-void initArrayData(MAP_Data* a, size_t initialSize[3])
+void initArrayData(MAP_Data* a, size_t size[3])
 {
 	int i;
 	for (i = 0; i < 3; i++) {
-		if (initialSize[i] <= 0)
+		if (size[i] <= 0)
 			a->size[i] = 1;
 		else 
-			a->size[i] = initialSize[i];
-		a->array[i] = (MAP_Cube*)malloc(a->size[i] * sizeof(MAP_Cube));
+			a->size[i] = size[i];
 		a->used[i] = 0;
+		a->offset[i] = 0;
 	}
+	a->array = (MAP_Cube*)malloc((a->size[0] * a->size[1] * a->size[2]) * sizeof(MAP_Cube));
 }
 
 void resizeArrayData(MAP_Data* a, size_t size[3])
@@ -110,9 +63,14 @@ void resizeArrayData(MAP_Data* a, size_t size[3])
 			a->size[i] = 1;
 		else
 			a->size[i] = size[i];
-		a->array[i] = (MAP_Cube*)realloc(a->array[i], a->size[i] * sizeof(MAP_Cube));
 		a->used[i] = 0;
 	}
+	a->array = (MAP_Cube*)realloc(a->array, (a->size[0] * a->size[1] * a->size[2]) * sizeof(MAP_Cube));
+}
+
+int getIndex(MAP_Data d, int x, int y, int z)
+{
+	return z + y * d.size[2] + x * d.size[2] * d.size[1];
 }
 
 // Folder where to store and load maps files
@@ -124,8 +82,7 @@ char * filePath;
 // File pointer to the file 
 FILE * fp;
 // Main map file header
-MAP_FileHeader mainMapHeader;
-MAP_Data mainMapData;
+MAP_Map Map;
 
 
 void display(void)
@@ -240,6 +197,101 @@ void tick(int value)
 	glutTimerFunc(10, tick, value + 1);
 }
 
+// Loads map from file. If mode =
+// 1 -> tries to load the map from the file
+// 2 -> Initiates the Map 
+// If anything fails the function returns 1, else 0 is returned
+int loadMapFromFile(FILE * fp, MAP_Map * map, int mode)
+{
+	// File Header
+	MAP_FileHeader myHeader;
+	MAP_Cube defaultCube;
+	defaultCube.type = 1;
+	// We don't want to directly modify the map given unless everything goes well
+	MAP_Map myMap;
+	// Size
+	size_t size[3];
+	switch (mode) {
+	case 1: // Try to load the file, else return 1
+		// If file is NULL
+		if (fp == NULL) {
+			return 1;
+		}
+		// Read the header
+		if (fread(&myHeader, sizeof(MAP_FileHeader), 1, fp) != 1) {
+			return 1;
+		}
+
+		// First let's get the name of the map
+		myMap.Info.name = (char *)malloc((strlen(myHeader.name) + 1) * sizeof(char));
+		// Now for the cubes
+		MAP_FileCube * myCubes = (MAP_FileCube*)malloc(myHeader.numOfCubes * sizeof(MAP_FileCube));
+		// Read them
+		if (fread(myCubes, sizeof(MAP_FileCube), myHeader.numOfCubes, fp) != myHeader.numOfCubes) {
+			return 1;
+		}
+		// Calculate max and min for each axis
+		unsigned int i;
+		int min[3] = {0, 0, 0}, max[3] = {0, 0, 0};
+		if (myHeader.numOfCubes != 0) {
+			min[0] = max[0] = myCubes[0].x;
+			min[1] = max[1] = myCubes[0].y;
+			min[2] = max[2] = myCubes[0].z;
+		}
+		for (i = 0; i < myHeader.numOfCubes; i++) {
+			if (myCubes[i].x < min[0]) min[0] = myCubes[i].x;
+			if (myCubes[i].y < min[1]) min[1] = myCubes[i].y;
+			if (myCubes[i].z < min[2]) min[2] = myCubes[i].z;
+			if (myCubes[i].x > max[0]) max[0] = myCubes[i].x;
+			if (myCubes[i].y > max[1]) max[1] = myCubes[i].y;
+			if (myCubes[i].z > max[2]) max[2] = myCubes[i].z;
+		}
+		// Offset is -min
+		for (int i = 0; i < 3; i++) {
+			myMap.Data.offset[i] = -min[i];
+		}
+		// Size is max - min
+		for (int i = 0; i < 3; i++) {
+			size[i] = max[i] - min[i];
+		}
+		// Now for the Data array
+		initArrayData(&myMap.Data, size);
+		// Init array with default cube
+		for (i = 0; i < size[0] * size[1] * size[2]; i++) {
+			myMap.Data.array[i] = defaultCube;
+		}
+		// Add cubes
+		for (i = 0; i < myHeader.numOfCubes; i++) {
+			myMap.Data.array[getIndex(myMap.Data, myCubes[i].x, myCubes[i].y, myCubes[i].z)].type = myCubes[i].type;
+		}
+		// I think that's all
+		return 0;
+		break;
+	case 2:
+		// First let's set the name of the map
+		myMap.Info.name = "Nexus Rulz";
+		// Offset
+		for (int i = 0; i < 3; i++) {
+			myMap.Data.offset[i] = 0;
+		}
+		for (int i = 0; i < 3; i++) {
+			size[i] = 100;
+		}
+		// Now for the Data array
+		initArrayData(&myMap.Data, size);
+		// Init array with default cube
+		for (i = 0; i < size[0] * size[1] * size[2]; i++) {
+			myMap.Data.array[i] = defaultCube;
+		}
+		return 0;
+		break;
+	default:
+		return 1;
+		break;
+	}
+}
+
+// Prompts for a file to load/save the map, 
 int openMapFile(void)
 {
 	printf("Enter file name: %s", mapFolder);
@@ -263,11 +315,14 @@ int openMapFile(void)
 				// File name
 				fileName = (char *)malloc((strlen(fileN) + 1) * sizeof(char));
 				strcpy(fileName, fileN);
+
 				// Try to open file in read-binay mode
 				fp = fopen(filePath, "rb");
+				int exists = 0;
 				if (fp != NULL) {
 					// File already exists, lets try to read its content
-					if (fread(&mainMapHeader, sizeof(MAP_FileHeader), 1, fp) != 1)
+					exists = 1;
+					if (loadMapFromFile(fp, &Map, 1))
 						// Failed
 						printf("Error loading map from file \"%s\". Invalid or corrupted .map file\n", filePath);
 					else
@@ -275,17 +330,23 @@ int openMapFile(void)
 						printf("Successfully loaded map from file\n");
 					fclose(fp);
 				}
-				else
+				else {
 					// No file found
 					printf("No such vaid file found, creating one: \"%s\"\n", filePath);
+				}
 				// Open the file in write-binary mode (this also creates the file if it doesn't exist)
 				fp = fopen(filePath, "wb");
 				if (fp != NULL) {
+					if (!exists) {
+						// Init our Map
+						loadMapFromFile(fp, &Map, 2);
+					}
 					// Everything went well
 					printf("Done opening map file for writing\n");
 					return 0;
 				}
-				// Something quite bad happened
+
+				// Something bad happened
 				printf("Could not open file \"%s\"\n", filePath);
 				return 1;
 			}

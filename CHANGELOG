@@ -1,7 +1,19 @@
 	TODO: MapCreator
+		Save Map to file function
+		Init Map function (just take it out from loadMapFromFile)
+		Input to place blocks
+		Function to draw map (using Immediate Mode for start)
+		A crap ton of other thing that will be done in the future (so hard to work alone...)
+		Testing... Heavy testing 
+		Make a library avalable for Timix
 	TODO: motion: Crouch and prone
 	TODO: Shadows
 	TODO: Transparency
+
+v0.6.2-alpha
+
+	++ MapCreator: Function to load a map from a file
+	** MapCreator: Moved structs to MapCreator.h
 
 v0.6.1-alpha
 
