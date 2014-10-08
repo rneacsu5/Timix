@@ -1,8 +1,7 @@
 	TODO: MapCreator
-		Save Map to file function
-		Init Map function (just take it out from loadMapFromFile)
-		Input to place blocks
 		Function to draw map (using Immediate Mode for start)
+		Input to place blocks
+		Ctrl-S to save the map
 		A crap ton of other thing that will be done in the future (so hard to work alone...)
 		Testing... Heavy testing 
 		Make a library avalable for Timix
@@ -13,6 +12,8 @@
 v0.6.2-alpha
 
 	++ MapCreator: Function to load a map from a file
+	++ MapCreator: Function to save a map to a file
+	++ MapCreator: Function to initialize a map
 	** MapCreator: Moved structs to MapCreator.h
 
 v0.6.1-alpha

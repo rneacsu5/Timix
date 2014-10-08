@@ -37,9 +37,12 @@ int fpsCurrentTime = 0, fpsPreviousTime = 0, fpsFrameCount = 0;
 		After that a series of special triggers and animations
 		Note the "MAP_File..." format
 	Then we need to take all the cubes and create a tri-dimensional array (MAP_Data) and put this among others (MAP_Info, MAP_Triggers, etc.) inside a map (MAP_Map)
-	For example myMap.Data.array[getIndex(myMap.Data, 5, 7, 2)] will represent the cube located at (5, 7, 2). All coordonates must and will be positive.
+	For example getCubeAt(myMap.Data, 5, 7, 2) will represent the cube located at (5, 7, 2). All coordonates must and will be positive.
 
 */
+
+#define CUBE_AIR 0
+#define CUBE_FIXED_SOLID 1
 
 void initArrayData(MAP_Data* a, size_t size[3])
 {
@@ -68,9 +71,14 @@ void resizeArrayData(MAP_Data* a, size_t size[3])
 	a->array = (MAP_Cube*)realloc(a->array, (a->size[0] * a->size[1] * a->size[2]) * sizeof(MAP_Cube));
 }
 
-int getIndex(MAP_Data d, int x, int y, int z)
+MAP_Cube getCubeAt(MAP_Data d, int x, int y, int z)
 {
-	return z + y * d.size[2] + x * d.size[2] * d.size[1];
+	return d.array[z + y * d.size[2] + x * d.size[2] * d.size[1]];
+}
+
+void setCubeAt(MAP_Data *d, int x, int y, int z, MAP_Cube c)
+{
+	d->array[z + y * d->size[2] + x * d->size[2] * d->size[1]] = c;
 }
 
 // Folder where to store and load maps files
@@ -197,101 +205,155 @@ void tick(int value)
 	glutTimerFunc(10, tick, value + 1);
 }
 
-// Loads map from file. If mode =
-// 1 -> tries to load the map from the file
-// 2 -> Initiates the Map 
-// If anything fails the function returns 1, else 0 is returned
-int loadMapFromFile(FILE * fp, MAP_Map * map, int mode)
+void initMap(MAP_Map *m, size_t size[3])
 {
-	// File Header
-	MAP_FileHeader myHeader;
-	MAP_Cube defaultCube;
-	defaultCube.type = 1;
-	// We don't want to directly modify the map given unless everything goes well
-	MAP_Map myMap;
-	// Size
-	size_t size[3];
-	switch (mode) {
-	case 1: // Try to load the file, else return 1
-		// If file is NULL
-		if (fp == NULL) {
-			return 1;
-		}
-		// Read the header
-		if (fread(&myHeader, sizeof(MAP_FileHeader), 1, fp) != 1) {
-			return 1;
-		}
+	unsigned int i;
 
-		// First let's get the name of the map
-		myMap.Info.name = (char *)malloc((strlen(myHeader.name) + 1) * sizeof(char));
-		// Now for the cubes
-		MAP_FileCube * myCubes = (MAP_FileCube*)malloc(myHeader.numOfCubes * sizeof(MAP_FileCube));
-		// Read them
-		if (fread(myCubes, sizeof(MAP_FileCube), myHeader.numOfCubes, fp) != myHeader.numOfCubes) {
-			return 1;
-		}
-		// Calculate max and min for each axis
-		unsigned int i;
-		int min[3] = {0, 0, 0}, max[3] = {0, 0, 0};
-		if (myHeader.numOfCubes != 0) {
-			min[0] = max[0] = myCubes[0].x;
-			min[1] = max[1] = myCubes[0].y;
-			min[2] = max[2] = myCubes[0].z;
-		}
-		for (i = 0; i < myHeader.numOfCubes; i++) {
-			if (myCubes[i].x < min[0]) min[0] = myCubes[i].x;
-			if (myCubes[i].y < min[1]) min[1] = myCubes[i].y;
-			if (myCubes[i].z < min[2]) min[2] = myCubes[i].z;
-			if (myCubes[i].x > max[0]) max[0] = myCubes[i].x;
-			if (myCubes[i].y > max[1]) max[1] = myCubes[i].y;
-			if (myCubes[i].z > max[2]) max[2] = myCubes[i].z;
-		}
-		// Offset is -min
-		for (int i = 0; i < 3; i++) {
-			myMap.Data.offset[i] = -min[i];
-		}
-		// Size is max - min
-		for (int i = 0; i < 3; i++) {
-			size[i] = max[i] - min[i];
-		}
-		// Now for the Data array
-		initArrayData(&myMap.Data, size);
-		// Init array with default cube
-		for (i = 0; i < size[0] * size[1] * size[2]; i++) {
-			myMap.Data.array[i] = defaultCube;
-		}
-		// Add cubes
-		for (i = 0; i < myHeader.numOfCubes; i++) {
-			myMap.Data.array[getIndex(myMap.Data, myCubes[i].x, myCubes[i].y, myCubes[i].z)].type = myCubes[i].type;
-		}
-		// I think that's all
-		return 0;
-		break;
-	case 2:
-		// First let's set the name of the map
-		myMap.Info.name = "Nexus Rulz";
-		// Offset
-		for (int i = 0; i < 3; i++) {
-			myMap.Data.offset[i] = 0;
-		}
-		for (int i = 0; i < 3; i++) {
-			size[i] = 100;
-		}
-		// Now for the Data array
-		initArrayData(&myMap.Data, size);
-		// Init array with default cube
-		for (i = 0; i < size[0] * size[1] * size[2]; i++) {
-			myMap.Data.array[i] = defaultCube;
-		}
-		return 0;
-		break;
-	default:
-		return 1;
-		break;
+	// Let's set the name of the map
+	m->Info.name = "Nexus Rulz";
+
+	// Offset and size
+	for (int i = 0; i < 3; i++) {
+		m->Data.offset[i] = 0;
+	}
+
+	// Now for the Data array
+	initArrayData(&m->Data, size);
+
+	// The default cube used
+	MAP_Cube defaultCube;
+	defaultCube.type = CUBE_AIR;
+
+	// Init array with default cube
+	for (i = 0; i < size[0] * size[1] * size[2]; i++) {
+		m->Data.array[i] = defaultCube;
 	}
 }
 
-// Prompts for a file to load/save the map, 
+// Loads map from file.
+// If anything fails the function returns 1, else 0 is returned
+int loadMapFromFile(FILE * fp, MAP_Map * map)
+{
+	// If file is NULL
+	if (fp == NULL) {
+		return 1;
+	}
+
+	// Read the header
+	MAP_FileHeader myHeader;
+	if (fread(&myHeader, sizeof(MAP_FileHeader), 1, fp) != 1) {
+		return 1;
+	}
+
+	// We don't want to directly modify the map given unless everything goes well
+	MAP_Map myMap;
+
+	// The cubes from the file
+	MAP_FileCube * myCubes = (MAP_FileCube*)malloc(myHeader.numOfCubes * sizeof(MAP_FileCube));
+	// Read them
+	if (fread(myCubes, sizeof(MAP_FileCube), myHeader.numOfCubes, fp) != myHeader.numOfCubes) {
+		return 1;
+	}
+
+	// Calculate max and min for each axis
+	unsigned int i;
+	int min[3] = {0, 0, 0}, max[3] = {0, 0, 0};
+	if (myHeader.numOfCubes != 0) {
+		min[0] = max[0] = myCubes[0].x;
+		min[1] = max[1] = myCubes[0].y;
+		min[2] = max[2] = myCubes[0].z;
+	}
+	for (i = 0; i < myHeader.numOfCubes; i++) {
+		if (myCubes[i].x < min[0]) min[0] = myCubes[i].x;
+		if (myCubes[i].y < min[1]) min[1] = myCubes[i].y;
+		if (myCubes[i].z < min[2]) min[2] = myCubes[i].z;
+		if (myCubes[i].x > max[0]) max[0] = myCubes[i].x;
+		if (myCubes[i].y > max[1]) max[1] = myCubes[i].y;
+		if (myCubes[i].z > max[2]) max[2] = myCubes[i].z;
+	}
+
+	// Offset is -min
+	for (int i = 0; i < 3; i++) {
+		myMap.Data.offset[i] = -min[i];
+	}
+
+	// Size is max - min + 1
+	size_t size[3];
+	for (int i = 0; i < 3; i++) {
+		size[i] = max[i] - min[i] + 1;
+	}
+
+	// Now initialize the map
+	initMap(&myMap, size);
+
+	// Get the name of the map
+	free(myMap.Info.name);
+	myMap.Info.name = (char *)malloc((strlen(myHeader.name) + 1) * sizeof(char));
+	strcpy(myMap.Info.name, myHeader.name);
+
+	// Add cubes
+	MAP_Cube cube;
+	for (i = 0; i < myHeader.numOfCubes; i++) {
+		cube.type = myCubes[i].type;
+		setCubeAt(&myMap.Data, myCubes[i].x, myCubes[i].y, myCubes[i].z, cube);
+	}
+
+	// Everything went well so
+	*map = myMap;
+	return 0;
+}
+
+// Save the map to the file
+// If writting fails the function returns 1, else 0 is returned
+int saveMapToFile(FILE * fp, MAP_Map map)
+{
+	// File header
+	MAP_FileHeader myH;
+	// A file cube
+	MAP_FileCube cube;
+	// Copy the name
+	strcpy(myH.name, map.Info.name);
+	// Number of non-air cubes
+	myH.numOfCubes = 0;
+	// Size of allocated memory for myCubes
+	size_t used = 10;
+	// Array of cubes that will be written to the file
+	MAP_FileCube * myCubes = (MAP_FileCube *)malloc(used * sizeof(MAP_FileCube));
+
+	unsigned int a, b, c;
+	// "For frenzy"
+	for (a = 0; a < map.Data.size[0]; a++) {
+		for (b = 0; b < map.Data.size[1]; b++) {
+			for (c = 0; a < map.Data.size[2]; c++) {
+				// If the cube is not air add it to the array
+				if (getCubeAt(map.Data, a, b, c).type != CUBE_AIR) {
+					// Increment
+					myH.numOfCubes++;
+					// Realloc memory if needed
+					if (myH.numOfCubes > used) {
+						used *= 2;
+						myCubes = realloc(myCubes, used * sizeof(MAP_FileCube));
+					}
+					// Add the cube to the array
+					cube.x = a; cube.y = b; cube.z = c;
+					cube.type = getCubeAt(map.Data, a, b, c).type;
+					myCubes[myH.numOfCubes - 1] = cube;
+				}
+			}
+		}
+	}
+	int e = 0;
+
+	// Write the header
+	if (fwrite(&myH, sizeof(MAP_FileHeader), 1, fp) != 1) e = 1;
+	//Write the cubes
+	if (fwrite(myCubes, sizeof(MAP_FileCube), myH.numOfCubes, fp) != myH.numOfCubes) e = 1;
+
+	return e;
+}
+
+// Prompts for a file to open the map
+// If anything fails the function returns 1, else 0 is returned
 int openMapFile(void)
 {
 	printf("Enter file name: %s", mapFolder);
@@ -322,7 +384,7 @@ int openMapFile(void)
 				if (fp != NULL) {
 					// File already exists, lets try to read its content
 					exists = 1;
-					if (loadMapFromFile(fp, &Map, 1))
+					if (loadMapFromFile(fp, &Map))
 						// Failed
 						printf("Error loading map from file \"%s\". Invalid or corrupted .map file\n", filePath);
 					else
@@ -339,7 +401,8 @@ int openMapFile(void)
 				if (fp != NULL) {
 					if (!exists) {
 						// Init our Map
-						loadMapFromFile(fp, &Map, 2);
+						int size[3] = {100, 100, 100};
+						initMap(&Map, size);
 					}
 					// Everything went well
 					printf("Done opening map file for writing\n");
@@ -364,9 +427,7 @@ int openMapFile(void)
 int main(int argc, char *argv[])
 {
 	printf("===================================================\n");
-	while (openMapFile()) {
-		// Tries to open a file
-	}
+	while (openMapFile()); // Tries to open a file
 	printf("Starting OpenGL...");
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
@@ -374,10 +435,10 @@ int main(int argc, char *argv[])
 	glutCreateWindow("Epic Game");
 	glewExperimental = GL_TRUE;
 	glewInit();
-	mot_SetIsOP(true);
 
 	// The parameter should be 1 / AverageFPS
 	mot_Init(1 / 90.0);
+	mot_SetIsOP(true);
 
 	// Event listeners
 	glutDisplayFunc(display);
