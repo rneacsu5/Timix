@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#ifdef _WIN32
+#include <Windows.h>
+#endif // _WIN32
 
 #include <GL/glew.h>
 #include <GL/glut.h>
@@ -44,6 +47,8 @@ int fpsCurrentTime = 0, fpsPreviousTime = 0, fpsFrameCount = 0;
 #define CUBE_AIR 0
 #define CUBE_FIXED_SOLID 1
 
+int saveButtonWasPressed = 0;
+
 void initArrayData(MAP_Data* a, size_t size[3])
 {
 	int i;
@@ -52,7 +57,6 @@ void initArrayData(MAP_Data* a, size_t size[3])
 			a->size[i] = 1;
 		else 
 			a->size[i] = size[i];
-		a->used[i] = 0;
 		a->offset[i] = 0;
 	}
 	a->array = (MAP_Cube*)malloc((a->size[0] * a->size[1] * a->size[2]) * sizeof(MAP_Cube));
@@ -66,19 +70,18 @@ void resizeArrayData(MAP_Data* a, size_t size[3])
 			a->size[i] = 1;
 		else
 			a->size[i] = size[i];
-		a->used[i] = 0;
 	}
 	a->array = (MAP_Cube*)realloc(a->array, (a->size[0] * a->size[1] * a->size[2]) * sizeof(MAP_Cube));
 }
 
 MAP_Cube getCubeAt(MAP_Data d, int x, int y, int z)
 {
-	return d.array[z + y * d.size[2] + x * d.size[2] * d.size[1]];
+	return d.array[(z + d.offset[2]) + (y + d.offset[1]) * d.size[2] + (x + d.offset[0]) * d.size[2] * d.size[1]];
 }
 
 void setCubeAt(MAP_Data *d, int x, int y, int z, MAP_Cube c)
 {
-	d->array[z + y * d->size[2] + x * d->size[2] * d->size[1]] = c;
+	d->array[(z + d->offset[2]) + (y + d->offset[1]) * d->size[2] + (x + d->offset[0]) * d->size[2] * d->size[1]] = c;
 }
 
 // Folder where to store and load maps files
@@ -92,6 +95,306 @@ FILE * fp;
 // Main map file header
 MAP_Map Map;
 
+// A simple way to draw a map
+void drawMap(MAP_Map map)
+{
+	unsigned long int a, b, c;
+	// "For frenzy"
+	for (a = -map.Data.offset[0]; a < map.Data.size[0] - map.Data.offset[0]; a++) {
+		for (b = -map.Data.offset[1]; b < map.Data.size[1] - map.Data.offset[1]; b++) {
+			for (c = -map.Data.offset[2]; c < map.Data.size[2] - map.Data.offset[2]; c++) {
+				// If the cube is not air add it to the array
+				if (getCubeAt(map.Data, a, b, c).type != CUBE_AIR) {
+					glPushMatrix();
+					glTranslatef(a + 0.5, b + 0.5, c + 0.5);
+					glutSolidCube(1);
+					glPopMatrix();
+				}
+			}
+		}
+	}
+}
+
+// Initialize an empty map
+void initMap(MAP_Map *m, size_t size[3])
+{
+	unsigned long int i;
+
+	// Let's set the name of the map
+	m->Info.name = (char*)malloc(64 * sizeof(char));
+	strcpy(m->Info.name, "Nexus Rulz");
+
+	// Now for the Data array
+	initArrayData(&m->Data, size);
+
+	// The default cube used
+	MAP_Cube defaultCube;
+	defaultCube.type = CUBE_AIR;
+
+	// Init array with default cube
+	for (i = 0; i < size[0] * size[1] * size[2]; i++) {
+		m->Data.array[i] = defaultCube;
+	}
+}
+
+// Loads map from file.
+// If anything fails the function returns 1, else 0 is returned
+int loadMapFromFile(FILE * fp, MAP_Map * map)
+{
+	// If file is NULL
+	if (fp == NULL) {
+		return 1;
+	}
+
+	// Read the header
+	MAP_FileHeader myHeader;
+	if (fread(&myHeader, sizeof(MAP_FileHeader), 1, fp) != 1) {
+		return 1;
+	}
+
+	// We don't want to directly modify the map given unless everything goes well
+	MAP_Map myMap;
+
+	// The cubes from the file
+	MAP_FileCube * myCubes = (MAP_FileCube*)malloc(myHeader.numOfCubes * sizeof(MAP_FileCube));
+	// Read them
+	if (fread(myCubes, sizeof(MAP_FileCube), myHeader.numOfCubes, fp) != myHeader.numOfCubes) {
+		return 1;
+	}
+
+	// Calculate max and min for each axis
+	unsigned int i;
+	int min[3] = {0, 0, 0}, max[3] = {0, 0, 0};
+	if (myHeader.numOfCubes != 0) {
+		min[0] = max[0] = myCubes[0].x;
+		min[1] = max[1] = myCubes[0].y;
+		min[2] = max[2] = myCubes[0].z;
+	}
+	for (i = 0; i < myHeader.numOfCubes; i++) {
+		if (myCubes[i].x < min[0]) min[0] = myCubes[i].x;
+		if (myCubes[i].y < min[1]) min[1] = myCubes[i].y;
+		if (myCubes[i].z < min[2]) min[2] = myCubes[i].z;
+		if (myCubes[i].x > max[0]) max[0] = myCubes[i].x;
+		if (myCubes[i].y > max[1]) max[1] = myCubes[i].y;
+		if (myCubes[i].z > max[2]) max[2] = myCubes[i].z;
+	}
+
+	// Size is max - min + 1
+	size_t size[3];
+	for (int i = 0; i < 3; i++) {
+		size[i] = max[i] - min[i] + 1;
+	}
+
+	// Now initialize the map
+	initMap(&myMap, size);
+
+	// Offset is -min
+	for (int i = 0; i < 3; i++) {
+		myMap.Data.offset[i] = -min[i];
+	}
+
+	// Get the name of the map
+	free(myMap.Info.name);
+	myMap.Info.name = (char *)malloc((strlen(myHeader.name) + 1) * sizeof(char));
+	strcpy(myMap.Info.name, myHeader.name);
+
+	// Add cubes
+	MAP_Cube cube;
+	for (i = 0; i < myHeader.numOfCubes; i++) {
+		cube.type = myCubes[i].type;
+		setCubeAt(&myMap.Data, myCubes[i].x, myCubes[i].y, myCubes[i].z, cube);
+	}
+
+	// Everything went well so
+	*map = myMap;
+	return 0;
+}
+
+// Save the map to the file
+// If writting fails the function returns 1, else 0 is returned
+int saveMapToFile(FILE * fp, MAP_Map map)
+{
+	// File header
+	MAP_FileHeader myH;
+	// A file cube
+	MAP_FileCube cube;
+	// Copy the name
+	strcpy(myH.name, map.Info.name);
+	// Number of non-air cubes
+	myH.numOfCubes = 0;
+	// Size of allocated memory for myCubes
+	size_t used = 10;
+	// Array of cubes that will be written to the file
+	MAP_FileCube * myCubes = (MAP_FileCube *)malloc(used * sizeof(MAP_FileCube));
+
+	unsigned int a, b, c;
+	// "For frenzy"
+	for (a = -map.Data.offset[0]; a < map.Data.size[0] - map.Data.offset[0]; a++) {
+		for (b = -map.Data.offset[1]; b < map.Data.size[1] - map.Data.offset[1]; b++) {
+			for (c = -map.Data.offset[2]; c < map.Data.size[2] - map.Data.offset[2]; c++) {
+				// If the cube is not air add it to the array
+				if (getCubeAt(map.Data, a, b, c).type != CUBE_AIR) {
+					// Increment
+					myH.numOfCubes++;
+					// Realloc memory if needed
+					if (myH.numOfCubes > used) {
+						used *= 2;
+						myCubes = realloc(myCubes, used * sizeof(MAP_FileCube));
+					}
+					// Add the cube to the array
+					cube.x = a; cube.y = b; cube.z = c;
+					cube.type = getCubeAt(map.Data, a, b, c).type;
+					myCubes[myH.numOfCubes - 1] = cube;
+				}
+			}
+		}
+	}
+
+	// Move cursor to start of the file
+	fseek(fp, 0, SEEK_SET);
+	// Reopen file (clear content)
+	fp = freopen(filePath, "wb", fp);
+	if (fp == NULL) return 1;
+	// Write the header
+	if (fwrite(&myH, sizeof(MAP_FileHeader), 1, fp) != 1) return 1;
+	// Write the cubes
+	if (fwrite(myCubes, sizeof(MAP_FileCube), myH.numOfCubes, fp) != myH.numOfCubes) return 1;
+
+	return 0;
+}
+
+// Prompts for a file to open the map
+// If anything fails the function returns 1, else 0 is returned
+int openMapFile(void)
+{
+	printf("Enter file name: %s", mapFolder);
+	// Input entered
+	char * fileN = (char*)malloc(32 * sizeof(char));
+	if (scanf("%s", fileN) == 1) {
+		// Lets extract the extension
+		// Pointer to the last dot
+		char * p = NULL;
+		char * p1 = strchr(fileN, '.');
+		while (p1 != NULL) {
+			p = p1;
+			p1 = strchr(p1 + 1, '.');
+		}
+		if (p != NULL) {
+			if (strstr(p + 1, "map") != NULL && strlen(p + 1) == 3) {
+				// File path is folder path + file name
+				filePath = (char *)malloc((strlen(mapFolder) + strlen(fileN) + 1) * sizeof(char));
+				strcpy(filePath, mapFolder);
+				strcat(filePath, fileN);
+				// File name
+				fileName = (char *)malloc((strlen(fileN) + 1) * sizeof(char));
+				strcpy(fileName, fileN);
+
+				// Try to open file in read-binay mode
+				fp = fopen(filePath, "rb");
+				int exists = 0;
+				if (fp != NULL) {
+					// File already exists, lets try to read its content
+					if (loadMapFromFile(fp, &Map)) {
+						// Failed
+						printf("Error loading map from file \"%s\". Invalid or corrupted .map file\n", filePath);
+					}
+					else {
+						// Succeeded
+						exists = 1;
+						printf("Successfully loaded map from file\n");
+					}
+				}
+				else {
+					// No file found
+					printf("No such vaid file found, creating one: \"%s\"\n", filePath);
+				}
+
+				// Open the file in write-binary mode (this also creates the file if it doesn't exist)
+				if (exists) {
+					fp = freopen(filePath, "wb", fp);
+				}
+				else {
+					fp = fopen(filePath, "wb");
+					// Init our Map
+					int size[3] = {50, 50, 50};
+					initMap(&Map, size);
+				}
+
+				if (fp != NULL) {
+					// Everything went well
+					printf("Done.\n");
+					return 0;
+				}
+
+				// Something bad happened
+				printf("Could not open file \"%s\"\n", filePath);
+				return 1;
+			}
+			// Extension found but it's not .map
+			printf("Invalid file extension: \"%s\"\n", p);
+			return 1;
+		}
+		// No dot found so there is no extension
+		printf("No file extension in given name\n");
+	}
+	// Input failed?
+	return 1;
+}
+
+// Changes the block at the eye level
+void changeBlock(void)
+{
+	// Get position
+	mot_Vector pos = mot_GetTargetPos();
+	pos.x = (int)pos.x;
+	pos.y = (int)pos.y;
+	pos.z = (int)pos.z;
+
+	// Resize the map if needed
+	if (pos.x < -Map.Data.offset[0] || pos.y < -Map.Data.offset[1] || pos.z < -Map.Data.offset[2]) {
+		return;
+		unsigned int diff[3] = {0, 0, 0};
+		if (pos.x < -Map.Data.offset[0]) {
+			diff[0] = -Map.Data.offset[0] - pos.x;
+			Map.Data.offset[0] = -pos.x;
+		}
+		if (pos.y < -Map.Data.offset[1]) {
+			diff[1] = -Map.Data.offset[1] - pos.y;
+			Map.Data.offset[1] = -pos.y;
+		}
+		if (pos.z < -Map.Data.offset[2]) {
+			diff[2] = -Map.Data.offset[2] - pos.z;
+			Map.Data.offset[2] = -pos.z;
+		}
+		size_t size[3];
+		int i;
+		for (i = 0; i < 3; i++) {
+			size[i] = Map.Data.size[i] + diff[i];
+		}
+		resizeArrayData(&Map.Data, size);
+
+	}
+	if (pos.x > Map.Data.size[0] - Map.Data.offset[0] || pos.y > Map.Data.size[1] - Map.Data.offset[1] && pos.z > Map.Data.size[2] - Map.Data.offset[2]) {
+		return;
+	}
+	MAP_Cube cube;
+	if (getCubeAt(Map.Data, pos.x, pos.y, pos.z).type == CUBE_AIR)
+	{
+		cube.type = CUBE_FIXED_SOLID;
+	}
+	else {
+		cube.type = CUBE_AIR;
+	}
+	setCubeAt(&Map.Data, pos.x, pos.y, pos.z, cube);
+}
+
+void mouseClick(int button, int state, int x, int y)
+{
+	if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN) {
+		// Right click
+		changeBlock();
+	}
+}
 
 void display(void)
 {
@@ -102,7 +405,19 @@ void display(void)
 	// Set up the camera
 	mot_MoveCamera();
 	// Set light position
+	vector eyePos, targetPos, pos;
+	eyePos.x = mot_GetEyePos().x; eyePos.y = mot_GetEyePos().y; eyePos.z = mot_GetEyePos().z;
+	targetPos.x = mot_GetTargetPos().x; targetPos.y = mot_GetTargetPos().y; targetPos.z = mot_GetTargetPos().z;
+	pos = substractv(targetPos, eyePos);
+	normalizev(&pos);
+	multiplyv(&pos, -1);
+	pos = addv(pos, eyePos);
+	lightPos[0] = pos.x;
+	lightPos[1] = pos.y;
+	lightPos[2] = pos.z;
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+
+	drawMap(Map);
 
 	// Swap buffers in GPU
 	glutSwapBuffers();
@@ -201,234 +516,35 @@ void tick(int value)
 		glutSetWindowTitle(title);
 	}
 
+#ifdef _WIN32
+	
+	// Save the map if Ctrl-s is pressed
+	if (GetKeyState(VK_LCONTROL) < 0 && GetKeyState('S') < 0) {
+		if (!saveButtonWasPressed) {
+			saveButtonWasPressed = 1;
+			if (saveMapToFile(fp, Map)) {
+				printf("Error while saving file :(\n");
+			}
+			else {
+				printf("Saved map to file.\n");
+			}
+		}
+	}
+	else {
+		saveButtonWasPressed = 0;
+	}
+
+#endif // _WIN32
+
 	// Waits 10 ms
 	glutTimerFunc(10, tick, value + 1);
-}
-
-void initMap(MAP_Map *m, size_t size[3])
-{
-	unsigned int i;
-
-	// Let's set the name of the map
-	m->Info.name = "Nexus Rulz";
-
-	// Offset and size
-	for (int i = 0; i < 3; i++) {
-		m->Data.offset[i] = 0;
-	}
-
-	// Now for the Data array
-	initArrayData(&m->Data, size);
-
-	// The default cube used
-	MAP_Cube defaultCube;
-	defaultCube.type = CUBE_AIR;
-
-	// Init array with default cube
-	for (i = 0; i < size[0] * size[1] * size[2]; i++) {
-		m->Data.array[i] = defaultCube;
-	}
-}
-
-// Loads map from file.
-// If anything fails the function returns 1, else 0 is returned
-int loadMapFromFile(FILE * fp, MAP_Map * map)
-{
-	// If file is NULL
-	if (fp == NULL) {
-		return 1;
-	}
-
-	// Read the header
-	MAP_FileHeader myHeader;
-	if (fread(&myHeader, sizeof(MAP_FileHeader), 1, fp) != 1) {
-		return 1;
-	}
-
-	// We don't want to directly modify the map given unless everything goes well
-	MAP_Map myMap;
-
-	// The cubes from the file
-	MAP_FileCube * myCubes = (MAP_FileCube*)malloc(myHeader.numOfCubes * sizeof(MAP_FileCube));
-	// Read them
-	if (fread(myCubes, sizeof(MAP_FileCube), myHeader.numOfCubes, fp) != myHeader.numOfCubes) {
-		return 1;
-	}
-
-	// Calculate max and min for each axis
-	unsigned int i;
-	int min[3] = {0, 0, 0}, max[3] = {0, 0, 0};
-	if (myHeader.numOfCubes != 0) {
-		min[0] = max[0] = myCubes[0].x;
-		min[1] = max[1] = myCubes[0].y;
-		min[2] = max[2] = myCubes[0].z;
-	}
-	for (i = 0; i < myHeader.numOfCubes; i++) {
-		if (myCubes[i].x < min[0]) min[0] = myCubes[i].x;
-		if (myCubes[i].y < min[1]) min[1] = myCubes[i].y;
-		if (myCubes[i].z < min[2]) min[2] = myCubes[i].z;
-		if (myCubes[i].x > max[0]) max[0] = myCubes[i].x;
-		if (myCubes[i].y > max[1]) max[1] = myCubes[i].y;
-		if (myCubes[i].z > max[2]) max[2] = myCubes[i].z;
-	}
-
-	// Offset is -min
-	for (int i = 0; i < 3; i++) {
-		myMap.Data.offset[i] = -min[i];
-	}
-
-	// Size is max - min + 1
-	size_t size[3];
-	for (int i = 0; i < 3; i++) {
-		size[i] = max[i] - min[i] + 1;
-	}
-
-	// Now initialize the map
-	initMap(&myMap, size);
-
-	// Get the name of the map
-	free(myMap.Info.name);
-	myMap.Info.name = (char *)malloc((strlen(myHeader.name) + 1) * sizeof(char));
-	strcpy(myMap.Info.name, myHeader.name);
-
-	// Add cubes
-	MAP_Cube cube;
-	for (i = 0; i < myHeader.numOfCubes; i++) {
-		cube.type = myCubes[i].type;
-		setCubeAt(&myMap.Data, myCubes[i].x, myCubes[i].y, myCubes[i].z, cube);
-	}
-
-	// Everything went well so
-	*map = myMap;
-	return 0;
-}
-
-// Save the map to the file
-// If writting fails the function returns 1, else 0 is returned
-int saveMapToFile(FILE * fp, MAP_Map map)
-{
-	// File header
-	MAP_FileHeader myH;
-	// A file cube
-	MAP_FileCube cube;
-	// Copy the name
-	strcpy(myH.name, map.Info.name);
-	// Number of non-air cubes
-	myH.numOfCubes = 0;
-	// Size of allocated memory for myCubes
-	size_t used = 10;
-	// Array of cubes that will be written to the file
-	MAP_FileCube * myCubes = (MAP_FileCube *)malloc(used * sizeof(MAP_FileCube));
-
-	unsigned int a, b, c;
-	// "For frenzy"
-	for (a = 0; a < map.Data.size[0]; a++) {
-		for (b = 0; b < map.Data.size[1]; b++) {
-			for (c = 0; a < map.Data.size[2]; c++) {
-				// If the cube is not air add it to the array
-				if (getCubeAt(map.Data, a, b, c).type != CUBE_AIR) {
-					// Increment
-					myH.numOfCubes++;
-					// Realloc memory if needed
-					if (myH.numOfCubes > used) {
-						used *= 2;
-						myCubes = realloc(myCubes, used * sizeof(MAP_FileCube));
-					}
-					// Add the cube to the array
-					cube.x = a; cube.y = b; cube.z = c;
-					cube.type = getCubeAt(map.Data, a, b, c).type;
-					myCubes[myH.numOfCubes - 1] = cube;
-				}
-			}
-		}
-	}
-	int e = 0;
-
-	// Write the header
-	if (fwrite(&myH, sizeof(MAP_FileHeader), 1, fp) != 1) e = 1;
-	//Write the cubes
-	if (fwrite(myCubes, sizeof(MAP_FileCube), myH.numOfCubes, fp) != myH.numOfCubes) e = 1;
-
-	return e;
-}
-
-// Prompts for a file to open the map
-// If anything fails the function returns 1, else 0 is returned
-int openMapFile(void)
-{
-	printf("Enter file name: %s", mapFolder);
-	// Input entered
-	char * fileN = (char*)malloc(32 * sizeof(char));
-	if (scanf("%s", fileN) == 1) {
-		// Lets extract the extension
-		// Pointer to the last dot
-		char * p = NULL;
-		char * p1 = strchr(fileN, '.');
-		while (p1 != NULL) {
-			p = p1;
-			p1 = strchr(p1 + 1, '.');
-		}
-		if (p != NULL) {
-			if (strstr(p + 1, "map") != NULL && strlen(p + 1) == 3) {
-				// File path is folder path + file name
-				filePath = (char *)malloc((strlen(mapFolder) + strlen(fileN) + 1) * sizeof(char));
-				strcpy(filePath, mapFolder);
-				strcat(filePath, fileN);
-				// File name
-				fileName = (char *)malloc((strlen(fileN) + 1) * sizeof(char));
-				strcpy(fileName, fileN);
-
-				// Try to open file in read-binay mode
-				fp = fopen(filePath, "rb");
-				int exists = 0;
-				if (fp != NULL) {
-					// File already exists, lets try to read its content
-					exists = 1;
-					if (loadMapFromFile(fp, &Map))
-						// Failed
-						printf("Error loading map from file \"%s\". Invalid or corrupted .map file\n", filePath);
-					else
-						// Succeeded
-						printf("Successfully loaded map from file\n");
-					fclose(fp);
-				}
-				else {
-					// No file found
-					printf("No such vaid file found, creating one: \"%s\"\n", filePath);
-				}
-				// Open the file in write-binary mode (this also creates the file if it doesn't exist)
-				fp = fopen(filePath, "wb");
-				if (fp != NULL) {
-					if (!exists) {
-						// Init our Map
-						int size[3] = {100, 100, 100};
-						initMap(&Map, size);
-					}
-					// Everything went well
-					printf("Done opening map file for writing\n");
-					return 0;
-				}
-
-				// Something bad happened
-				printf("Could not open file \"%s\"\n", filePath);
-				return 1;
-			}
-			// Extension found but it's not .map
-			printf("Invalid file extension: \"%s\"\n", p);
-			return 1;
-		}
-		// No dot found so there is no extension
-		printf("No file extension in given name\n");
-	}
-	// Input failed?
-	return 1;
 }
 
 int main(int argc, char *argv[])
 {
 	printf("===================================================\n");
 	while (openMapFile()); // Tries to open a file
-	printf("Starting OpenGL...");
+	printf("Starting OpenGL...\n");
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 	glutInitWindowSize(800, 600);
@@ -443,6 +559,7 @@ int main(int argc, char *argv[])
 	// Event listeners
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
+	glutMouseFunc(mouseClick);
 
 	initialize();
 

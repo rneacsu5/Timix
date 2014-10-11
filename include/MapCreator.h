@@ -29,7 +29,6 @@ typedef struct
 typedef struct
 {
 	MAP_Cube* array;
-	size_t used[3];
 	size_t size[3];
 	int offset[3];
 } MAP_Data;
@@ -39,8 +38,6 @@ typedef struct
 {
 	// Name of the map/level
 	char * name;
-	// Number of cubes on each axis
-	int numOfCubes[3];
 } MAP_Info;
 
 typedef struct

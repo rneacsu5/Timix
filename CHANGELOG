@@ -1,13 +1,21 @@
 	TODO: MapCreator
-		Function to draw map (using Immediate Mode for start)
-		Input to place blocks
-		Ctrl-S to save the map
+		Resize Map if blocks are placed outside the map
+		Draw Map bound
+		Outline selected cube
+		Save file on exit
 		A crap ton of other thing that will be done in the future (so hard to work alone...)
 		Testing... Heavy testing 
 		Make a library avalable for Timix
 	TODO: motion: Crouch and prone
+	TODO: motion: Function to change constants
 	TODO: Shadows
 	TODO: Transparency
+
+v0.6.3-alpha
+
+	++ MapCreator: You can place blocks with right click
+	++ MapCreator: Ctrl-S saves the map
+	** MapCreator: Other fixes, removed some unused variables from structs
 
 v0.6.2-alpha
 
