@@ -259,6 +259,8 @@ int saveMapToFile(FILE * fp, MAP_Map map)
 	if (fwrite(&myH, sizeof(MAP_FileHeader), 1, fp) != 1) return 1;
 	// Write the cubes
 	if (fwrite(myCubes, sizeof(MAP_FileCube), myH.numOfCubes, fp) != myH.numOfCubes) return 1;
+	// Move cursor to start of the file
+	fseek(fp, 0, SEEK_SET);
 
 	return 0;
 }
@@ -321,6 +323,8 @@ int openMapFile(void)
 				}
 
 				if (fp != NULL) {
+					// Save the map in case the user forgets to save it
+					saveMapToFile(fp, Map);
 					// Everything went well
 					printf("Done.\n");
 					return 0;
@@ -418,6 +422,22 @@ void display(void)
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
 	drawMap(Map);
+
+	// Draw axes form origin
+	glBegin(GL_LINES);
+		// X
+		glColor3f(1, 0, 0);
+		glVertex3f(0, 0, 0);
+		glVertex3f(100, 0, 0);
+		// Y
+		glColor3f(0, 1, 0);
+		glVertex3f(0, 0, 0);
+		glVertex3f(0, 100, 0);
+		// Z
+		glColor3f(0, 0, 1);
+		glVertex3f(0, 0, 0);
+		glVertex3f(0, 0, 100);
+	glEnd();
 
 	// Swap buffers in GPU
 	glutSwapBuffers();

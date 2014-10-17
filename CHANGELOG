@@ -8,8 +8,17 @@
 		Make a library avalable for Timix
 	TODO: motion: Crouch and prone
 	TODO: motion: Function to change constants
+	TODO: Rename/remove some models and rearrange folder tree
 	TODO: Shadows
 	TODO: Transparency
+
+v0.6.4-alpha
+
+	** MapCreator: fixed not saving file bug
+	++ Setup is now avalable thanks to "Inno Setup Compiler"
+	++ Added awful icon
+	** Shorter .gitignore
+	++ Added Timix.exe file (and configured VS to put it in bin/ folder)
 
 v0.6.3-alpha
 

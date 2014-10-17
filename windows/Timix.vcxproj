@@ -33,6 +33,7 @@
     <ClInclude Include="..\include\motion.h" />
     <ClInclude Include="..\include\std_image.h" />
     <ClInclude Include="..\include\utility.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\collision.c" />
@@ -40,6 +41,12 @@
     <ClCompile Include="..\src\main.c" />
     <ClCompile Include="..\src\motion.c" />
     <ClCompile Include="..\src\utility.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\setup\Icon\Timix-icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Timix.rc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{33B39174-4B2C-4024-B9E2-94D7D523F442}</ProjectGuid>
@@ -140,9 +147,8 @@
       <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>for %%a in ("$(SolutionDir)..\libs\bin\*.*") do (
-copy /Y "%%a" "$(TargetDir)"
-)</Command>
+      <Command>for %%a in ("$(SolutionDir)..\libs\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -161,9 +167,8 @@ copy /Y "%%a" "$(TargetDir)"
       <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\x64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do (
-copy /Y "%%a" "$(TargetDir)"
-)</Command>
+      <Command>for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -186,9 +191,8 @@ copy /Y "%%a" "$(TargetDir)"
       <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>for %%a in ("$(SolutionDir)..\libs\bin\*.*") do (
-copy /Y "%%a" "$(TargetDir)"
-)</Command>
+      <Command>for %%a in ("$(SolutionDir)..\libs\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -211,9 +215,8 @@ copy /Y "%%a" "$(TargetDir)"
       <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\x64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do (
-copy /Y "%%a" "$(TargetDir)"
-)</Command>
+      <Command>for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

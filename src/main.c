@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
 
 	// The parameter should be 1 / AverageFPS
 	mot_Init(1 / 90.0);
-	mot_SetIsOP(true);
+	//mot_SetIsOP(true);
 	lbj_PrintStats(true);
 
 	// Event listeners
