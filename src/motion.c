@@ -89,6 +89,31 @@ GLdouble motvLength(mot_Vector v) {
 	return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
+// Constants
+
+// Eye height
+GLdouble EYE_HEIGHT = 1.7;
+// Running acceleration
+GLdouble ACCELERATION = 40;
+// Sprinting acceleration
+GLdouble SPRINT_ACCELERATION = 50;
+// Braking acceleration
+GLdouble BRAKE_ACCELERATION = 25;
+// Air drag acceleration coefficient
+GLdouble AIR_DRAG = 0.2;
+// Maximum running speed
+GLdouble MAX_SPEED = 5;
+// Maximum sprinting speed
+GLdouble SPRINT_MAX_SPEED = 7.5;
+// Maximum forward speed while jumping
+GLdouble JUMP_MAX_SPEED = 5 / 1.3;
+// Maximum forward speed while jumping and sprinting
+GLdouble JUMP_SPRINT_MAX_SPEED = 7.5 / 1.3;
+// The jump up speed
+GLdouble JUMP_SPEED = 3.13;
+// Gravitational acceleration
+GLdouble GFORCE = 9.81;
+
 // Camerea pitch and yaw
 GLdouble cameraYaw = 0, cameraPitch = 0;
 // Vectors
@@ -104,7 +129,7 @@ int isPaused = mot_false;
 int isOP = mot_false;
 
 // The time interval between callbacks in seconds
-GLfloat deltaT;
+GLfloat deltaT = 1 / 100.0;
 
 // Moves camera freely with no gravity
 void moveOPCamera(void)
@@ -135,14 +160,14 @@ void moveOPCamera(void)
 
 	// Makes the acceleration the right length
 	motNormalizev(&speed);
-	speed = motMultiplyv(speed, MOT_MAX_SPEED * 1.5);
+	speed = motMultiplyv(speed, MAX_SPEED * 1.5);
 
 	// Moves up or down
 	if (keyStates[32]) {
-		speed = motAddv(speed, motCreatev(0, MOT_MAX_SPEED, 0));
+		speed = motAddv(speed, motCreatev(0, MAX_SPEED, 0));
 	}
 	if (isSprinting) {
-		speed = motAddv(speed, motCreatev(0, -MOT_MAX_SPEED, 0));
+		speed = motAddv(speed, motCreatev(0, -MAX_SPEED, 0));
 	}
 
 
@@ -177,26 +202,26 @@ void jumpFunc(void) {
 
 		// Makes the push motVector the right length
 		motNormalizev(&push);
-		push = motMultiplyv(push, 5 * MOT_ACCELERATION * deltaT);
+		push = motMultiplyv(push, 5 * ACCELERATION * deltaT);
 
 		// Adds the push motVector to the camera speed and limits its speed
-		if (!isSprinting && motvLength(motAddv(motCreatev(speed.x, 0, speed.z), push)) <= MOT_JUMP_MAX_SPEED) {
+		if (!isSprinting && motvLength(motAddv(motCreatev(speed.x, 0, speed.z), push)) <= JUMP_MAX_SPEED) {
 			speed = motAddv(speed, push);
 		}
-		else if (!isSprinting && motvLength(motAddv(motCreatev(speed.x, 0, speed.z), push)) > MOT_JUMP_MAX_SPEED && motvLength(motCreatev(speed.x, 0, speed.z)) <= MOT_JUMP_MAX_SPEED) {
+		else if (!isSprinting && motvLength(motAddv(motCreatev(speed.x, 0, speed.z), push)) > JUMP_MAX_SPEED && motvLength(motCreatev(speed.x, 0, speed.z)) <= JUMP_MAX_SPEED) {
 			speed = motAddv(speed, push);
 			motNormalizev(&speed);
-			speed = motMultiplyv(speed, MOT_JUMP_MAX_SPEED);
+			speed = motMultiplyv(speed, JUMP_MAX_SPEED);
 		}
-		if (isSprinting && motvLength(motAddv(motCreatev(speed.x, 0, speed.z), push)) <= MOT_JUMP_SPRINT_MAX_SPEED)
+		if (isSprinting && motvLength(motAddv(motCreatev(speed.x, 0, speed.z), push)) <= JUMP_SPRINT_MAX_SPEED)
 			speed = motAddv(speed, push);
-		else if (isSprinting && motvLength(motAddv(motCreatev(speed.x, 0, speed.z), push)) > MOT_JUMP_SPRINT_MAX_SPEED && motvLength(motCreatev(speed.x, 0, speed.z)) <= MOT_JUMP_SPRINT_MAX_SPEED) {
+		else if (isSprinting && motvLength(motAddv(motCreatev(speed.x, 0, speed.z), push)) > JUMP_SPRINT_MAX_SPEED && motvLength(motCreatev(speed.x, 0, speed.z)) <= JUMP_SPRINT_MAX_SPEED) {
 			speed = motAddv(speed, push);
 			motNormalizev(&speed);
-			speed = motMultiplyv(speed, MOT_JUMP_SPRINT_MAX_SPEED);
+			speed = motMultiplyv(speed, JUMP_SPRINT_MAX_SPEED);
 		}
 
-		speed = motAddv(speed, motCreatev(0, MOT_JUMP_SPEED, 0));
+		speed = motAddv(speed, motCreatev(0, JUMP_SPEED, 0));
 	}
 }
 
@@ -238,7 +263,7 @@ void mot_MoveCamera(void) {
 	// Brake acceleration  (opposite to the speed and parallel to the ground)
 	mot_Vector drag = motCreatev(speed0.x, 0, speed0.z);
 	motNormalizev(&drag);
-	drag = motMultiplyv(drag, -MOT_BRAKE_ACCELERATION);
+	drag = motMultiplyv(drag, -BRAKE_ACCELERATION);
 	if (!isJumping) {
 		if (motvLength(speed) > motvLength(motMultiplyv(drag, deltaT))) {
 			speed = motAddv(speed, motMultiplyv(drag, deltaT));
@@ -255,7 +280,7 @@ void mot_MoveCamera(void) {
 	mot_Vector airDrag = speed0;
 	motNormalizev(&airDrag);
 	// Air drag is proportional to the speed
-	airDrag = motMultiplyv(airDrag, - motvLength(speed0) * MOT_AIR_DRAG);
+	airDrag = motMultiplyv(airDrag, - motvLength(speed0) * AIR_DRAG);
 	if (motvLength(speed) > motvLength(motMultiplyv(airDrag, deltaT))) {
 		speed = motAddv(speed, motMultiplyv(airDrag, deltaT));
 	}
@@ -264,7 +289,7 @@ void mot_MoveCamera(void) {
 	}
 
 	// Gravity
-	speed = motAddv(speed, motMultiplyv(motCreatev(0, - MOT_GFORCE, 0), deltaT));
+	speed = motAddv(speed, motMultiplyv(motCreatev(0, - GFORCE, 0), deltaT));
 
 	// Makes the acceleration based on input and direction
 	mot_Vector direction = motSubstractv(motCreatev(target.x, eye.y, target.z), eye);
@@ -287,12 +312,12 @@ void mot_MoveCamera(void) {
 
 	// Makes the acceleration the right length
 	motNormalizev(&acc);
-	acc = motMultiplyv(acc, MOT_ACCELERATION);
+	acc = motMultiplyv(acc, ACCELERATION);
 
 	// If sprinting, resize the acceleration
 	if (isSprinting) {
 		motNormalizev(&acc);
-		acc = motMultiplyv(acc, MOT_SPRINT_ACCELERATION);
+		acc = motMultiplyv(acc, SPRINT_ACCELERATION);
 	}
 
 	speed = motAddv(speed, motMultiplyv(acc, deltaT));
@@ -301,43 +326,43 @@ void mot_MoveCamera(void) {
 
 	// This part limits the speed of the camera
 	if (!isJumping && isMoving) {
-		if (!isSprinting && motvLength(motCreatev(speed0.x, 0, speed0.z)) < MOT_MAX_SPEED && motvLength(motCreatev(speed.x, 0, speed.z)) > MOT_MAX_SPEED) {
+		if (!isSprinting && motvLength(motCreatev(speed0.x, 0, speed0.z)) < MAX_SPEED && motvLength(motCreatev(speed.x, 0, speed.z)) > MAX_SPEED) {
 			mot_Vector s = motCreatev(speed.x, 0, speed.z);
 			motNormalizev(&s);
-			s = motMultiplyv(s, MOT_MAX_SPEED);
+			s = motMultiplyv(s, MAX_SPEED);
 			speed = motCreatev(s.x, speed.y, s.z);
 		}
-		else if (!isSprinting && motvLength(motCreatev(speed0.x, 0, speed0.z)) >= MOT_MAX_SPEED) {
+		else if (!isSprinting && motvLength(motCreatev(speed0.x, 0, speed0.z)) >= MAX_SPEED) {
 			mot_Vector speed1 = speed0;
 			speed1 = motAddv(speed1, motMultiplyv(drag, deltaT));
 			speed1 = motAddv(speed1, motMultiplyv(airDrag, deltaT));
 			GLdouble length = motvLength(speed1);
 			motNormalizev(&speed);
 			speed = motMultiplyv(speed, length);
-			if (motvLength(motCreatev(speed.x, 0, speed.z)) < MOT_MAX_SPEED) {
+			if (motvLength(motCreatev(speed.x, 0, speed.z)) < MAX_SPEED) {
 				mot_Vector s = motCreatev(speed.x, 0, speed.z);
 				motNormalizev(&s);
-				s = motMultiplyv(s, MOT_MAX_SPEED);
+				s = motMultiplyv(s, MAX_SPEED);
 				speed = motCreatev(s.x, speed.y, s.z);
 			}
 		}
-		if (isSprinting && motvLength(motCreatev(speed0.x, 0, speed0.z)) < MOT_SPRINT_MAX_SPEED && motvLength(motCreatev(speed.x, 0, speed.z)) > MOT_SPRINT_MAX_SPEED) {
+		if (isSprinting && motvLength(motCreatev(speed0.x, 0, speed0.z)) < SPRINT_MAX_SPEED && motvLength(motCreatev(speed.x, 0, speed.z)) > SPRINT_MAX_SPEED) {
 			mot_Vector s = motCreatev(speed.x, 0, speed.z);
 			motNormalizev(&s);
-			s = motMultiplyv(s, MOT_SPRINT_MAX_SPEED);
+			s = motMultiplyv(s, SPRINT_MAX_SPEED);
 			speed = motCreatev(s.x, speed.y, s.z);
 		}
-		else if (isSprinting && motvLength(motCreatev(speed0.x, 0, speed0.z)) >= MOT_SPRINT_MAX_SPEED) {
+		else if (isSprinting && motvLength(motCreatev(speed0.x, 0, speed0.z)) >= SPRINT_MAX_SPEED) {
 			mot_Vector speed1 = speed0;
 			speed1 = motAddv(speed1, motMultiplyv(drag, deltaT));
 			speed1 = motAddv(speed1, motMultiplyv(airDrag, deltaT));
 			GLdouble length = motvLength(speed1);
 			motNormalizev(&speed);
 			speed = motMultiplyv(speed, length);
-			if (motvLength(motCreatev(speed.x, 0, speed.z)) < MOT_SPRINT_MAX_SPEED) {
+			if (motvLength(motCreatev(speed.x, 0, speed.z)) < SPRINT_MAX_SPEED) {
 				mot_Vector s = motCreatev(speed.x, 0, speed.z);
 				motNormalizev(&s);
-				s = motMultiplyv(s, MOT_SPRINT_MAX_SPEED);
+				s = motMultiplyv(s, SPRINT_MAX_SPEED);
 				speed = motCreatev(s.x, speed.y, s.z);
 			}
 		}
@@ -351,9 +376,9 @@ void mot_MoveCamera(void) {
 	target = motAddv(target, d);
 
 	// Check for floor
-	if (eye.y < MOT_EYE_HEIGHT) {
-		target.y += MOT_EYE_HEIGHT - eye.y;
-		eye.y = MOT_EYE_HEIGHT;
+	if (eye.y < EYE_HEIGHT) {
+		target.y += EYE_HEIGHT - eye.y;
+		eye.y = EYE_HEIGHT;
 		isJumping = mot_false;
 		speed = motCreatev(speed.x, 0, speed.z);
 	}
@@ -537,10 +562,10 @@ void mot_Init(GLdouble step) {
 	glutMotionFunc(freeCameraHandler);
 
 	// Represents the camera position
-	eye = motCreatev(0, MOT_EYE_HEIGHT, 0);
+	eye = motCreatev(0, EYE_HEIGHT, 0);
 
 	// Represents the point where the camera looks
-	target = motCreatev(1, MOT_EYE_HEIGHT, 0);
+	target = motCreatev(1, EYE_HEIGHT, 0);
 
 	// Camerea pitch and yaw
 	cameraPitch = 0;
@@ -591,4 +616,37 @@ void mot_SetIsOP(int state)
 {
 	if (state) isOP = mot_true;
 	else isOP = mot_false;
+}
+
+// Change a constant. Multiple constants can be set at once: MOT_MAX_SPEED | MOT_SPRINT_MAX_SPEED
+void mot_SetConstant(int constants, GLdouble value)
+{
+	if (constants & MOT_EYE_HEIGHT) EYE_HEIGHT = value;
+	if (constants & MOT_ACCELERATION) ACCELERATION = value;
+	if (constants & MOT_SPRINT_ACCELERATION) SPRINT_ACCELERATION = value;
+	if (constants & MOT_BRAKE_ACCELERATION) BRAKE_ACCELERATION = value;
+	if (constants & MOT_AIR_DRAG) AIR_DRAG = value;
+	if (constants & MOT_MAX_SPEED) MAX_SPEED = value;
+	if (constants & MOT_SPRINT_MAX_SPEED) SPRINT_MAX_SPEED = value;
+	if (constants & MOT_JUMP_MAX_SPEED) JUMP_MAX_SPEED = value;
+	if (constants & MOT_JUMP_SPRINT_MAX_SPEED) JUMP_SPRINT_MAX_SPEED = value;
+	if (constants & MOT_JUMP_SPEED) JUMP_SPEED = value;
+	if (constants & MOT_GFORCE) GFORCE = value;
+}
+
+// Get a constant
+GLdouble mot_GetConstant(int constant)
+{
+	if (constant == MOT_EYE_HEIGHT) return EYE_HEIGHT;
+	if (constant == MOT_ACCELERATION) return ACCELERATION;
+	if (constant == MOT_SPRINT_ACCELERATION) return SPRINT_ACCELERATION;
+	if (constant == MOT_BRAKE_ACCELERATION) return BRAKE_ACCELERATION;
+	if (constant == MOT_AIR_DRAG) return AIR_DRAG;
+	if (constant == MOT_MAX_SPEED) return MAX_SPEED;
+	if (constant == MOT_SPRINT_MAX_SPEED) return SPRINT_MAX_SPEED;
+	if (constant == MOT_JUMP_MAX_SPEED) return JUMP_MAX_SPEED;
+	if (constant == MOT_JUMP_SPRINT_MAX_SPEED) return JUMP_SPRINT_MAX_SPEED;
+	if (constant == MOT_JUMP_SPEED) return JUMP_SPEED;
+	if (constant == MOT_GFORCE) return GFORCE;
+	return 0;
 }

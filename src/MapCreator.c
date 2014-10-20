@@ -340,6 +340,7 @@ int openMapFile(void)
 		}
 		// No dot found so there is no extension
 		printf("No file extension in given name\n");
+		return 1;
 	}
 	// Input failed?
 	return 1;
@@ -382,8 +383,7 @@ void changeBlock(void)
 		return;
 	}
 	MAP_Cube cube;
-	if (getCubeAt(Map.Data, pos.x, pos.y, pos.z).type == CUBE_AIR)
-	{
+	if (getCubeAt(Map.Data, pos.x, pos.y, pos.z).type == CUBE_AIR) {
 		cube.type = CUBE_FIXED_SOLID;
 	}
 	else {
@@ -470,6 +470,8 @@ void initialize(void)
 	// Enable Blend and transparency
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	// Select a smooth shading
+	glShadeModel(GL_SMOOTH);
 
 	// Sets the light
 	glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
@@ -479,11 +481,9 @@ void initialize(void)
 	glEnable(GL_LIGHTING);
 	// Enables the light
 	glEnable(GL_LIGHT0);
-	// Select a smooth shading
-	glShadeModel(GL_SMOOTH);
 
 	// Enable fog
-	// glEnable(GL_FOG);
+	//glEnable(GL_FOG);
 	// Set fog formula
 	glFogi(GL_FOG_MODE, GL_EXP2);
 	// Set fog density
@@ -497,8 +497,12 @@ void initialize(void)
 	// Set fog quality
 	glHint(GL_FOG_HINT, GL_NICEST);
 
+	// The parameter should be 1 / AverageFPS
+	mot_Init(1 / 80.0);
 	// Teleport camera
-	mot_TeleportCamera(5, MOT_EYE_HEIGHT, 5);
+	mot_TeleportCamera(5, mot_GetConstant(MOT_EYE_HEIGHT), 5);
+	mot_SetIsOP(true);
+	mot_SetConstant(MOT_MAX_SPEED, 10);
 
 	// Loads the shaders
 	loadShaders("./src/vshader.vsh", GL_VERTEX_SHADER, "./src/fshader.fsh", GL_FRAGMENT_SHADER);
@@ -538,7 +542,7 @@ void tick(int value)
 
 #ifdef _WIN32
 	
-	// Save the map if Ctrl-s is pressed
+	// Save the map if Ctrl-S is pressed
 	if (GetKeyState(VK_LCONTROL) < 0 && GetKeyState('S') < 0) {
 		if (!saveButtonWasPressed) {
 			saveButtonWasPressed = 1;
@@ -572,16 +576,12 @@ int main(int argc, char *argv[])
 	glewExperimental = GL_TRUE;
 	glewInit();
 
-	// The parameter should be 1 / AverageFPS
-	mot_Init(1 / 90.0);
-	mot_SetIsOP(true);
+	initialize();
 
 	// Event listeners
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutMouseFunc(mouseClick);
-
-	initialize();
 
 	// Starts main timer
 	glutTimerFunc(10, tick, 0);

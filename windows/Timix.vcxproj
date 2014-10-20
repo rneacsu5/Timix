@@ -104,11 +104,12 @@
     <ExecutablePath>$(SolutionDir)..\libs\bin\;$(ExecutablePath)</ExecutablePath>
     <ReferencePath>$(SolutionDir)..\libs\lib\;$(ReferencePath)</ReferencePath>
     <LibraryPath>$(SolutionDir)..\libs\lib\;$(LibraryPath)</LibraryPath>
+    <IntDir>bin\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
-    <IntDir>$(Configuration)\</IntDir>
+    <IntDir>bin\$(Configuration)\</IntDir>
     <IncludePath>$(SolutionDir)..\libs\include\;$(IncludePath)</IncludePath>
     <ExecutablePath>$(SolutionDir)..\libs\bin\x64\;$(ExecutablePath)</ExecutablePath>
     <ReferencePath>$(SolutionDir)..\libs\lib\x64\;$(ReferencePath)</ReferencePath>
@@ -121,11 +122,12 @@
     <ExecutablePath>$(SolutionDir)..\libs\bin\;$(ExecutablePath)</ExecutablePath>
     <ReferencePath>$(SolutionDir)..\libs\lib\;$(ReferencePath)</ReferencePath>
     <LibraryPath>$(SolutionDir)..\libs\lib\;$(LibraryPath)</LibraryPath>
+    <IntDir>bin\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
-    <IntDir>$(Configuration)\</IntDir>
+    <IntDir>bin\$(Configuration)\</IntDir>
     <IncludePath>$(SolutionDir)..\libs\include\;$(IncludePath)</IncludePath>
     <ExecutablePath>$(SolutionDir)..\libs\bin\x64\;$(ExecutablePath)</ExecutablePath>
     <ReferencePath>$(SolutionDir)..\libs\lib\x64\;$(ReferencePath)</ReferencePath>
@@ -147,8 +149,14 @@
       <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>for %%a in ("$(SolutionDir)..\libs\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
-xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"</Command>
+      <Command>if "$(Platform)"=="Win32" (
+for %%a in ("$(SolutionDir)..\libs\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"
+)
+if "$(Platform)"=="x64" (
+for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64\"
+)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -167,8 +175,14 @@ xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"</Command>
       <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\x64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
-xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64"</Command>
+      <Command>if "$(Platform)"=="Win32" (
+for %%a in ("$(SolutionDir)..\libs\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"
+)
+if "$(Platform)"=="x64" (
+for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64\"
+)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -191,8 +205,14 @@ xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64"</Command>
       <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>for %%a in ("$(SolutionDir)..\libs\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
-xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"</Command>
+      <Command>if "$(Platform)"=="Win32" (
+for %%a in ("$(SolutionDir)..\libs\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"
+)
+if "$(Platform)"=="x64" (
+for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64\"
+)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -215,8 +235,14 @@ xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"</Command>
       <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\x64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
-xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64"</Command>
+      <Command>if "$(Platform)"=="Win32" (
+for %%a in ("$(SolutionDir)..\libs\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"
+)
+if "$(Platform)"=="x64" (
+for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64\"
+)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

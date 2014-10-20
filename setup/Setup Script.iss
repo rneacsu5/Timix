@@ -7,8 +7,8 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{AE15D0A5-84C2-4284-8444-461174FCC77C}
 AppName=Timix
-AppVersion=0.6.4
-;AppVerName=Timix 0.6.4
+AppVersion=0.6.5
+;AppVerName=Timix 0.6.5
 AppPublisher=Nexus Inc.
 DefaultDirName={pf}\Timix
 DefaultGroupName=Timix

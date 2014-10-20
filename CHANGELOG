@@ -6,11 +6,16 @@
 		A crap ton of other thing that will be done in the future (so hard to work alone...)
 		Testing... Heavy testing 
 		Make a library avalable for Timix
+	TODO: Test on Linux
 	TODO: motion: Crouch and prone
-	TODO: motion: Function to change constants
-	TODO: Rename/remove some models and rearrange folder tree
 	TODO: Shadows
 	TODO: Transparency
+
+v0.6.5-alpha
+
+	++ motion: You can get/change constants with mot_GetConstant() and mot_SetConstant()
+	-- Removed phone model
+	** Some small changes
 
 v0.6.4-alpha
 

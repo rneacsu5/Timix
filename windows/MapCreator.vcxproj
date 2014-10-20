@@ -73,11 +73,11 @@
     <ExecutablePath>$(SolutionDir)..\libs\bin\;$(ExecutablePath)</ExecutablePath>
     <ReferencePath>$(SolutionDir)..\libs\lib\;$(ReferencePath)</ReferencePath>
     <LibraryPath>$(SolutionDir)..\libs\lib\;$(LibraryPath)</LibraryPath>
-    <IntDir>$(Configuration)\MapCreator\</IntDir>
+    <IntDir>bin\MapCreator\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(Configuration)\MapCreator\</IntDir>
+    <IntDir>bin\MapCreator\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir)bin\MapCreator\$(Configuration)\</OutDir>
     <IncludePath>$(SolutionDir)..\libs\include\;$(IncludePath)</IncludePath>
     <ExecutablePath>$(SolutionDir)..\libs\bin\x64\;$(ExecutablePath)</ExecutablePath>
@@ -91,12 +91,12 @@
     <ExecutablePath>$(SolutionDir)..\libs\bin\;$(ExecutablePath)</ExecutablePath>
     <ReferencePath>$(SolutionDir)..\libs\lib\;$(ReferencePath)</ReferencePath>
     <LibraryPath>$(SolutionDir)..\libs\lib\;$(LibraryPath)</LibraryPath>
-    <IntDir>$(Configuration)\MapCreator\</IntDir>
+    <IntDir>bin\MapCreator\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin\MapCreator\$(Configuration)\</OutDir>
-    <IntDir>$(Configuration)\MapCreator\</IntDir>
+    <IntDir>bin\MapCreator\$(Configuration)\</IntDir>
     <IncludePath>$(SolutionDir)..\libs\include\;$(IncludePath)</IncludePath>
     <ExecutablePath>$(SolutionDir)..\libs\bin\x64\;$(ExecutablePath)</ExecutablePath>
     <ReferencePath>$(SolutionDir)..\libs\lib\x64\;$(ReferencePath)</ReferencePath>
@@ -117,8 +117,13 @@
       <AdditionalDependencies>opengl32.lib;glu32.lib;user32.lib;glut32.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>for %%a in ("$(SolutionDir)..\libs\bin\*.*") do (
-copy /Y "%%a" "$(TargetDir)"
+      <Command>if "$(Platform)"=="Win32" (
+for %%a in ("$(SolutionDir)..\libs\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"
+)
+if "$(Platform)"=="x64" (
+for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64\"
 )</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -137,8 +142,13 @@ copy /Y "%%a" "$(TargetDir)"
       <AdditionalDependencies>opengl32.lib;glu32.lib;user32.lib;glut64.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do (
-copy /Y "%%a" "$(TargetDir)"
+      <Command>if "$(Platform)"=="Win32" (
+for %%a in ("$(SolutionDir)..\libs\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"
+)
+if "$(Platform)"=="x64" (
+for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64\"
 )</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -161,8 +171,13 @@ copy /Y "%%a" "$(TargetDir)"
       <AdditionalDependencies>opengl32.lib;glu32.lib;user32.lib;glut32.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>for %%a in ("$(SolutionDir)..\libs\bin\*.*") do (
-copy /Y "%%a" "$(TargetDir)"
+      <Command>if "$(Platform)"=="Win32" (
+for %%a in ("$(SolutionDir)..\libs\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"
+)
+if "$(Platform)"=="x64" (
+for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64\"
 )</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -185,8 +200,13 @@ copy /Y "%%a" "$(TargetDir)"
       <AdditionalDependencies>opengl32.lib;glu32.lib;user32.lib;glut64.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do (
-copy /Y "%%a" "$(TargetDir)"
+      <Command>if "$(Platform)"=="Win32" (
+for %%a in ("$(SolutionDir)..\libs\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"
+)
+if "$(Platform)"=="x64" (
+for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64\"
 )</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

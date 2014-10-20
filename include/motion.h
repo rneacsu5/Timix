@@ -7,28 +7,30 @@
 #include <stdio.h>
 #include <GL/glut.h>
 
+// Constants. USE THEM WITH mot_GetConstant()
+
 // Eye height
-#define MOT_EYE_HEIGHT 1.7
+#define MOT_EYE_HEIGHT 1
 // Running acceleration
-#define MOT_ACCELERATION 40
+#define MOT_ACCELERATION 1<<1
 // Sprinting acceleration
-#define MOT_SPRINT_ACCELERATION 50
+#define MOT_SPRINT_ACCELERATION 1<<2
 // Braking acceleration
-#define MOT_BRAKE_ACCELERATION 25
+#define MOT_BRAKE_ACCELERATION 1<<3
 // Air drag acceleration coefficient
-#define MOT_AIR_DRAG 0.2
+#define MOT_AIR_DRAG 1<<4
 // Maximum running speed
-#define MOT_MAX_SPEED 5
+#define MOT_MAX_SPEED 1<<5
 // Maximum sprinting speed
-#define MOT_SPRINT_MAX_SPEED 7.5
+#define MOT_SPRINT_MAX_SPEED 1<<6
 // Maximum forward speed while jumping
-#define MOT_JUMP_MAX_SPEED MOT_MAX_SPEED / 1.3
+#define MOT_JUMP_MAX_SPEED 1<<7
 // Maximum forward speed while jumping and sprinting
-#define MOT_JUMP_SPRINT_MAX_SPEED MOT_SPRINT_MAX_SPEED / 1.3
+#define MOT_JUMP_SPRINT_MAX_SPEED 1<<8
 // The jump up speed
-#define MOT_JUMP_SPEED 3.13
+#define MOT_JUMP_SPEED 1<<9
 // Gravitational acceleration
-#define MOT_GFORCE 9.81
+#define MOT_GFORCE 1<<10
 
 #define MOT_PI 3.14159265359
 #define MOT_DEG_TO_RAD MOT_PI / 180
@@ -62,3 +64,7 @@ int mot_GetIsPaused(void);
 void mot_TeleportCamera(GLdouble x, GLdouble y, GLdouble z);
 // Set if OP (over-powered). If set to true, the player can fly in any direction
 void mot_SetIsOP(int state);
+// Change a constant. Multiple constants can be set at once: MOT_MAX_SPEED | MOT_SPRINT_MAX_SPEED
+void mot_SetConstant(int constant, GLdouble value);
+// Get a constant
+GLdouble mot_GetConstant(int constant);

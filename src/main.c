@@ -41,7 +41,7 @@ int fpsCurrentTime = 0, fpsPreviousTime = 0, fpsFrameCount = 0;
 lbj_Arraym terrainMats;
 
 // Models
-lbj_Model planeModel, nokiaModel, carModel, nexusModel;
+lbj_Model planeModel, nexusModel, carModel;
 
 // Music stream
 int musicStream;
@@ -237,15 +237,6 @@ void display(void)
 		lbj_DrawModelVBO(nexusModel);
 	glPopMatrix();
 
-	// Draws Nokia
-	glPushMatrix();
-		glTranslatef(3, 1.5, 3);
-		glRotatef(a1, 0, 1, 0);
-		glScalef(0.005, 0.005, 0.005);
-		glRotatef(90, 1, 0, 0);
-		lbj_DrawModelVBO(nokiaModel);
-	glPopMatrix();
-
 	// Swap buffers in GPU
 	glutSwapBuffers();
 }
@@ -274,9 +265,11 @@ void initialize(void)
 	glDisable(GL_COLOR_MATERIAL);
 	// Enable normalize 
 	glEnable(GL_NORMALIZE);
-	// Enable Blend and transparency
+	// Enable blend and transparency
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	// Select a smooth shading
+	glShadeModel(GL_SMOOTH);
 
 	// Sets the light
 	glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
@@ -286,13 +279,9 @@ void initialize(void)
 	glEnable(GL_LIGHTING);
 	// Enables the light
 	glEnable(GL_LIGHT0);
-	// Select a smooth shading
-	glShadeModel(GL_SMOOTH);
-	// Loads the default material
-	lbj_LoadDefaultMaterial();
 
 	// Enable fog
-	// glEnable(GL_FOG);
+	//glEnable(GL_FOG);
 	// Set fog formula
 	glFogi(GL_FOG_MODE, GL_EXP2);
 	// Set fog density
@@ -306,16 +295,24 @@ void initialize(void)
 	// Set fog quality
 	glHint(GL_FOG_HINT, GL_NICEST);
 
+	// The parameter should be 1 / AverageFPS
+	mot_Init(1 / 80.0);
 	// Teleport camera
-	mot_TeleportCamera(5, MOT_EYE_HEIGHT, 5);
+	mot_TeleportCamera(5, mot_GetConstant(MOT_EYE_HEIGHT), 5);
+	//mot_SetIsOP(true);
+
+	// Print stats
+	lbj_PrintStats(true);
+	// Loads the default material
+	lbj_LoadDefaultMaterial();
 
 	// Loads terrain materials
 	lbj_SetPaths("./data/models/", "./data/materials/", "./data/textures/");
-	lbj_SetFlipping(0, 1, 0, 0, 0);
 	lbj_LoadMTLToMaterials("terrain.mtl", &terrainMats, 1);
 
 	// Load models
-	lbj_SetPaths("./data/models/", "./data/models/materials/", "./data/models/textures/");
+	lbj_SetPaths("./data/models/", "./data/models/mtl/", "./data/models/tex/");
+	lbj_SetFlipping(0, 1, 0, 0, 0);
 
 	// Plane
 	lbj_LoadOBJToModel("SimplePlane.obj", &planeModel);
@@ -324,10 +321,6 @@ void initialize(void)
 	// Nexus
 	lbj_LoadOBJToModel("Nexus.obj", &nexusModel);
 	lbj_CreateVBO(&nexusModel, 1);
-
-	// Nokia
-	lbj_LoadOBJToModel("sonyericsson-w9600-midres.obj", &nokiaModel);
-	lbj_CreateVBO(&nokiaModel, 0);
 
 	// Car
 	lbj_SetFlipping(0, 1, 1, 0, 0);
@@ -374,7 +367,7 @@ void tick(int value)
 	// Calculate time passed
 	int timeInterval = fpsCurrentTime - fpsPreviousTime;
 
-	if (timeInterval > 1000)
+	if (timeInterval >= 1000)
 	{
 		// Calculate the number of frames per second
 		fps = fpsFrameCount / (float) timeInterval * 1000;
@@ -394,7 +387,7 @@ void tick(int value)
 	}
 
 	// Waits 10 ms
-	glutTimerFunc(10, tick, value + 1);
+	glutTimerFunc(10, tick, 0);
 }
 
 // Called when the song ends
@@ -420,25 +413,21 @@ void bass(void) {
 int main(int argc, char *argv[])
 {
 	printf("===================================================\n");
+	// Initialize OpenGL, create a window
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 	glutInitWindowSize(800, 600);
 	glutCreateWindow("Epic Game");
 	glewExperimental = GL_TRUE;
 	glewInit();
-
-	// The parameter should be 1 / AverageFPS
-	mot_Init(1 / 90.0);
-	//mot_SetIsOP(true);
-	lbj_PrintStats(true);
-
-	// Event listeners
-	glutDisplayFunc(display);
-	glutReshapeFunc(reshape);
 	
 	initialize();
 
 	bass();
+
+	// Event listeners
+	glutDisplayFunc(display);
+	glutReshapeFunc(reshape);
 
 	// Starts main timer
 	glutTimerFunc(10, tick, 0);

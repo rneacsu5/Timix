@@ -332,18 +332,18 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model) {
 		// Print Stats
 		printf("MODEL:\n");
 		printf("Loaded \"%s\".\n", path);
-		printf("Contained: %zd vertice, %zd texture coord, %zd normals, %zd faces, %zd materials\n",
-			   model->v.used,
-			   model->vt.used,
-			   model->vn.used,
-			   model->f.used,
+		printf("Contained: %zd vertice, %zd texture coord, %zd normals, %zd faces, %zd materials\n", 
+			   model->v.used, 
+			   model->vt.used, 
+			   model->vn.used, 
+			   model->f.used, 
 			   model->mats.used);
-		printf("Allocated %zd bytes of memory\n",
-			   model->v.size * sizeof(lbj_vector3f)+
-			   model->vt.size * sizeof(lbj_vector3f)+
-			   model->vn.size * sizeof(lbj_vector3f)+
-			   model->f.size * sizeof(lbj_vector3i)* 4 +
-			   model->mats.size * sizeof(lbj_Material)+
+		printf("Allocated %zd bytes of memory\n", 
+			   model->v.size * sizeof(lbj_vector3f) + 
+			   model->vt.size * sizeof(lbj_vector3f) + 
+			   model->vn.size * sizeof(lbj_vector3f) + 
+			   model->f.size * sizeof(lbj_vector3i) * 4 + 
+			   model->mats.size * sizeof(lbj_Material) + 
 			   model->matsi.size * sizeof(unsigned int));
 		printf("\n");
 	}
