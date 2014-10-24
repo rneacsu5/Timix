@@ -49,6 +49,7 @@ int fpsCurrentTime = 0, fpsPreviousTime = 0, fpsFrameCount = 0;
 
 int saveButtonWasPressed = 0;
 
+// Initiate the data array
 void initArrayData(MAP_Data* a, size_t size[3])
 {
 	int i;
@@ -62,6 +63,7 @@ void initArrayData(MAP_Data* a, size_t size[3])
 	a->array = (MAP_Cube*)malloc((a->size[0] * a->size[1] * a->size[2]) * sizeof(MAP_Cube));
 }
 
+// Resizes the data array
 void resizeArrayData(MAP_Data* a, size_t size[3])
 {
 	int i;
@@ -74,11 +76,13 @@ void resizeArrayData(MAP_Data* a, size_t size[3])
 	a->array = (MAP_Cube*)realloc(a->array, (a->size[0] * a->size[1] * a->size[2]) * sizeof(MAP_Cube));
 }
 
+// Returns the cube at the given position
 MAP_Cube getCubeAt(MAP_Data d, int x, int y, int z)
 {
 	return d.array[(z + d.offset[2]) + (y + d.offset[1]) * d.size[2] + (x + d.offset[0]) * d.size[2] * d.size[1]];
 }
 
+// Sets the cube at the given position
 void setCubeAt(MAP_Data *d, int x, int y, int z, MAP_Cube c)
 {
 	d->array[(z + d->offset[2]) + (y + d->offset[1]) * d->size[2] + (x + d->offset[0]) * d->size[2] * d->size[1]] = c;
@@ -98,12 +102,11 @@ MAP_Map Map;
 // A simple way to draw a map
 void drawMap(MAP_Map map)
 {
-	unsigned long int a, b, c;
+	int a, b, c;
 	// "For frenzy"
-	for (a = -map.Data.offset[0]; a < map.Data.size[0] - map.Data.offset[0]; a++) {
-		for (b = -map.Data.offset[1]; b < map.Data.size[1] - map.Data.offset[1]; b++) {
-			for (c = -map.Data.offset[2]; c < map.Data.size[2] - map.Data.offset[2]; c++) {
-				// If the cube is not air add it to the array
+	for (a = -map.Data.offset[0]; a < (int)map.Data.size[0] - map.Data.offset[0]; a++) {
+		for (b = -map.Data.offset[1]; b < (int)map.Data.size[1] - map.Data.offset[1]; b++) {
+			for (c = -map.Data.offset[2]; c < (int)map.Data.size[2] - map.Data.offset[2]; c++) {
 				if (getCubeAt(map.Data, a, b, c).type != CUBE_AIR) {
 					glPushMatrix();
 					glTranslatef(a + 0.5, b + 0.5, c + 0.5);
@@ -227,11 +230,11 @@ int saveMapToFile(FILE * fp, MAP_Map map)
 	// Array of cubes that will be written to the file
 	MAP_FileCube * myCubes = (MAP_FileCube *)malloc(used * sizeof(MAP_FileCube));
 
-	unsigned int a, b, c;
+	int a, b, c;
 	// "For frenzy"
-	for (a = -map.Data.offset[0]; a < map.Data.size[0] - map.Data.offset[0]; a++) {
-		for (b = -map.Data.offset[1]; b < map.Data.size[1] - map.Data.offset[1]; b++) {
-			for (c = -map.Data.offset[2]; c < map.Data.size[2] - map.Data.offset[2]; c++) {
+	for (a = -map.Data.offset[0]; a < (int)map.Data.size[0] - map.Data.offset[0]; a++) {
+		for (b = -map.Data.offset[1]; b < (int)map.Data.size[1] - map.Data.offset[1]; b++) {
+			for (c = -map.Data.offset[2]; c < (int)map.Data.size[2] - map.Data.offset[2]; c++) {
 				// If the cube is not air add it to the array
 				if (getCubeAt(map.Data, a, b, c).type != CUBE_AIR) {
 					// Increment
@@ -346,42 +349,110 @@ int openMapFile(void)
 	return 1;
 }
 
-// Changes the block at the eye level
-void changeBlock(void)
+// Get the position of the cube in front of the camera
+vector getSelectedCube(void)
 {
-	// Get position
-	mot_Vector pos = mot_GetTargetPos();
+	// Get position of eye and target
+	mot_Vector pos1 = mot_GetTargetPos();
+	mot_Vector eye1 = mot_GetEyePos();
+
+	// Transform mot_Vector to vector  
+	vector pos, eye;
+	pos.x = pos1.x; pos.y = pos1.y; pos.z = pos1.z;
+	eye.x = eye1.x; eye.y = eye1.y; eye.z = eye1.z;
+
+	// Move the target sqrt(3) units in front of the camera
+	pos = substractv(pos, eye);
+	normalizev(&pos);
+	multiplyv(&pos, sqrt(3));
+	pos = addv(pos, eye);
+
+	// Transform to int
 	pos.x = (int)pos.x;
 	pos.y = (int)pos.y;
 	pos.z = (int)pos.z;
+	return pos;
+}
 
-	// Resize the map if needed
-	if (pos.x < -Map.Data.offset[0] || pos.y < -Map.Data.offset[1] || pos.z < -Map.Data.offset[2]) {
-		return;
-		unsigned int diff[3] = {0, 0, 0};
-		if (pos.x < -Map.Data.offset[0]) {
-			diff[0] = -Map.Data.offset[0] - pos.x;
-			Map.Data.offset[0] = -pos.x;
-		}
-		if (pos.y < -Map.Data.offset[1]) {
-			diff[1] = -Map.Data.offset[1] - pos.y;
-			Map.Data.offset[1] = -pos.y;
-		}
-		if (pos.z < -Map.Data.offset[2]) {
-			diff[2] = -Map.Data.offset[2] - pos.z;
-			Map.Data.offset[2] = -pos.z;
-		}
-		size_t size[3];
-		int i;
+// Changes the block at the eye level
+void changeBlock(void)
+{
+	int i;
+	int resize = 0;
+
+	// Get position
+	vector pos = getSelectedCube();
+
+	// Create a blank map. It will be used if we need to resize the map
+	MAP_Map newMap;
+	for (i = 0; i < 3; i++) {
+		newMap.Data.size[i] = Map.Data.size[i];
+		newMap.Data.offset[i] = Map.Data.offset[i];
+	}
+
+	// Check if the block is outside the boundary and resize newMap's size and offset
+	if (pos.x < -Map.Data.offset[0]) {
+		newMap.Data.size[0] += -Map.Data.offset[0] - pos.x;
+		newMap.Data.offset[0] = -pos.x;
+		resize = 1;
+	}
+	if (pos.y < -Map.Data.offset[1]) {
+		newMap.Data.size[1] += -Map.Data.offset[1] - pos.y;
+		newMap.Data.offset[1] = -pos.y;
+		resize = 1;
+	}
+	if (pos.z < -Map.Data.offset[2]) {
+		newMap.Data.size[2] += -Map.Data.offset[2] - pos.z;
+		newMap.Data.offset[2] = -pos.z;
+		resize = 1;
+	}
+	if (pos.x > Map.Data.size[0] - Map.Data.offset[0] - 1) {
+		newMap.Data.size[0] += pos.x - Map.Data.size[0] + Map.Data.offset[0] + 1;
+		resize = 1;
+	}
+	if (pos.y > Map.Data.size[1] - Map.Data.offset[1] - 1) {
+		newMap.Data.size[1] += pos.y - Map.Data.size[1] + Map.Data.offset[1] + 1;
+		resize = 1;
+	}
+	if (pos.z > Map.Data.size[2] - Map.Data.offset[2] - 1) {
+		newMap.Data.size[2] += pos.z - Map.Data.size[2] + Map.Data.offset[2] + 1;
+		resize = 1;
+	}
+
+	// Note that we resize the map only if needed
+	if (resize) {
+		// Because initMap() resets the offset to 0 we need to store it temporarly
+		int tempOffset[3];
 		for (i = 0; i < 3; i++) {
-			size[i] = Map.Data.size[i] + diff[i];
+			tempOffset[i] = newMap.Data.offset[i];
 		}
-		resizeArrayData(&Map.Data, size);
 
+		// The map is initialized with the new size
+		initMap(&newMap, newMap.Data.size);
+
+		// Restore offset
+		for (i = 0; i < 3; i++) {
+			newMap.Data.offset[i] = tempOffset[i];
+		}
+
+		// The content of the original map is copied to the new map
+		int a, b, c;
+		// "For frenzy"
+		for (a = -Map.Data.offset[0]; a < (int)Map.Data.size[0] - Map.Data.offset[0]; a++) {
+			for (b = -Map.Data.offset[1]; b < (int)Map.Data.size[1] - Map.Data.offset[1]; b++) {
+				for (c = -Map.Data.offset[2]; c < (int)Map.Data.size[2] - Map.Data.offset[2]; c++) {
+					setCubeAt(&newMap.Data, a, b, c, getCubeAt(Map.Data, a, b, c));
+				}
+			}
+		}
+
+		// Free the old map
+		free(Map.Data.array);
+		// We only want to update the Data
+		Map.Data = newMap.Data;
 	}
-	if (pos.x > Map.Data.size[0] - Map.Data.offset[0] || pos.y > Map.Data.size[1] - Map.Data.offset[1] && pos.z > Map.Data.size[2] - Map.Data.offset[2]) {
-		return;
-	}
+
+	// For now we only toggle cubes form air to solid
 	MAP_Cube cube;
 	if (getCubeAt(Map.Data, pos.x, pos.y, pos.z).type == CUBE_AIR) {
 		cube.type = CUBE_FIXED_SOLID;
@@ -392,6 +463,48 @@ void changeBlock(void)
 	setCubeAt(&Map.Data, pos.x, pos.y, pos.z, cube);
 }
 
+// Draws map boundary and selected cube
+void drawGuides(void)
+{
+	// Draw Map bound
+	glBegin(GL_LINE_LOOP);
+		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2]);
+		glVertex3f(-Map.Data.offset[0] + Map.Data.size[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2]);
+		glVertex3f(-Map.Data.offset[0] + Map.Data.size[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2] + Map.Data.size[2]);
+		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2] + Map.Data.size[2]);
+	glEnd();
+
+	glBegin(GL_LINE_LOOP);
+		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1], -Map.Data.offset[2]);
+		glVertex3f(-Map.Data.offset[0] + Map.Data.size[0], -Map.Data.offset[1], -Map.Data.offset[2]);
+		glVertex3f(-Map.Data.offset[0] + Map.Data.size[0], -Map.Data.offset[1], -Map.Data.offset[2] + Map.Data.size[2]);
+		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1], -Map.Data.offset[2] + Map.Data.size[2]);
+	glEnd();
+
+	glBegin(GL_LINES);
+		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1], -Map.Data.offset[2]);
+		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2]);
+
+		glVertex3f(-Map.Data.offset[0] + Map.Data.size[0], -Map.Data.offset[1], -Map.Data.offset[2]);
+		glVertex3f(-Map.Data.offset[0] + Map.Data.size[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2]);
+
+		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1], -Map.Data.offset[2] + Map.Data.size[2]);
+		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2] + Map.Data.size[2]);
+
+		glVertex3f(-Map.Data.offset[0] + Map.Data.size[0], -Map.Data.offset[1], -Map.Data.offset[2] + Map.Data.size[2]);
+		glVertex3f(-Map.Data.offset[0] + Map.Data.size[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2] + Map.Data.size[2]);
+	glEnd();
+	
+	// Select cube
+	vector pos = getSelectedCube();
+	glPushMatrix();
+		glTranslatef(pos.x + 0.5, pos.y + 0.5, pos.z + 0.5);
+		glutWireCube(1);
+	glPopMatrix();
+
+}
+
+// Handles mouse click events
 void mouseClick(int button, int state, int x, int y)
 {
 	if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN) {
@@ -423,21 +536,7 @@ void display(void)
 
 	drawMap(Map);
 
-	// Draw axes form origin
-	glBegin(GL_LINES);
-		// X
-		glColor3f(1, 0, 0);
-		glVertex3f(0, 0, 0);
-		glVertex3f(100, 0, 0);
-		// Y
-		glColor3f(0, 1, 0);
-		glVertex3f(0, 0, 0);
-		glVertex3f(0, 100, 0);
-		// Z
-		glColor3f(0, 0, 1);
-		glVertex3f(0, 0, 0);
-		glVertex3f(0, 0, 100);
-	glEnd();
+	drawGuides();
 
 	// Swap buffers in GPU
 	glutSwapBuffers();

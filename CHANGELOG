@@ -1,15 +1,21 @@
 	TODO: MapCreator
-		Resize Map if blocks are placed outside the map
-		Draw Map bound
-		Outline selected cube
+		Start thinking about colisions. (Talk with Onea/Catalin about the bit matrix and their project)
+		Put down all the cube types
+		Write on a piece of paper how to create/save/load/edit custom events
 		Save file on exit
 		A crap ton of other thing that will be done in the future (so hard to work alone...)
 		Testing... Heavy testing 
 		Make a library avalable for Timix
+	TODO: Vector library
 	TODO: Test on Linux
 	TODO: motion: Crouch and prone
 	TODO: Shadows
 	TODO: Transparency
+
+v0.6.6-alpha
+
+	++ MapCreator: Added guidelines
+	++ MapCreator: Map is resized if blocks are placed outside the boundary
 
 v0.6.5-alpha
 
