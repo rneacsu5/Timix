@@ -27,19 +27,15 @@
     <None Include="..\src\vshader.vsh" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\bass.h" />
-    <ClInclude Include="..\include\collision.h" />
     <ClInclude Include="..\include\lobjder.h" />
     <ClInclude Include="..\include\motion.h" />
     <ClInclude Include="..\include\std_image.h" />
     <ClInclude Include="..\include\utility.h" />
+    <ClInclude Include="..\include\vector.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\collision.c" />
-    <ClCompile Include="..\src\lobjder.c" />
     <ClCompile Include="..\src\main.c" />
-    <ClCompile Include="..\src\motion.c" />
     <ClCompile Include="..\src\utility.c" />
   </ItemGroup>
   <ItemGroup>

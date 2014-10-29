@@ -6,11 +6,18 @@
 		A crap ton of other thing that will be done in the future (so hard to work alone...)
 		Testing... Heavy testing 
 		Make a library avalable for Timix
-	TODO: Vector library
 	TODO: Test on Linux
 	TODO: motion: Crouch and prone
 	TODO: Shadows
 	TODO: Transparency
+
+v0.7.0-alpha
+
+	++ Smart vector library (just one file: vector.h)
+	++ Learned a bunch of useful stuffs such as "include guard", how to include the source code in a header file and the use of "static"
+	** lobjder library was compacted into one file: lobjder.h
+	** motion library was compacted into one file: motion.h
+	** Cleaned up most of the code that contained vector operations
 
 v0.6.6-alpha
 

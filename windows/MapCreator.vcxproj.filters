@@ -18,15 +18,21 @@
     <ClCompile Include="..\src\MapCreator.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\motion.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\utility.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\MapCreator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\motion.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -212,11 +212,13 @@ xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64\"
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\MapCreator.c" />
-    <ClCompile Include="..\src\motion.c" />
     <ClCompile Include="..\src\utility.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\MapCreator.h" />
+    <ClInclude Include="..\include\motion.h" />
+    <ClInclude Include="..\include\utility.h" />
+    <ClInclude Include="..\include\vector.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

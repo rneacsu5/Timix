@@ -10,6 +10,9 @@
 #include <GL/glut.h>
 
 #include "../include/utility.h"
+#define VECTOR_IMPLEMENTATION
+#include "../include/vector.h"
+#define MOTION_IMPLEMENTATION
 #include "../include/motion.h"
 #include "../include/MapCreator.h"
 
@@ -350,22 +353,17 @@ int openMapFile(void)
 }
 
 // Get the position of the cube in front of the camera
-vector getSelectedCube(void)
+vect_Vector getSelectedCube(void)
 {
 	// Get position of eye and target
-	mot_Vector pos1 = mot_GetTargetPos();
-	mot_Vector eye1 = mot_GetEyePos();
-
-	// Transform mot_Vector to vector  
-	vector pos, eye;
-	pos.x = pos1.x; pos.y = pos1.y; pos.z = pos1.z;
-	eye.x = eye1.x; eye.y = eye1.y; eye.z = eye1.z;
+	vect_Vector pos = mot_GetTargetPos();
+	vect_Vector eye = mot_GetEyePos();
 
 	// Move the target sqrt(3) units in front of the camera
-	pos = substractv(pos, eye);
-	normalizev(&pos);
-	multiplyv(&pos, sqrt(3));
-	pos = addv(pos, eye);
+	pos = vect_Substract(pos, eye);
+	vect_Normalize(&pos);
+	pos = vect_Multiply(pos, sqrt(3));
+	pos = vect_Add(pos, eye);
 
 	// Transform to int
 	pos.x = (int)pos.x;
@@ -381,7 +379,7 @@ void changeBlock(void)
 	int resize = 0;
 
 	// Get position
-	vector pos = getSelectedCube();
+	vect_Vector pos = getSelectedCube();
 
 	// Create a blank map. It will be used if we need to resize the map
 	MAP_Map newMap;
@@ -496,7 +494,7 @@ void drawGuides(void)
 	glEnd();
 	
 	// Select cube
-	vector pos = getSelectedCube();
+	vect_Vector pos = getSelectedCube();
 	glPushMatrix();
 		glTranslatef(pos.x + 0.5, pos.y + 0.5, pos.z + 0.5);
 		glutWireCube(1);
@@ -522,13 +520,11 @@ void display(void)
 	// Set up the camera
 	mot_MoveCamera();
 	// Set light position
-	vector eyePos, targetPos, pos;
-	eyePos.x = mot_GetEyePos().x; eyePos.y = mot_GetEyePos().y; eyePos.z = mot_GetEyePos().z;
-	targetPos.x = mot_GetTargetPos().x; targetPos.y = mot_GetTargetPos().y; targetPos.z = mot_GetTargetPos().z;
-	pos = substractv(targetPos, eyePos);
-	normalizev(&pos);
-	multiplyv(&pos, -1);
-	pos = addv(pos, eyePos);
+	vect_Vector eyePos = mot_GetEyePos(), targetPos = mot_GetTargetPos(), pos;
+	pos = vect_Substract(targetPos, eyePos);
+	vect_Normalize(&pos);
+	pos = vect_Multiply(pos, -1);
+	pos = vect_Add(pos, eyePos);
 	lightPos[0] = pos.x;
 	lightPos[1] = pos.y;
 	lightPos[2] = pos.z;

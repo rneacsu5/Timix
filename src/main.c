@@ -6,18 +6,23 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
 
-#include "../include/utility.h"
-#include "../include/lobjder.h"
-#include "../include/motion.h"
 #ifdef _WIN32
 
 #include <bass.h>
 
 #else
 
-#include "../include/bass.h"
+#include "../libs/Linux/bass.h"
 
 #endif // _WIN32
+
+#include "../include/utility.h"
+#define LOBJDER_IMPLEMENTATION
+#include "../include/lobjder.h"
+#define VECTOR_IMPLEMENTATION
+#include "../include/vector.h"
+#define MOTION_IMPLEMENTATION
+#include "../include/motion.h"
 
 // C does not support boolean
 #define true 1
