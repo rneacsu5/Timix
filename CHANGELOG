@@ -1,8 +1,7 @@
 	TODO: MapCreator
-		Start thinking about colisions. (Talk with Onea/Catalin about the bit matrix and their project)
+		Finish collisions
 		Put down all the cube types
 		Write on a piece of paper how to create/save/load/edit custom events
-		Save file on exit
 		A crap ton of other thing that will be done in the future (so hard to work alone...)
 		Testing... Heavy testing 
 		Make a library avalable for Timix
@@ -10,6 +9,16 @@
 	TODO: motion: Crouch and prone
 	TODO: Shadows
 	TODO: Transparency
+
+v0.7.1-aplha
+
+	** Changed icon (it's no longer that awful)
+	++ motion: Several new function: mot_ExitFunc(), mot_GetVelocity(), mot_SetVelocity(), mot_SetCamera()
+	** motion: Renamed speed to velocity
+	** motion: All the functions that got, set states (jumping, sprinting etc.) are now condensed into two functions: mot_GetState(), mot_SetState()
+	++ MapCreator: Some of the collision is done
+	++ MapCreator: Toggle OP mode with C and R (C = Creative, R = Real)
+	++ First test map
 
 v0.7.0-alpha
 

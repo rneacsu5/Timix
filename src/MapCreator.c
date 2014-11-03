@@ -50,7 +50,7 @@ int fpsCurrentTime = 0, fpsPreviousTime = 0, fpsFrameCount = 0;
 #define CUBE_AIR 0
 #define CUBE_FIXED_SOLID 1
 
-int saveButtonWasPressed = 0;
+int saveBtnWasPressed = 0;
 
 // Initiate the data array
 void initArrayData(MAP_Data* a, size_t size[3])
@@ -511,6 +511,61 @@ void mouseClick(int button, int state, int x, int y)
 	}
 }
 
+void doMagic(void)
+{
+	return; // REMOVE THIS AFTER YOU ARE DONE
+
+	if (mot_GetState(MOT_IS_OP)) {
+		return;
+	}
+
+	// Player block
+	vect_Vector pos;
+	// Cube to check with
+	vect_Vector cube;
+	// Velocity
+	vect_Vector velocity = mot_GetVelocity();
+	pos = vect_Create(mot_GetEyePos().x, mot_GetEyePos().y - mot_GetConstant(MOT_EYE_HEIGHT) + 0.5, mot_GetEyePos().z);
+
+
+	// Magic that gets the cubes needed will be inserted here
+
+
+	if (pos.x - 1 < cube.x && pos.x > cube.x && velocity.x < 0) {
+		pos.x = cube.x + 1;
+		velocity.x = 0;
+	}
+	if (pos.y - 1 < cube.y && pos.y > cube.y && velocity.y < 0) {
+		pos.y = cube.y + 1;
+		velocity.y = 0;
+	}
+	if (pos.z - 1 < cube.z && pos.z > cube.z && velocity.z < 0) {
+		pos.z = cube.z + 1;
+		velocity.z = 0;
+	}
+
+	if (pos.x + 1 > cube.x && pos.x < cube.x && velocity.x > 0) {
+		pos.x = cube.x - 1;
+		velocity.x = 0;
+	}
+	if (pos.y + 1 > cube.y && pos.y < cube.y && velocity.y > 0) {
+		pos.y = cube.y - 1;
+		velocity.y = 0;
+	}
+	if (pos.z + 1 > cube.z && pos.z < cube.z && velocity.z > 0) {
+		pos.z = cube.z - 1;
+		velocity.z = 0;
+	}
+
+	mot_SetVelocity(velocity);
+	mot_TeleportCamera(pos.x, pos.y, pos.z);
+}
+
+void exitFunc(int exitCode)
+{
+	exit(exitCode);
+}
+
 void display(void)
 {
 	// Clear the color buffer, restore the background
@@ -519,6 +574,9 @@ void display(void)
 	glLoadIdentity();
 	// Set up the camera
 	mot_MoveCamera();
+	// Collisions with blockss
+	doMagic();
+	mot_SetCamera();
 	// Set light position
 	vect_Vector eyePos = mot_GetEyePos(), targetPos = mot_GetTargetPos(), pos;
 	pos = vect_Substract(targetPos, eyePos);
@@ -596,8 +654,9 @@ void initialize(void)
 	mot_Init(1 / 80.0);
 	// Teleport camera
 	mot_TeleportCamera(5, mot_GetConstant(MOT_EYE_HEIGHT), 5);
-	mot_SetIsOP(true);
+	mot_SetState(MOT_IS_OP, true);
 	mot_SetConstant(MOT_MAX_SPEED, 10);
+	mot_ExitFunc(exitFunc);
 
 	// Loads the shaders
 	loadShaders("./src/vshader.vsh", GL_VERTEX_SHADER, "./src/fshader.fsh", GL_FRAGMENT_SHADER);
@@ -626,7 +685,7 @@ void tick(int value)
 		fpsFrameCount = 0;
 		// Change the window's title
 		char title[50];
-		if (mot_GetIsPaused()) {
+		if (mot_GetState(MOT_IS_PAUSED)) {
 			sprintf(title, "Epic Game Paused | FPS: %f", fps);
 		}
 		else {
@@ -639,8 +698,8 @@ void tick(int value)
 	
 	// Save the map if Ctrl-S is pressed
 	if (GetKeyState(VK_LCONTROL) < 0 && GetKeyState('S') < 0) {
-		if (!saveButtonWasPressed) {
-			saveButtonWasPressed = 1;
+		if (!saveBtnWasPressed) {
+			saveBtnWasPressed = 1;
 			if (saveMapToFile(fp, Map)) {
 				printf("Error while saving file :(\n");
 			}
@@ -650,7 +709,15 @@ void tick(int value)
 		}
 	}
 	else {
-		saveButtonWasPressed = 0;
+		saveBtnWasPressed = 0;
+	}
+
+	// Toggle OP mode
+	if (GetKeyState('C') < 0) {
+		mot_SetState(MOT_IS_OP, 1);
+	}
+	if (GetKeyState('R') < 0) {
+		mot_SetState(MOT_IS_OP, 0);
 	}
 
 #endif // _WIN32

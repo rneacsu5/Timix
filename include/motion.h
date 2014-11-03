@@ -16,7 +16,7 @@
 #include <GL/glut.h>
 
 #include "vector.h"
-// Constants. USE THEM WITH mot_GetConstant()
+// Constants. USE THEM WITH mot_GetConstant() or mot_SetConstant()
 
 // Eye height
 #define MOT_EYE_HEIGHT 1
@@ -41,6 +41,17 @@
 // Gravitational acceleration
 #define MOT_GFORCE 1<<10
 
+// States, use them with mot_GetState() or mot_SetState()
+
+// If the player is jumping (in mid air)
+#define MOT_IS_JUMPING 1
+// If the player is sprinting
+#define MOT_IS_SPRINTING 1<<2
+// If the game is paused
+#define MOT_IS_PAUSED 1<<3
+// If the player is OP (over-powered)
+#define MOT_IS_OP 1<<4
+
 #define MOT_PI 3.14159265359
 #define MOT_DEG_TO_RAD MOT_PI / 180
 
@@ -59,20 +70,24 @@ vect_Vector mot_GetEyePos(void);
 vect_Vector mot_GetTargetPos(void);
 // Returns the key state for the given key
 int mot_GetKeyStatus(int key);
-// Returns true if he is jumping or returns false if not
-int mot_GetIsJumping(void);
-// Returns true if he is sprinting or returns false if not
-int mot_GetIsSprinting(void);
-// Returns true if the game is paused or returns false if not
-int mot_GetIsPaused(void);
 // Teleports the camera
 void mot_TeleportCamera(GLdouble x, GLdouble y, GLdouble z);
-// Set if OP (over-powered). If set to true, the player can fly in any direction
-void mot_SetIsOP(int state);
+// Sets the camera (with gluLookAt())
+void mot_SetCamera(void);
 // Change a constant. Multiple constants can be set at once: MOT_MAX_SPEED | MOT_SPRINT_MAX_SPEED
 void mot_SetConstant(int constant, GLdouble value);
 // Get a constant
 GLdouble mot_GetConstant(int constant);
+// Get a state
+int mot_GetState(int state);
+// Set a state. Multiple states can be set at once.
+void mot_SetState(int states, int value);
+// Sets the camera velocity
+void mot_SetVelocity(vect_Vector value);
+// Returns the camera velocity
+vect_Vector mot_GetVelocity(void);
+// Sets the exit function. The default one just ends the program when ESC is pressed
+void mot_ExitFunc(void(*func)(int));
 
 
 //Implementation
@@ -113,7 +128,7 @@ static GLdouble GFORCE = 9.81;
 // Camerea pitch and yaw
 static GLdouble cameraYaw = 0, cameraPitch = 0;
 // Vectors
-static vect_Vector eye, target, speed;
+static vect_Vector eye, target, velocity;
 // Key states for moving and pausing the game: true if the key is pressed and false if not
 static int keyStates[256];
 // All the key states, used with mot_GetKeyState()
@@ -127,50 +142,52 @@ static int isOP = MOT_FALSE;
 // The time interval between callbacks in seconds
 static GLfloat deltaT = 1 / 100.0;
 
+// Default exit function
+static void defaultExitFunc(int exitCode)
+{
+	exit(0);
+}
+
+// Exit function
+static void(*mot_exitFunc)(int) = defaultExitFunc;
+
 // Moves camera freely with no gravity
 static void moveOPCamera(void)
 {
-	// Moves mouse to the middle
-	GLint v[4];
-	glGetIntegerv(GL_VIEWPORT, v);
-	glutWarpPointer(v[2] / 2, v[3] / 2);
-
 	// Direction in which the camera looks parallel to the ground
 	vect_Vector direction = vect_Substract(vect_Create(target.x, eye.y, target.z), eye);
 	vect_Normalize(&direction);
 
-	vect_Vector speed = vect_Create(0, 0, 0);
+	vect_Vector velocity = vect_Create(0, 0, 0);
 
 	if (keyStates['w']) {
-		speed = vect_Add(speed, direction);
+		velocity = vect_Add(velocity, direction);
 	}
 	if (keyStates['s']) {
-		speed = vect_Substract(speed, direction);
+		velocity = vect_Substract(velocity, direction);
 	}
 	if (keyStates['a']) {
-		speed = vect_Add(speed, vect_Rotate(direction, 90, 0, 1, 0));
+		velocity = vect_Add(velocity, vect_Rotate(direction, 90, 0, 1, 0));
 	}
 	if (keyStates['d']) {
-		speed = vect_Add(speed, vect_Rotate(direction, -90, 0, 1, 0));
+		velocity = vect_Add(velocity, vect_Rotate(direction, -90, 0, 1, 0));
 	}
 
 	// Makes the acceleration the right length
-	vect_Normalize(&speed);
-	speed = vect_Multiply(speed, MAX_SPEED * 1.5);
+	vect_Normalize(&velocity);
+	velocity = vect_Multiply(velocity, MAX_SPEED * 1.5);
 
 	// Moves up or down
 	if (keyStates[32]) {
-		speed = vect_Add(speed, vect_Create(0, MAX_SPEED, 0));
+		velocity = vect_Add(velocity, vect_Create(0, MAX_SPEED, 0));
 	}
 	if (isSprinting) {
-		speed = vect_Add(speed, vect_Create(0, -MAX_SPEED, 0));
+		velocity = vect_Add(velocity, vect_Create(0, -MAX_SPEED, 0));
 	}
 
-
 	// Moves eye and target
-	eye = vect_Add(eye, vect_Multiply(speed, deltaT));
-	target = vect_Add(target, vect_Multiply(speed, deltaT));
-	gluLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, 0, 1, 0);
+	eye = vect_Add(eye, vect_Multiply(velocity, deltaT));
+	target = vect_Add(target, vect_Multiply(velocity, deltaT));
 }
 
 // Checks for the space bar being pressed amd jumps if needed
@@ -201,24 +218,24 @@ static void jumpFunc(void)
 		vect_Normalize(&push);
 		push = vect_Multiply(push, 5 * ACCELERATION * deltaT);
 
-		// Adds the push motVector to the camera speed and limits its speed
-		if (!isSprinting && vect_Length(vect_Add(vect_Create(speed.x, 0, speed.z), push)) <= JUMP_MAX_SPEED) {
-			speed = vect_Add(speed, push);
+		// Adds the push vector to the camera velocity and limits its speed
+		if (!isSprinting && vect_Length(vect_Add(vect_Create(velocity.x, 0, velocity.z), push)) <= JUMP_MAX_SPEED) {
+			velocity = vect_Add(velocity, push);
 		}
-		else if (!isSprinting && vect_Length(vect_Add(vect_Create(speed.x, 0, speed.z), push)) > JUMP_MAX_SPEED && vect_Length(vect_Create(speed.x, 0, speed.z)) <= JUMP_MAX_SPEED) {
-			speed = vect_Add(speed, push);
-			vect_Normalize(&speed);
-			speed = vect_Multiply(speed, JUMP_MAX_SPEED);
+		else if (!isSprinting && vect_Length(vect_Add(vect_Create(velocity.x, 0, velocity.z), push)) > JUMP_MAX_SPEED && vect_Length(vect_Create(velocity.x, 0, velocity.z)) <= JUMP_MAX_SPEED) {
+			velocity = vect_Add(velocity, push);
+			vect_Normalize(&velocity);
+			velocity = vect_Multiply(velocity, JUMP_MAX_SPEED);
 		}
-		if (isSprinting && vect_Length(vect_Add(vect_Create(speed.x, 0, speed.z), push)) <= JUMP_SPRINT_MAX_SPEED)
-			speed = vect_Add(speed, push);
-		else if (isSprinting && vect_Length(vect_Add(vect_Create(speed.x, 0, speed.z), push)) > JUMP_SPRINT_MAX_SPEED && vect_Length(vect_Create(speed.x, 0, speed.z)) <= JUMP_SPRINT_MAX_SPEED) {
-			speed = vect_Add(speed, push);
-			vect_Normalize(&speed);
-			speed = vect_Multiply(speed, JUMP_SPRINT_MAX_SPEED);
+		if (isSprinting && vect_Length(vect_Add(vect_Create(velocity.x, 0, velocity.z), push)) <= JUMP_SPRINT_MAX_SPEED)
+			velocity = vect_Add(velocity, push);
+		else if (isSprinting && vect_Length(vect_Add(vect_Create(velocity.x, 0, velocity.z), push)) > JUMP_SPRINT_MAX_SPEED && vect_Length(vect_Create(velocity.x, 0, velocity.z)) <= JUMP_SPRINT_MAX_SPEED) {
+			velocity = vect_Add(velocity, push);
+			vect_Normalize(&velocity);
+			velocity = vect_Multiply(velocity, JUMP_SPRINT_MAX_SPEED);
 		}
 
-		speed = vect_Add(speed, vect_Create(0, JUMP_SPEED, 0));
+		velocity = vect_Add(velocity, vect_Create(0, JUMP_SPEED, 0));
 	}
 }
 
@@ -227,8 +244,6 @@ void mot_MoveCamera(void)
 {
 	// If paused
 	if (isPaused) {
-		// Set up camera
-		gluLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, 0, 1, 0);
 		return;
 	}
 
@@ -252,42 +267,42 @@ void mot_MoveCamera(void)
 	}
 
 	// The following two kinematic equations are used: d = v0 * deltaT + (a * deltaT ^ 2) / 2 and v = v0 + a * deltaT
-	// where v0 is the initial speed, v is the final speed, a is the acceleration, deltaT is the time interval and d is the distance traveled
+	// where v0 is the initial velocity, v is the final velocity, a is the acceleration, deltaT is the time interval and d is the distance traveled
 	// Note that the previous are applied for 3D vectors (v0, v, d and a are 3D vectors)
 
-	// Initial speed
-	vect_Vector speed0 = speed;
+	// Initial velocity
+	vect_Vector velocity0 = velocity;
 
-	// Brake acceleration  (opposite to the speed and parallel to the ground)
-	vect_Vector drag = vect_Create(speed0.x, 0, speed0.z);
+	// Brake acceleration  (opposite to the velocity and parallel to the ground)
+	vect_Vector drag = vect_Create(velocity0.x, 0, velocity0.z);
 	vect_Normalize(&drag);
 	drag = vect_Multiply(drag, -BRAKE_ACCELERATION);
 	if (!isJumping) {
-		if (vect_Length(speed) > vect_Length(vect_Multiply(drag, deltaT))) {
-			speed = vect_Add(speed, vect_Multiply(drag, deltaT));
+		if (vect_Length(velocity) > vect_Length(vect_Multiply(drag, deltaT))) {
+			velocity = vect_Add(velocity, vect_Multiply(drag, deltaT));
 		}
 		else {
-			speed = vect_Create(0, 0, 0);
+			velocity = vect_Create(0, 0, 0);
 		}
 	}
 
 	// Checks whether to jump or not
 	jumpFunc();
 
-	// Air drag acceleration (opposite to the speed)
-	vect_Vector airDrag = speed0;
+	// Air drag acceleration (opposite to the velocity)
+	vect_Vector airDrag = velocity0;
 	vect_Normalize(&airDrag);
-	// Air drag is proportional to the speed
-	airDrag = vect_Multiply(airDrag, -vect_Length(speed0) * AIR_DRAG);
-	if (vect_Length(speed) > vect_Length(vect_Multiply(airDrag, deltaT))) {
-		speed = vect_Add(speed, vect_Multiply(airDrag, deltaT));
+	// Air drag is proportional to the velocity
+	airDrag = vect_Multiply(airDrag, -vect_Length(velocity0) * AIR_DRAG);
+	if (vect_Length(velocity) > vect_Length(vect_Multiply(airDrag, deltaT))) {
+		velocity = vect_Add(velocity, vect_Multiply(airDrag, deltaT));
 	}
 	else {
-		speed = vect_Create(0, 0, 0);
+		velocity = vect_Create(0, 0, 0);
 	}
 
 	// Gravity
-	speed = vect_Add(speed, vect_Multiply(vect_Create(0, -GFORCE, 0), deltaT));
+	velocity = vect_Add(velocity, vect_Multiply(vect_Create(0, -GFORCE, 0), deltaT));
 
 	// Makes the acceleration based on input and direction
 	vect_Vector direction = vect_Substract(vect_Create(target.x, eye.y, target.z), eye);
@@ -318,56 +333,56 @@ void mot_MoveCamera(void)
 		acc = vect_Multiply(acc, SPRINT_ACCELERATION);
 	}
 
-	speed = vect_Add(speed, vect_Multiply(acc, deltaT));
+	velocity = vect_Add(velocity, vect_Multiply(acc, deltaT));
 
 	int isMoving = keyStates['w'] || keyStates['a'] || keyStates['s'] || keyStates['d'];
 
-	// This part limits the speed of the camera
+	// This part limits the velocity of the camera
 	if (!isJumping && isMoving) {
-		if (!isSprinting && vect_Length(vect_Create(speed0.x, 0, speed0.z)) < MAX_SPEED && vect_Length(vect_Create(speed.x, 0, speed.z)) > MAX_SPEED) {
-			vect_Vector s = vect_Create(speed.x, 0, speed.z);
+		if (!isSprinting && vect_Length(vect_Create(velocity0.x, 0, velocity0.z)) < MAX_SPEED && vect_Length(vect_Create(velocity.x, 0, velocity.z)) > MAX_SPEED) {
+			vect_Vector s = vect_Create(velocity.x, 0, velocity.z);
 			vect_Normalize(&s);
 			s = vect_Multiply(s, MAX_SPEED);
-			speed = vect_Create(s.x, speed.y, s.z);
+			velocity = vect_Create(s.x, velocity.y, s.z);
 		}
-		else if (!isSprinting && vect_Length(vect_Create(speed0.x, 0, speed0.z)) >= MAX_SPEED) {
-			vect_Vector speed1 = speed0;
-			speed1 = vect_Add(speed1, vect_Multiply(drag, deltaT));
-			speed1 = vect_Add(speed1, vect_Multiply(airDrag, deltaT));
-			GLdouble length = vect_Length(speed1);
-			vect_Normalize(&speed);
-			speed = vect_Multiply(speed, length);
-			if (vect_Length(vect_Create(speed.x, 0, speed.z)) < MAX_SPEED) {
-				vect_Vector s = vect_Create(speed.x, 0, speed.z);
+		else if (!isSprinting && vect_Length(vect_Create(velocity0.x, 0, velocity0.z)) >= MAX_SPEED) {
+			vect_Vector velocity1 = velocity0;
+			velocity1 = vect_Add(velocity1, vect_Multiply(drag, deltaT));
+			velocity1 = vect_Add(velocity1, vect_Multiply(airDrag, deltaT));
+			GLdouble length = vect_Length(velocity1);
+			vect_Normalize(&velocity);
+			velocity = vect_Multiply(velocity, length);
+			if (vect_Length(vect_Create(velocity.x, 0, velocity.z)) < MAX_SPEED) {
+				vect_Vector s = vect_Create(velocity.x, 0, velocity.z);
 				vect_Normalize(&s);
 				s = vect_Multiply(s, MAX_SPEED);
-				speed = vect_Create(s.x, speed.y, s.z);
+				velocity = vect_Create(s.x, velocity.y, s.z);
 			}
 		}
-		if (isSprinting && vect_Length(vect_Create(speed0.x, 0, speed0.z)) < SPRINT_MAX_SPEED && vect_Length(vect_Create(speed.x, 0, speed.z)) > SPRINT_MAX_SPEED) {
-			vect_Vector s = vect_Create(speed.x, 0, speed.z);
+		if (isSprinting && vect_Length(vect_Create(velocity0.x, 0, velocity0.z)) < SPRINT_MAX_SPEED && vect_Length(vect_Create(velocity.x, 0, velocity.z)) > SPRINT_MAX_SPEED) {
+			vect_Vector s = vect_Create(velocity.x, 0, velocity.z);
 			vect_Normalize(&s);
 			s = vect_Multiply(s, SPRINT_MAX_SPEED);
-			speed = vect_Create(s.x, speed.y, s.z);
+			velocity = vect_Create(s.x, velocity.y, s.z);
 		}
-		else if (isSprinting && vect_Length(vect_Create(speed0.x, 0, speed0.z)) >= SPRINT_MAX_SPEED) {
-			vect_Vector speed1 = speed0;
-			speed1 = vect_Add(speed1, vect_Multiply(drag, deltaT));
-			speed1 = vect_Add(speed1, vect_Multiply(airDrag, deltaT));
-			GLdouble length = vect_Length(speed1);
-			vect_Normalize(&speed);
-			speed = vect_Multiply(speed, length);
-			if (vect_Length(vect_Create(speed.x, 0, speed.z)) < SPRINT_MAX_SPEED) {
-				vect_Vector s = vect_Create(speed.x, 0, speed.z);
+		else if (isSprinting && vect_Length(vect_Create(velocity0.x, 0, velocity0.z)) >= SPRINT_MAX_SPEED) {
+			vect_Vector velocity1 = velocity0;
+			velocity1 = vect_Add(velocity1, vect_Multiply(drag, deltaT));
+			velocity1 = vect_Add(velocity1, vect_Multiply(airDrag, deltaT));
+			GLdouble length = vect_Length(velocity1);
+			vect_Normalize(&velocity);
+			velocity = vect_Multiply(velocity, length);
+			if (vect_Length(vect_Create(velocity.x, 0, velocity.z)) < SPRINT_MAX_SPEED) {
+				vect_Vector s = vect_Create(velocity.x, 0, velocity.z);
 				vect_Normalize(&s);
 				s = vect_Multiply(s, SPRINT_MAX_SPEED);
-				speed = vect_Create(s.x, speed.y, s.z);
+				velocity = vect_Create(s.x, velocity.y, s.z);
 			}
 		}
 	}
 
 	// The distance traveled
-	vect_Vector d = vect_Add(vect_Multiply(speed0, deltaT), vect_Multiply(vect_Substract(speed, speed0), deltaT / 2.0));
+	vect_Vector d = vect_Add(vect_Multiply(velocity0, deltaT), vect_Multiply(vect_Substract(velocity, velocity0), deltaT / 2.0));
 
 	// Moves eye and target
 	eye = vect_Add(eye, d);
@@ -378,13 +393,11 @@ void mot_MoveCamera(void)
 		target.y += EYE_HEIGHT - eye.y;
 		eye.y = EYE_HEIGHT;
 		isJumping = MOT_FALSE;
-		speed = vect_Create(speed.x, 0, speed.z);
+		velocity = vect_Create(velocity.x, 0, velocity.z);
 	}
-
-	gluLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, 0, 1, 0);
 }
 
-// Handels mouse movements
+// Handles mouse movements
 static void freeCameraHandler(int x, int y)
 {
 	// If paused, don't do anything
@@ -421,17 +434,6 @@ static void freeCameraHandler(int x, int y)
 
 	// Adds the eye position so that the camera points to the right place
 	target = vect_Add(target, eye);
-}
-
-// Teleports the camera
-void mot_TeleportCamera(GLdouble x, GLdouble y, GLdouble z)
-{
-	target.x -= eye.x - x;
-	target.y -= eye.y - y;
-	target.z -= eye.z - z;
-	eye.x = x;
-	eye.y = y;
-	eye.z = z;
 }
 
 // Handles normal key presses (arrow, function and other keys not included)
@@ -473,7 +475,7 @@ static void normalKeysHandler(unsigned char key, int x, int y)
 		break;
 		// Esc Key
 	case 27:
-		exit(0);
+		mot_exitFunc(0);
 		break;
 	}
 }
@@ -572,8 +574,8 @@ void mot_Init(GLdouble step)
 	cameraPitch = 0;
 	cameraYaw = 0;
 
-	// The camera speed
-	speed = vect_Create(0, 0, 0);
+	// The camera velocity
+	velocity = vect_Create(0, 0, 0);
 
 	// The time interval between callbacks in seconds
 	deltaT = step;
@@ -594,35 +596,27 @@ vect_Vector mot_GetTargetPos(void)
 	return target;
 }
 
+// Teleports the camera
+void mot_TeleportCamera(GLdouble x, GLdouble y, GLdouble z)
+{
+	target.x -= eye.x - x;
+	target.y -= eye.y - y;
+	target.z -= eye.z - z;
+	eye.x = x;
+	eye.y = y;
+	eye.z = z;
+}
+
+// Sets the camera (with gluLookAt())
+void mot_SetCamera(void)
+{
+	gluLookAt(eye.x, eye.y, eye.z, target.x, target.y, target.z, 0, 1, 0);
+}
+
 // Returns the key state for the given key
 int mot_GetKeyStatus(int key)
 {
 	return globalKeyStates[key];
-}
-
-// Returns true if he is jumping or returns false if not
-int mot_GetIsJumping(void)
-{
-	return isJumping;
-}
-
-// Returns true if he is sprinting or returns false if not
-int mot_GetIsSprinting(void)
-{
-	return isSprinting;
-}
-
-// Returns true if the game is paused or returns false if not
-int mot_GetIsPaused(void)
-{
-	return isPaused;
-}
-
-// Set if OP (over-powered). If set to true, the player can fly in any direction
-void mot_SetIsOP(int state)
-{
-	if (state) isOP = MOT_TRUE;
-	else isOP = MOT_FALSE;
 }
 
 // Change a constant. Multiple constants can be set at once: MOT_MAX_SPEED | MOT_SPRINT_MAX_SPEED
@@ -656,6 +650,43 @@ GLdouble mot_GetConstant(int constant)
 	if (constant == MOT_JUMP_SPEED) return JUMP_SPEED;
 	if (constant == MOT_GFORCE) return GFORCE;
 	return 0;
+}
+
+// Get a state
+int mot_GetState(int state)
+{
+	if (state == MOT_IS_JUMPING) return isJumping;
+	if (state == MOT_IS_SPRINTING) return isSprinting;
+	if (state == MOT_IS_PAUSED) return isPaused;
+	if (state == MOT_IS_OP) return isOP;
+	return 0;
+}
+
+// Set a state. Multiple states can be set at once.
+void mot_SetState(int states, int value)
+{
+	if (states & MOT_IS_JUMPING) isJumping = (value) ? MOT_TRUE : MOT_FALSE;
+	if (states & MOT_IS_SPRINTING) isSprinting = (value) ? MOT_TRUE : MOT_FALSE;
+	if (states & MOT_IS_PAUSED) isPaused = (value) ? MOT_TRUE : MOT_FALSE;
+	if (states & MOT_IS_OP) isOP = (value) ? MOT_TRUE : MOT_FALSE;
+}
+
+// Sets the camera velocity
+void mot_SetVelocity(vect_Vector value)
+{
+	velocity = value;
+}
+
+// Returns the camera velocity
+vect_Vector mot_GetVelocity(void)
+{
+	return velocity;
+}
+
+// Sets the exit function. The default one just ends the program when ESC is pressed
+void mot_ExitFunc(void(*func)(int))
+{
+	mot_exitFunc = func;
 }
 
 #endif // MOTION_IMPLEMENTATION

@@ -189,6 +189,7 @@ void display(void)
 	glLoadIdentity();
 	// Set up the camera
 	mot_MoveCamera();
+	mot_SetCamera();
 	// Set light position
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
 
@@ -304,7 +305,7 @@ void initialize(void)
 	mot_Init(1 / 80.0);
 	// Teleport camera
 	mot_TeleportCamera(5, mot_GetConstant(MOT_EYE_HEIGHT), 5);
-	//mot_SetIsOP(true);
+	//mot_SetState(MOT_IS_OP, true);
 
 	// Print stats
 	lbj_PrintStats(true);
@@ -382,7 +383,7 @@ void tick(int value)
 		fpsFrameCount = 0;
 		// Change the window's title
 		char title[50];
-		if (mot_GetIsPaused()){
+		if (mot_GetState(MOT_IS_PAUSED)){
 			sprintf(title, "Epic Game Paused | FPS: %f", fps);
 		}
 		else {
