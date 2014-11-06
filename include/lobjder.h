@@ -36,12 +36,14 @@
 
 	Note: Triangle and quad faces are supported. N-GONS are NOT supported
 	Note: stb_image is used for loading textures. See http://nothings.org/stb_image.c for more info
+	Note: Implementation for stb_image is created in this header file by default. If you want to prevent that use "#define LBJ_NO_STB_IMPLEMENTATION".
+	Note: Everything prefixed with "lbjp_" or "LBJP_" (stands for "lobjder private") should not be used or else problems might occur.
 
 */
 
-#ifndef LOBJDER_H
+#ifndef LOBJDER_H_INCLUDED
 
-#define LOBJDER_H
+#define LOBJDER_H_INCLUDED
 
 #include <stdio.h>
 #include <GL/glut.h>
@@ -60,15 +62,15 @@ typedef struct {
 // lbj_Arrayv is used for vertices, texture coordonates and normals
 typedef struct {
 	lbj_Vector3f * array;
-	size_t used;
-	size_t size;
+	unsigned int used;
+	unsigned int size;
 } lbj_Arrayv;
 
 // lbj_Arrayf is used for faces
 typedef struct {
 	lbj_Vector3i* array[4];
-	size_t used;
-	size_t size;
+	unsigned int used;
+	unsigned int size;
 } lbj_Arrayf;
 
 // Material structure
@@ -87,21 +89,20 @@ typedef struct {
 	lbj_Vector3f offset; // Texture offset, not used
 	lbj_Vector3f scale; // Texture scale, not used
 	int illum; // not used
-
 } lbj_Material;
 
 // Material array
 typedef struct {
 	lbj_Material * array;
-	size_t used;
-	size_t size;
+	unsigned int used;
+	unsigned int size;
 } lbj_Arraym;
 
 // Material index array
 typedef struct {
 	unsigned int * array;
-	size_t used;
-	size_t size;
+	unsigned int used;
+	unsigned int size;
 } lbj_Arraymi;
 
 // Model structure
@@ -180,24 +181,29 @@ void lbj_PrintStats(int value);
 #include <GL/glew.h>
 #define GL_GLEXT_PROTOTYPES
 
+#ifndef LBJ_NO_STB_IMPLEMENTATION
+
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ASSERT(x)
-#include "std_image.h"
+
+#endif // LBJ_NO_STB_IMPLEMENTATION
+
+#include "stb_image.h"
 
 // Paths
-static char * modelsPath = NULL;
-static char * materialsPath = NULL;
-static char * texturesPath = NULL;
+static char * lbjp_modelsPath = NULL;
+static char * lbjp_materialsPath = NULL;
+static char * lbjp_texturesPath = NULL;
 // A neutral, gray material
-static lbj_Material defaultMaterial;
-static int firstUsed = 1;
+static lbj_Material lbjp_defaultMaterial;
+static int lbjp_firstUsed = 1;
 // Used for flipping the model or texture
-static int flipU = 0, flipV = 1, flipX = 0, flipY = 0, flipZ = 0;
+static int lbjp_flipU = 0, lbjp_flipV = 1, lbjp_flipX = 0, lbjp_flipY = 0, lbjp_flipZ = 0;
 // Print stats or not
-static int printStats = 0;
+static int lbjp_printStats = 0;
 
 // Initializes the Array and allocates memory
-static void initArrayv(lbj_Arrayv *a, size_t initialSize)
+static void lbjp_initArrayv(lbj_Arrayv *a, unsigned int initialSize)
 {
 	if (initialSize <= 0)
 		a->size = 1;
@@ -208,7 +214,7 @@ static void initArrayv(lbj_Arrayv *a, size_t initialSize)
 }
 
 // Adds an element to the array and reallocates memory if needed
-static void insertArrayv(lbj_Arrayv *a, lbj_Vector3f element)
+static void lbjp_insertArrayv(lbj_Arrayv *a, lbj_Vector3f element)
 {
 	if (a->used == a->size) {
 		a->size *= 2;
@@ -218,7 +224,7 @@ static void insertArrayv(lbj_Arrayv *a, lbj_Vector3f element)
 }
 
 // Frees the memory and resets the array
-static void freeArrayv(lbj_Arrayv *a)
+static void lbjp_freeArrayv(lbj_Arrayv *a)
 {
 	free(a->array);
 	a->array = NULL;
@@ -226,7 +232,7 @@ static void freeArrayv(lbj_Arrayv *a)
 }
 
 // Same as above but for a face array
-static void initArrayf(lbj_Arrayf *a, size_t initialSize)
+static void lbjp_initArrayf(lbj_Arrayf *a, unsigned int initialSize)
 {
 	int i;
 	if (initialSize <= 0)
@@ -239,7 +245,7 @@ static void initArrayf(lbj_Arrayf *a, size_t initialSize)
 	a->used = 0;
 }
 
-static void insertArrayf(lbj_Arrayf *a, lbj_Vector3i element[4])
+static void lbjp_insertArrayf(lbj_Arrayf *a, lbj_Vector3i element[4])
 {
 	int i;
 	if (a->used == a->size) {
@@ -254,7 +260,7 @@ static void insertArrayf(lbj_Arrayf *a, lbj_Vector3i element[4])
 	a->used++;
 }
 
-static void freeArrayf(lbj_Arrayf *a)
+static void lbjp_freeArrayf(lbj_Arrayf *a)
 {
 	int i;
 	for (i = 0; i < 4; i++) {
@@ -265,7 +271,7 @@ static void freeArrayf(lbj_Arrayf *a)
 }
 
 // For a materials array
-static void initArraym(lbj_Arraym *a, size_t initialSize)
+static void lbjp_initArraym(lbj_Arraym *a, unsigned int initialSize)
 {
 	if (initialSize <= 0)
 		a->size = 1;
@@ -275,7 +281,7 @@ static void initArraym(lbj_Arraym *a, size_t initialSize)
 	a->used = 0;
 }
 
-static void insertArraym(lbj_Arraym *a, lbj_Material mat)
+static void lbjp_insertArraym(lbj_Arraym *a, lbj_Material mat)
 {
 	if (a->used == a->size) {
 		a->size *= 2;
@@ -284,7 +290,7 @@ static void insertArraym(lbj_Arraym *a, lbj_Material mat)
 	a->array[a->used++] = mat;
 }
 
-static void freeArraym(lbj_Arraym *a)
+static void lbjp_freeArraym(lbj_Arraym *a)
 {
 	free(a->array);
 	a->array = NULL;
@@ -292,7 +298,7 @@ static void freeArraym(lbj_Arraym *a)
 }
 
 // For a material indexes array
-static void initArraymi(lbj_Arraymi *a, size_t initialSize)
+static void lbjp_initArraymi(lbj_Arraymi *a, unsigned int initialSize)
 {
 	if (initialSize <= 0)
 		a->size = 1;
@@ -302,7 +308,7 @@ static void initArraymi(lbj_Arraymi *a, size_t initialSize)
 	a->used = 0;
 }
 
-static void insertArraymi(lbj_Arraymi *a, unsigned int mat)
+static void lbjp_insertArraymi(lbj_Arraymi *a, unsigned int mat)
 {
 	if (a->used == a->size) {
 		a->size *= 2;
@@ -311,7 +317,7 @@ static void insertArraymi(lbj_Arraymi *a, unsigned int mat)
 	a->array[a->used++] = mat;
 }
 
-static void freeArraymi(lbj_Arraymi *a)
+static void lbjp_freeArraymi(lbj_Arraymi *a)
 {
 	free(a->array);
 	a->array = NULL;
@@ -321,9 +327,9 @@ static void freeArraymi(lbj_Arraymi *a)
 // Sets paths to look for files
 void lbj_SetPaths(char * modelsFolderPath, char * materialsFolderPath, char * texturesFolderPath)
 {
-	modelsPath = modelsFolderPath;
-	materialsPath = materialsFolderPath;
-	texturesPath = texturesFolderPath;
+	lbjp_modelsPath = modelsFolderPath;
+	lbjp_materialsPath = materialsFolderPath;
+	lbjp_texturesPath = texturesFolderPath;
 }
 
 // Sets flipping
@@ -331,11 +337,11 @@ void lbj_SetFlipping(int _flipU, int _flipV, int _flipX, int _flipY, int _flipZ)
 {
 	// If set to 0 : no flipping; 1 : flip; other: leave it unchanged
 
-	if (_flipU == 0 || _flipU == 1) flipU = _flipU;
-	if (_flipV == 0 || _flipV == 1) flipV = _flipV;
-	if (_flipX == 0 || _flipX == 1) flipX = _flipX;
-	if (_flipY == 0 || _flipY == 1) flipY = _flipY;
-	if (_flipZ == 0 || _flipZ == 1) flipZ = _flipZ;
+	if (_flipU == 0 || _flipU == 1) lbjp_flipU = _flipU;
+	if (_flipV == 0 || _flipV == 1) lbjp_flipV = _flipV;
+	if (_flipX == 0 || _flipX == 1) lbjp_flipX = _flipX;
+	if (_flipY == 0 || _flipY == 1) lbjp_flipY = _flipY;
+	if (_flipZ == 0 || _flipZ == 1) lbjp_flipZ = _flipZ;
 }
 
 // Loads a .obj file to a model
@@ -343,16 +349,14 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model)
 {
 	// Opens file in read-text mode
 	char * path;
-	if (modelsPath != NULL) {
-		path = (char *)malloc((strlen(modelsPath) + strlen(fileName) + 1) * sizeof(char));
-		path[0] = '\0';
-		strcat(path, modelsPath);
+	if (lbjp_modelsPath != NULL) {
+		path = (char *)malloc((strlen(lbjp_modelsPath) + strlen(fileName) + 1) * sizeof(char));
+		strcpy(path, lbjp_modelsPath);
 		strcat(path, fileName);
 	}
 	else {
 		path = (char *)malloc((strlen(fileName) + 1) * sizeof(char));
-		path[0] = '\0';
-		strcat(path, fileName);
+		strcpy(path, fileName);
 	}
 	FILE * fp = fopen(path, "rt");
 	if (fp == NULL) {
@@ -361,12 +365,12 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model)
 	}
 
 	// Initializes the model's arrays
-	initArrayv(&model->v, 10);
-	initArrayv(&model->vt, 10);
-	initArrayv(&model->vn, 10);
-	initArrayf(&model->f, 10);
-	initArraymi(&model->matsi, 5);
-	initArraym(&model->mats, 5);
+	lbjp_initArrayv(&model->v, 10);
+	lbjp_initArrayv(&model->vt, 10);
+	lbjp_initArrayv(&model->vn, 10);
+	lbjp_initArrayf(&model->f, 10);
+	lbjp_initArraymi(&model->matsi, 5);
+	lbjp_initArraym(&model->mats, 5);
 
 	// Now we need to read the file line by line
 	char * line = (char *)malloc(128 * sizeof(char));
@@ -376,10 +380,10 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model)
 		// The v flag is a vertice
 		if (strncmp(line, "v ", 2) == 0) {
 			if (sscanf(line, "%*s %f %f %f", &vect.x, &vect.y, &vect.z) == 3) {
-				if (flipX) vect.x = -vect.x;
-				if (flipY) vect.y = -vect.y;
-				if (flipZ) vect.z = -vect.z;
-				insertArrayv(&model->v, vect);
+				if (lbjp_flipX) vect.x = -vect.x;
+				if (lbjp_flipY) vect.y = -vect.y;
+				if (lbjp_flipZ) vect.z = -vect.z;
+				lbjp_insertArrayv(&model->v, vect);
 			}
 		}
 
@@ -387,26 +391,26 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model)
 		else if (strncmp(line, "vt", 2) == 0) {
 			vect.z = 0;
 			if (sscanf(line, "%*s %f %f", &vect.x, &vect.y) == 2) {
-				if (flipU) vect.x = -vect.x;
-				if (flipV) vect.y = -vect.y;
-				insertArrayv(&model->vt, vect);
+				if (lbjp_flipU) vect.x = -vect.x;
+				if (lbjp_flipV) vect.y = -vect.y;
+				lbjp_insertArrayv(&model->vt, vect);
 			}
 		}
 
 		// The vn flag is a normal
 		else if (strncmp(line, "vn", 2) == 0) {
 			if (sscanf(line, "%*s %f %f %f", &vect.x, &vect.y, &vect.z) == 3) {
-				if (flipX) vect.x = -vect.x;
-				if (flipY) vect.y = -vect.y;
-				if (flipZ) vect.z = -vect.z;
-				insertArrayv(&(*model).vn, vect);
+				if (lbjp_flipX) vect.x = -vect.x;
+				if (lbjp_flipY) vect.y = -vect.y;
+				if (lbjp_flipZ) vect.z = -vect.z;
+				lbjp_insertArrayv(&(*model).vn, vect);
 			}
 		}
 
 		// The f flag is a face
 		else if (strncmp(line, "f ", 2) == 0) {
 			lbj_Vector3i vct[4]; // Output vector
-			char * point = NULL; // A vertice/texture/normal sequence
+			char * point = (char *)malloc(sizeof(char)); // A vertice/texture/normal sequence
 
 			// Note that there are four formats:
 			// <1>     f 145 679 12
@@ -428,19 +432,16 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model)
 					else if (i == 3) {
 						vct[3] = vct[2];
 					}
-					free(point);
 					break;
 				}
 				p[i + 1] = strchr(p[i] + 1, 32);
 				if (p[i + 1] != NULL) {
-					free(point);
-					point = (char *)malloc((p[i + 1] - p[i]) * sizeof(char));
+					point = (char *)realloc(point, (p[i + 1] - p[i]) * sizeof(char));
 					strncpy(point, p[i] + 1, p[i + 1] - p[i] - 1); // Take a sequence
 					point[p[i + 1] - p[i] - 1] = '\0'; // Add the null character
 				}
 				else {
-					free(point);
-					point = (char *)malloc((strlen(p[i] + 1) + 1) * sizeof(char));
+					point = (char *)realloc(point, (strlen(p[i] + 1) + 1) * sizeof(char));
 					strcpy(point, p[i] + 1);
 				}
 				char * c1; // Pointer to first forward-slash
@@ -480,9 +481,12 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model)
 					}
 				}
 			}
+
+			free(point);
+
 			if (fail == 0) {
-				insertArrayf(&(*model).f, vct);
-				insertArraymi(&(*model).matsi, matIndex);
+				lbjp_insertArrayf(&model->f, vct);
+				lbjp_insertArraymi(&model->matsi, matIndex);
 			}
 		}
 		// .mtl file reference
@@ -511,17 +515,17 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model)
 		}
 	}
 
-	if (printStats) {
+	if (lbjp_printStats) {
 		// Print Stats
 		printf("MODEL:\n");
 		printf("Loaded \"%s\".\n", path);
-		printf("Contained: %zd vertice, %zd texture coord, %zd normals, %zd faces, %zd materials\n",
+		printf("Contained: %u vertice, %u texture coord, %u normals, %u faces, %u materials\n",
 			   model->v.used,
 			   model->vt.used,
 			   model->vn.used,
 			   model->f.used,
 			   model->mats.used);
-		printf("Allocated %zd bytes of memory\n",
+		printf("Allocated %u bytes of memory\n",
 			   model->v.size * sizeof(lbj_Vector3f)+
 			   model->vt.size * sizeof(lbj_Vector3f)+
 			   model->vn.size * sizeof(lbj_Vector3f)+
@@ -544,16 +548,14 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init)
 {
 	// Opens file in read-text mode
 	char * path;
-	if (materialsPath != NULL) {
-		path = (char *)malloc((strlen(materialsPath) + strlen(fileName) + 1) * sizeof(char));
-		path[0] = '\0';
-		strcat(path, materialsPath);
+	if (lbjp_materialsPath != NULL) {
+		path = (char *)malloc((strlen(lbjp_materialsPath) + strlen(fileName) + 1) * sizeof(char));
+		strcpy(path, lbjp_materialsPath);
 		strcat(path, fileName);
 	}
 	else {
 		path = (char *)malloc((strlen(fileName) + 1) * sizeof(char));
-		path[0] = '\0';
-		strcat(path, fileName);
+		strcpy(path, fileName);
 	}
 	FILE * fp = fopen(path, "rt");
 	if (fp == NULL) {
@@ -562,7 +564,7 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init)
 	}
 	// Initialize the array if init != 0
 	if (init != 0) {
-		initArraym(mats, 1);
+		lbjp_initArraym(mats, 1);
 	}
 
 	// Now we need to read the file line by line
@@ -573,11 +575,11 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init)
 		// The newmtl flag is a new material
 		if (strncmp(line, "newmtl", 6) == 0) {
 			if (i != 0) {
-				insertArraym(mats, mat);
+				lbjp_insertArraym(mats, mat);
 			}
 			i++;
 			lbj_LoadDefaultMaterial();
-			mat = defaultMaterial;
+			mat = lbjp_defaultMaterial;
 			mat.matName = (char *)malloc((strlen(line) - 6) * sizeof(char));
 			sscanf(line, "%*s %s", mat.matName);
 			glGenTextures(1, &mat.glTexName);
@@ -645,23 +647,23 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init)
 			}
 
 			// Full path
-			char * path2;
-			if (texturesPath != NULL) {
-				path2 = (char *)malloc((strlen(texturesPath) + k + 1) * sizeof(char));
-				strcpy(path2, texturesPath);
-				strcat(path2, mat.fileName);
+			char * path1;
+			if (lbjp_texturesPath != NULL) {
+				path1 = (char *)malloc((strlen(lbjp_texturesPath) + strlen(mat.fileName) + 1) * sizeof(char));
+				strcpy(path1, lbjp_texturesPath);
+				strcat(path1, mat.fileName);
 			}
 			else {
-				path2 = (char *)malloc((k + 1) * sizeof(char));
-				strcpy(path2, mat.fileName);
+				path1 = (char *)malloc((strlen(mat.fileName) + 1) * sizeof(char));
+				strcpy(path1, mat.fileName);
 			}
 
 			// Gets the texture data and texture info
 			int n;
-			mat.texData = stbi_load(path2, &mat.texWidth, &mat.texHeight, &n, 3);
+			mat.texData = stbi_load(path1, &mat.texWidth, &mat.texHeight, &n, 3);
 			if (mat.texData == NULL) {
-				printf("WARNING: Failed to open \"%s\".\n", path2);
-				printf("std_image.h says: %s\n", stbi_failure_reason());
+				printf("WARNING: Failed to open \"%s\".\n", path1);
+				printf("stb_image.h says: %s\n", stbi_failure_reason());
 			}
 			else {
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
@@ -670,7 +672,7 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init)
 							 mat.texData);
 			}
 
-			free(path2);
+			free(path1);
 		}
 		// Custom flag for pixelated textures
 		else if (strncmp(line, "pixelated", 9) == 0) {
@@ -682,7 +684,7 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init)
 		}
 	}
 	if (i != 0) {
-		insertArraym(mats, mat);
+		lbjp_insertArraym(mats, mat);
 	}
 
 	// Free memory
@@ -718,31 +720,31 @@ void lbj_LoadDefaultMaterial(void)
 	// The first time this function is called, initialize the "defaultMaterial" and load it
 	// The next time the function is called, just load the "defaultMaterial"
 
-	if (firstUsed) {
-		firstUsed = 0;
+	if (lbjp_firstUsed) {
+		lbjp_firstUsed = 0;
 		// Initializes the "defaultMaterial"
-		defaultMaterial.matName = (char *)malloc(8 * sizeof(char));
-		defaultMaterial.fileName = (char *)malloc(5 * sizeof(char));
-		strcpy(defaultMaterial.matName, "default");
-		strcpy(defaultMaterial.fileName, "none");
-		glGenTextures(1, &defaultMaterial.glTexName);
-		glBindTexture(GL_TEXTURE_2D, defaultMaterial.glTexName);
+		lbjp_defaultMaterial.matName = (char *)malloc(8 * sizeof(char));
+		lbjp_defaultMaterial.fileName = (char *)malloc(5 * sizeof(char));
+		strcpy(lbjp_defaultMaterial.matName, "default");
+		strcpy(lbjp_defaultMaterial.fileName, "none");
+		glGenTextures(1, &lbjp_defaultMaterial.glTexName);
+		glBindTexture(GL_TEXTURE_2D, lbjp_defaultMaterial.glTexName);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		defaultMaterial.Ka[0] = defaultMaterial.Ka[1] = defaultMaterial.Ka[2] = 0.2;
-		defaultMaterial.Kd[0] = defaultMaterial.Kd[1] = defaultMaterial.Kd[2] = 0.8;
-		defaultMaterial.Ks[0] = defaultMaterial.Ks[1] = defaultMaterial.Ks[2] = 1.0;
-		defaultMaterial.Ns = 50;
-		defaultMaterial.Tr = 1;
-		defaultMaterial.illum = 2;
-		defaultMaterial.offset.x = defaultMaterial.offset.y = defaultMaterial.offset.z = 0;
-		defaultMaterial.scale.x = defaultMaterial.scale.y = defaultMaterial.scale.z = 1;
+		lbjp_defaultMaterial.Ka[0] = lbjp_defaultMaterial.Ka[1] = lbjp_defaultMaterial.Ka[2] = 0.2;
+		lbjp_defaultMaterial.Kd[0] = lbjp_defaultMaterial.Kd[1] = lbjp_defaultMaterial.Kd[2] = 0.8;
+		lbjp_defaultMaterial.Ks[0] = lbjp_defaultMaterial.Ks[1] = lbjp_defaultMaterial.Ks[2] = 1.0;
+		lbjp_defaultMaterial.Ns = 50;
+		lbjp_defaultMaterial.Tr = 1;
+		lbjp_defaultMaterial.illum = 2;
+		lbjp_defaultMaterial.offset.x = lbjp_defaultMaterial.offset.y = lbjp_defaultMaterial.offset.z = 0;
+		lbjp_defaultMaterial.scale.x = lbjp_defaultMaterial.scale.y = lbjp_defaultMaterial.scale.z = 1;
 	}
 
 	// Load the default material
-	lbj_LoadMaterial(defaultMaterial);
+	lbj_LoadMaterial(lbjp_defaultMaterial);
 }
 
 // Draws model using immediate mode
@@ -820,7 +822,7 @@ void lbj_CreateVBO(lbj_Model * model, int economic)
 	// A variable to hold a VBOVertex 
 	lbj_VBOVertex vert;
 
-	if (printStats) printf("Creating VBO...\n");
+	if (lbjp_printStats) printf("Creating VBO...\n");
 
 	for (i = 0; i < model->f.used; i++) {
 		for (j = 0; j < 4; j++) {
@@ -885,7 +887,7 @@ void lbj_CreateVBO(lbj_Model * model, int economic)
 				indices[4 * i + j] = found;
 			}
 		}
-		if (printStats) {
+		if (lbjp_printStats) {
 			// A simple "loading screen"
 			// Get the procentage done
 			procentLoaded = (int)(i / (float)(model->f.used - 1) * 100);
@@ -893,7 +895,7 @@ void lbj_CreateVBO(lbj_Model * model, int economic)
 			// Print it (the carrage return keeps it on the same line)
 			if (procentLoaded == 100) {
 				printf("\rLoaded: 100 %%\n");
-				printf("\rThere are %u vertices in the vertex buffer and %zd indices in the index buffer\n\n", usedVertices, model->f.used * 4);
+				printf("\rThere are %u vertices in the vertex buffer and %u indices in the index buffer\n\n", usedVertices, model->f.used * 4);
 			}
 			else if (procentLoaded > lastProcent) {
 				printf("\rLoaded: %d %%", procentLoaded);
@@ -986,10 +988,10 @@ void lbj_DrawModelVBO(lbj_Model model)
 // Whether to print stats about the model or just warnings
 void lbj_PrintStats(int value)
 {
-	if (value) printStats = 1;
-	else printStats = 0;
+	if (value) lbjp_printStats = 1;
+	else lbjp_printStats = 0;
 }
 
 #endif // LOBJDER_IMPLEMENTATION
 
-#endif // !LOBJDER_H
+#endif // LOBJDER_H_INCLUDED

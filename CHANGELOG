@@ -10,6 +10,12 @@
 	TODO: Shadows
 	TODO: Transparency
 
+v0.7.2-alpha
+
+	++ Added prefix to private things (variables, functions) for "motion" and "lobjder" ("motp_" and "lbjp_")
+	** Renamed stb_image.h (previously was std_image.h for some unknown reason)
+	** lobjder: Changed size_t to unsigned int and some other small improvements
+
 v0.7.1-aplha
 
 	** Changed icon (it's no longer that awful)

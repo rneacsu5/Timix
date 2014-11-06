@@ -53,7 +53,7 @@ int fpsCurrentTime = 0, fpsPreviousTime = 0, fpsFrameCount = 0;
 int saveBtnWasPressed = 0;
 
 // Initiate the data array
-void initArrayData(MAP_Data* a, size_t size[3])
+void initArrayData(MAP_Data* a, unsigned int size[3])
 {
 	int i;
 	for (i = 0; i < 3; i++) {
@@ -67,7 +67,7 @@ void initArrayData(MAP_Data* a, size_t size[3])
 }
 
 // Resizes the data array
-void resizeArrayData(MAP_Data* a, size_t size[3])
+void resizeArrayData(MAP_Data* a, unsigned int size[3])
 {
 	int i;
 	for (i = 0; i < 3; i++) {
@@ -122,7 +122,7 @@ void drawMap(MAP_Map map)
 }
 
 // Initialize an empty map
-void initMap(MAP_Map *m, size_t size[3])
+void initMap(MAP_Map *m, unsigned int size[3])
 {
 	unsigned long int i;
 
@@ -186,7 +186,7 @@ int loadMapFromFile(FILE * fp, MAP_Map * map)
 	}
 
 	// Size is max - min + 1
-	size_t size[3];
+	unsigned int size[3];
 	for (int i = 0; i < 3; i++) {
 		size[i] = max[i] - min[i] + 1;
 	}
@@ -229,7 +229,7 @@ int saveMapToFile(FILE * fp, MAP_Map map)
 	// Number of non-air cubes
 	myH.numOfCubes = 0;
 	// Size of allocated memory for myCubes
-	size_t used = 10;
+	unsigned int used = 10;
 	// Array of cubes that will be written to the file
 	MAP_FileCube * myCubes = (MAP_FileCube *)malloc(used * sizeof(MAP_FileCube));
 
@@ -381,56 +381,66 @@ void changeBlock(void)
 	// Get position
 	vect_Vector pos = getSelectedCube();
 
-	// Create a blank map. It will be used if we need to resize the map
-	MAP_Map newMap;
+	// Create a blank map data. It will be used if we need to resize the map
+	MAP_Data newData;
 	for (i = 0; i < 3; i++) {
-		newMap.Data.size[i] = Map.Data.size[i];
-		newMap.Data.offset[i] = Map.Data.offset[i];
+		newData.size[i] = Map.Data.size[i];
+		newData.offset[i] = Map.Data.offset[i];
 	}
 
 	// Check if the block is outside the boundary and resize newMap's size and offset
 	if (pos.x < -Map.Data.offset[0]) {
-		newMap.Data.size[0] += -Map.Data.offset[0] - pos.x;
-		newMap.Data.offset[0] = -pos.x;
+		newData.size[0] += -Map.Data.offset[0] - pos.x;
+		newData.offset[0] = -pos.x;
 		resize = 1;
 	}
 	if (pos.y < -Map.Data.offset[1]) {
-		newMap.Data.size[1] += -Map.Data.offset[1] - pos.y;
-		newMap.Data.offset[1] = -pos.y;
+		newData.size[1] += -Map.Data.offset[1] - pos.y;
+		newData.offset[1] = -pos.y;
 		resize = 1;
 	}
 	if (pos.z < -Map.Data.offset[2]) {
-		newMap.Data.size[2] += -Map.Data.offset[2] - pos.z;
-		newMap.Data.offset[2] = -pos.z;
+		newData.size[2] += -Map.Data.offset[2] - pos.z;
+		newData.offset[2] = -pos.z;
 		resize = 1;
 	}
 	if (pos.x > Map.Data.size[0] - Map.Data.offset[0] - 1) {
-		newMap.Data.size[0] += pos.x - Map.Data.size[0] + Map.Data.offset[0] + 1;
+		newData.size[0] += pos.x - Map.Data.size[0] + Map.Data.offset[0] + 1;
 		resize = 1;
 	}
 	if (pos.y > Map.Data.size[1] - Map.Data.offset[1] - 1) {
-		newMap.Data.size[1] += pos.y - Map.Data.size[1] + Map.Data.offset[1] + 1;
+		newData.size[1] += pos.y - Map.Data.size[1] + Map.Data.offset[1] + 1;
 		resize = 1;
 	}
 	if (pos.z > Map.Data.size[2] - Map.Data.offset[2] - 1) {
-		newMap.Data.size[2] += pos.z - Map.Data.size[2] + Map.Data.offset[2] + 1;
+		newData.size[2] += pos.z - Map.Data.size[2] + Map.Data.offset[2] + 1;
 		resize = 1;
 	}
 
 	// Note that we resize the map only if needed
 	if (resize) {
-		// Because initMap() resets the offset to 0 we need to store it temporarly
+		// Because initArrayData() resets the offset to 0 we need to store it temporarly
 		int tempOffset[3];
 		for (i = 0; i < 3; i++) {
-			tempOffset[i] = newMap.Data.offset[i];
+			tempOffset[i] = newData.offset[i];
 		}
 
-		// The map is initialized with the new size
-		initMap(&newMap, newMap.Data.size);
+		// The map data is initialized with the new size
+		initArrayData(&newData, newData.size);
 
 		// Restore offset
 		for (i = 0; i < 3; i++) {
-			newMap.Data.offset[i] = tempOffset[i];
+			newData.offset[i] = tempOffset[i];
+		}
+
+		// The default cube used
+		MAP_Cube defaultCube;
+		defaultCube.type = CUBE_AIR;
+
+		// Init array with default cube
+		unsigned int j;
+		for (j = 0; j < newData.size[0] * newData.size[1] * newData.size[2]; j++) {
+			newData.array[j] = defaultCube;
 		}
 
 		// The content of the original map is copied to the new map
@@ -439,15 +449,15 @@ void changeBlock(void)
 		for (a = -Map.Data.offset[0]; a < (int)Map.Data.size[0] - Map.Data.offset[0]; a++) {
 			for (b = -Map.Data.offset[1]; b < (int)Map.Data.size[1] - Map.Data.offset[1]; b++) {
 				for (c = -Map.Data.offset[2]; c < (int)Map.Data.size[2] - Map.Data.offset[2]; c++) {
-					setCubeAt(&newMap.Data, a, b, c, getCubeAt(Map.Data, a, b, c));
+					setCubeAt(&newData, a, b, c, getCubeAt(Map.Data, a, b, c));
 				}
 			}
 		}
 
-		// Free the old map
+		// Free old data
 		free(Map.Data.array);
-		// We only want to update the Data
-		Map.Data = newMap.Data;
+		// Update new data
+		Map.Data = newData;
 	}
 
 	// For now we only toggle cubes form air to solid

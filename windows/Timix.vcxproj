@@ -29,7 +29,7 @@
   <ItemGroup>
     <ClInclude Include="..\include\lobjder.h" />
     <ClInclude Include="..\include\motion.h" />
-    <ClInclude Include="..\include\std_image.h" />
+    <ClInclude Include="..\include\stb_image.h" />
     <ClInclude Include="..\include\utility.h" />
     <ClInclude Include="..\include\vector.h" />
     <ClInclude Include="resource.h" />

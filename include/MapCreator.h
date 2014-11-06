@@ -29,7 +29,7 @@ typedef struct
 typedef struct
 {
 	MAP_Cube* array;
-	size_t size[3];
+	unsigned int size[3];
 	int offset[3];
 } MAP_Data;
 
