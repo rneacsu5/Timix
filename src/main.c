@@ -53,6 +53,15 @@ int musicStream;
 int musicIsPlaying = false;
 int musicButtonWasPressed = false;
 
+// Box position
+vect_Vector boxPos;
+// Box game is running
+int boxIsEnabled = true;
+// Small timer to change direction
+int boxTimer = 0;
+// Box angle
+int boxAngle = 25;
+
 void drawWallsAndFloor(void)
 {
 	GLdouble i, j;
@@ -196,52 +205,103 @@ void display(void)
 	// Loads the default material
 	lbj_LoadDefaultMaterial();
 
-	// Draws and animates a cube
-	glPushMatrix();
-		GLdouble k = (a2 - ((int) a2 / 90) * 90) * 2 * DEG_TO_RAD;
-		glTranslatef(5 + 4 * sin(a1 * DEG_TO_RAD), 0.5 + sin(k) * (sqrt(2) / 2 - 0.5), 5 + 4 * cos(a1 * DEG_TO_RAD));
-		glRotatef(a2, -sin(a1 * DEG_TO_RAD), 0, -cos(a1 * DEG_TO_RAD));
-		glRotatef(a1, 0, 1, 0);
-		glutSolidCube(1);
-	glPopMatrix();
-
-	// Draws the room
-	drawWallsAndFloor();
+	// Reset game if button pressed
+	if (!boxIsEnabled && GetKeyState('B') < 0) {
+		boxIsEnabled = !boxIsEnabled;
+	}
 
 	// Draws ground
 	drawGround();
 
-	// Draws Plane on ground
-	glPushMatrix();
+	if (!boxIsEnabled) {
+		// Draws the room
+		drawWallsAndFloor();
+
+		// Draws and animates a cube
+		glPushMatrix();
+		GLdouble k = (a2 - ((int)a2 / 90) * 90) * 2 * DEG_TO_RAD;
+		glTranslatef(5 + 4 * sin(a1 * DEG_TO_RAD), 0.5 + sin(k) * (sqrt(2) / 2 - 0.5), 5 + 4 * cos(a1 * DEG_TO_RAD));
+		glRotatef(a2, -sin(a1 * DEG_TO_RAD), 0, -cos(a1 * DEG_TO_RAD));
+		glRotatef(a1, 0, 1, 0);
+		glutSolidCube(1);
+		glPopMatrix();
+
+		// Draws Plane on ground
+		glPushMatrix();
 		glTranslatef(17, 1, 3);
 		glRotatef(a1, 0, 1, 0);
 		glScalef(0.4, 0.4, 0.4);
 		lbj_DrawModelVBO(planeModel);
-	glPopMatrix();
+		glPopMatrix();
 
-	// Draws Plane that flies
-	glPushMatrix();
+		// Draws Plane that flies
+		glPushMatrix();
 		glTranslatef(10 + 7 * sin(a1 * DEG_TO_RAD), 4 + 0.5 * sin(a1 * DEG_TO_RAD), 10 + 7 * cos(a1 * DEG_TO_RAD));
 		glRotatef(a1 - 90, 0, 1, 0);
 		glScalef(0.4, 0.4, 0.4);
 		lbj_DrawModelVBO(planeModel);
-	glPopMatrix();
+		glPopMatrix();
 
-	// Draws car
-	glPushMatrix();
+		// Draws car
+		glPushMatrix();
 		glTranslatef(5, 0, 15);
-		glRotatef(a1, 0 , 1, 0);
+		glRotatef(45, 0, 1, 0);
 		glScalef(1.5, 1.5, 1.5);
 		lbj_DrawModelVBO(carModel);
-	glPopMatrix();
+		glPopMatrix();
 
-	// Draws Nexus
-	glPushMatrix();
+		// Draws Nexus
+		glPushMatrix();
 		glTranslatef(17, 1.5, 10);
 		glRotatef(-90, 0, 1, 0);
 		glScalef(0.01, 0.01, 0.01);
 		lbj_DrawModelVBO(nexusModel);
-	glPopMatrix();
+		glPopMatrix();
+	}
+	// Draw and move box away from player
+	else {
+		// Player position
+		vect_Vector player = mot_GetEyePos();
+		// Get direction away from player
+		vect_Vector dir = vect_Substract(boxPos, player);
+
+		// Check if distance is too small
+		if (sqrt(pow(player.x - boxPos.x, 2) + pow(player.z - boxPos.z, 2)) < 5) {
+			// The box stays on the ground
+			dir.y = 0;
+			// After some time rotate the direction randomly to make the chase more difficult
+			boxTimer++;
+			if (boxTimer >= 150) {
+				boxTimer = 0;
+				if (rand() % 2) {
+					boxAngle = -boxAngle;
+				}
+			}
+			dir = vect_Rotate(dir, boxAngle, 0, 1, 0);
+			// Make its speed a little slower that the player's
+			vect_Normalize(&dir);
+			dir = vect_Multiply(dir, mot_GetConstant(MOT_MAX_SPEED) / 100 * 1.25);
+			// Move the box
+			boxPos = vect_Add(boxPos, dir);
+		}
+		else {
+			dir = vect_Rotate(dir, boxAngle, 0, 1, 0);
+		}
+		if (sqrt(pow(player.x - boxPos.x, 2) + pow(player.z - boxPos.z, 2)) < sqrt(2)) {
+			boxIsEnabled = false;
+			boxPos = vect_Create(0, 0.5, 0);
+			mot_TeleportCamera(5, mot_GetConstant(MOT_EYE_HEIGHT), 5);
+		}
+		// Draw box
+		glEnable(GL_TEXTURE_2D);
+		lbj_LoadMaterial(terrainMats.array[2]);
+		glPushMatrix();
+			glTranslatef(boxPos.x, boxPos.y, boxPos.z);
+			glRotatef(atan(dir.x / dir.z) * 180 / PI, 0, 1, 0);
+			glutSolidCube(1);
+		glPopMatrix();
+		glDisable(GL_TEXTURE_2D);
+	}
 
 	// Swap buffers in GPU
 	glutSwapBuffers();
@@ -307,6 +367,9 @@ void initialize(void)
 	mot_TeleportCamera(5, mot_GetConstant(MOT_EYE_HEIGHT), 5);
 	//mot_SetState(MOT_IS_OP, true);
 
+	// Initialize box position
+	boxPos = vect_Create(0, 0.5, 0);
+
 	// Print stats
 	lbj_PrintStats(true);
 	// Loads the default material
@@ -368,7 +431,7 @@ void tick(int value)
 
 	// Increase frame count
 	fpsFrameCount++;
-	// Get the number of milliseconds since glutInit called (or first call to glutGet(GLUT ELAPSED TIME))
+	// Get the number of milliseconds since glutInit called (or first call to glutGet(GLUT_ELAPSED_TIME))
 	fpsCurrentTime = glutGet(GLUT_ELAPSED_TIME);
 	// Calculate time passed
 	int timeInterval = fpsCurrentTime - fpsPreviousTime;
@@ -384,10 +447,10 @@ void tick(int value)
 		// Change the window's title
 		char title[50];
 		if (mot_GetState(MOT_IS_PAUSED)){
-			sprintf(title, "Epic Game Paused | FPS: %f", fps);
+			sprintf(title, "Catch the Box Paused | FPS: %f", fps);
 		}
 		else {
-			sprintf(title, "Epic Game | FPS: %f", fps);
+			sprintf(title, "Catch the Box | FPS: %f", fps);
 		}
 		glutSetWindowTitle(title);
 	}
@@ -423,7 +486,7 @@ int main(int argc, char *argv[])
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 	glutInitWindowSize(800, 600);
-	glutCreateWindow("Epic Game");
+	glutCreateWindow("Catch the Box");
 	glewExperimental = GL_TRUE;
 	glewInit();
 	

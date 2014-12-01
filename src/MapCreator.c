@@ -52,6 +52,8 @@ int fpsCurrentTime = 0, fpsPreviousTime = 0, fpsFrameCount = 0;
 
 int saveBtnWasPressed = 0;
 
+vect_Vector lastPos;
+
 // Initiate the data array
 void initArrayData(MAP_Data* a, unsigned int size[3])
 {
@@ -375,6 +377,7 @@ vect_Vector getSelectedCube(void)
 // Changes the block at the eye level
 void changeBlock(void)
 {
+	if (!mot_GetState(MOT_IS_OP)) return;
 	int i;
 	int resize = 0;
 
@@ -474,6 +477,7 @@ void changeBlock(void)
 // Draws map boundary and selected cube
 void drawGuides(void)
 {
+	if (!mot_GetState(MOT_IS_OP)) return;
 	// Draw Map bound
 	glBegin(GL_LINE_LOOP);
 		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2]);
@@ -529,46 +533,78 @@ void doMagic(void)
 		return;
 	}
 
-	// Player block
-	vect_Vector pos;
+	// Player position
+	vect_Vector pos = vect_Create(mot_GetEyePos().x - 0.5, mot_GetEyePos().y - mot_GetConstant(MOT_EYE_HEIGHT), mot_GetEyePos().z - 0.5);
+	// Integer position
+	int x = (int)pos.x, y = (int)pos.y, z = (int)pos.z;
 	// Cube to check with
-	vect_Vector cube;
+	int a,b,c;
 	// Velocity
 	vect_Vector velocity = mot_GetVelocity();
-	pos = vect_Create(mot_GetEyePos().x, mot_GetEyePos().y - mot_GetConstant(MOT_EYE_HEIGHT) + 0.5, mot_GetEyePos().z);
 
+	// Take each level (the player is 2 cubes tall)
+	for (b = y; b < y + 3; b++) {
+		a = x; c = z;
+		while (1) {
+			// Check for air or if outside bound
+			int skip = 0;
+			if (a > (int)Map.Data.size[0] + Map.Data.offset[0] ||
+				b > (int)Map.Data.size[1] + Map.Data.offset[1] ||
+				c > (int)Map.Data.size[2] + Map.Data.offset[2] ||
+				a < Map.Data.offset[0] ||
+				b < Map.Data.offset[1] ||
+				c < Map.Data.offset[2])
 
-	// Magic that gets the cubes needed will be inserted here
+				skip = 1;
 
+			if (!skip)
+				if (getCubeAt(Map.Data, a, b, c).type == CUBE_AIR) 
+					skip = 1;
 
-	if (pos.x - 1 < cube.x && pos.x > cube.x && velocity.x < 0) {
-		pos.x = cube.x + 1;
-		velocity.x = 0;
-	}
-	if (pos.y - 1 < cube.y && pos.y > cube.y && velocity.y < 0) {
-		pos.y = cube.y + 1;
-		velocity.y = 0;
-	}
-	if (pos.z - 1 < cube.z && pos.z > cube.z && velocity.z < 0) {
-		pos.z = cube.z + 1;
-		velocity.z = 0;
-	}
+			if (!skip) {
+				// Algoritm that checks for collision and moves player accordingly
+				if (pos.x - 1 < a && pos.x > a && velocity.x < 0 && lastPos.y - 1 < b && lastPos.y + 1 > b && lastPos.z - 1 < c && lastPos.z + 1 > c) {
+					pos.x = a + 1;
+					velocity.x = 0;
+				}
+				if (pos.x + 1 > a && pos.x < a && velocity.x > 0 && lastPos.y - 1 < b && lastPos.y + 1 > b && lastPos.z - 1 < c && lastPos.z + 1 > c) {
+					pos.x = a - 1;
+					velocity.x = 0;
+				}
 
-	if (pos.x + 1 > cube.x && pos.x < cube.x && velocity.x > 0) {
-		pos.x = cube.x - 1;
-		velocity.x = 0;
-	}
-	if (pos.y + 1 > cube.y && pos.y < cube.y && velocity.y > 0) {
-		pos.y = cube.y - 1;
-		velocity.y = 0;
-	}
-	if (pos.z + 1 > cube.z && pos.z < cube.z && velocity.z > 0) {
-		pos.z = cube.z - 1;
-		velocity.z = 0;
-	}
+				if (pos.y - 1 < b && pos.y > b && velocity.y < 0 && lastPos.x - 1 < a && lastPos.x + 1 > a && lastPos.z - 1 < c && lastPos.z + 1 > c) {
+					pos.y = b + 1;
+					velocity.y = 0;
+				}
+				if (pos.y + 1 > b && pos.y < b && velocity.y > 0 && lastPos.x - 1 < a && lastPos.x + 1 > a && lastPos.z - 1 < c && lastPos.z + 1 > c) {
+					pos.y = b - 1;
+					velocity.y = 0;
+				}
 
+				if (pos.z - 1 < c && pos.z > c && velocity.z < 0 && lastPos.x - 1 < a && lastPos.x + 1 > a && lastPos.y - 1 < b && lastPos.y + 1 > b) {
+					pos.z = c + 1;
+					velocity.z = 0;
+				}
+				if (pos.z + 1 > c && pos.z < c && velocity.z > 0 && lastPos.x - 1 < a && lastPos.x + 1 > a && lastPos.y - 1 < b && lastPos.y + 1 > b) {
+					pos.z = c - 1;
+					velocity.z = 0;
+				}
+			}
+			glPushMatrix();
+				glTranslatef(a + 0.5, b + 0.5, c + 0.5);
+				glutWireCube(1);
+			glPopMatrix();
+			if (c == z) c++;
+			else if (c == z + 1) {
+				c--;
+				a++;
+			}
+			if (c == z && a == x + 2) break;
+		}
+	}
 	mot_SetVelocity(velocity);
-	mot_TeleportCamera(pos.x, pos.y, pos.z);
+	mot_TeleportCamera(pos.x + 0.5, pos.y + mot_GetConstant(MOT_EYE_HEIGHT), pos.z + 0.5);
+	lastPos = pos;
 }
 
 void exitFunc(int exitCode)
@@ -584,7 +620,7 @@ void display(void)
 	glLoadIdentity();
 	// Set up the camera
 	mot_MoveCamera();
-	// Collisions with blockss
+	// Collisions with blocks
 	doMagic();
 	mot_SetCamera();
 	// Set light position
