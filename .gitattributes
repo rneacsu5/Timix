@@ -1,0 +1,13 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Line endings
+*.sln text eol=crlf
+*.vcxproj eol=crlf
+*.vcxproj.filters eol=crlf
+*.vcxproj.user eol=crlf
+*.iss eol=crlf
+
+*.exe binary
+*.png binary
+*.jpg binary

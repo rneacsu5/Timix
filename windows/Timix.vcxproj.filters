@@ -25,6 +25,7 @@
     <None Include="..\LICENCE" />
     <None Include="..\README.md" />
     <None Include="..\.gitignore" />
+    <None Include="..\.gitattributes" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\motion.h">
