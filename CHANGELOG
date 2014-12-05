@@ -10,6 +10,14 @@
 	TODO: Shadows
 	TODO: Transparency
 
+v0.8.1-alpha
+
+	++ colortext library: Console output is now colored
+	++ lobjder: Added colortext support
+	** Changed title
+	** Improved compatibility with other systems: Checks OpenGL version before start and also MSVCR***.dll are no longer needed
+	++ Added temporary Windows XP build
+
 v0.8.0-alpha
 
 	++ Catch the box demo for presentation

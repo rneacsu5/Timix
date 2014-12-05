@@ -17,7 +17,10 @@
 #endif // _WIN32
 
 #include "../include/utility.h"
+#define COLORTEXT_IMPLEMENTATION
+#include "../include/colortext.h"
 #define LOBJDER_IMPLEMENTATION
+#define LOBJDER_COLOR_OUTPUT
 #include "../include/lobjder.h"
 #define VECTOR_IMPLEMENTATION
 #include "../include/vector.h"
@@ -56,7 +59,7 @@ int musicButtonWasPressed = false;
 // Box position
 vect_Vector boxPos;
 // Box game is running
-int boxIsEnabled = true;
+int boxIsEnabled = false;
 // Small timer to change direction
 int boxTimer = 0;
 // Box angle
@@ -207,6 +210,7 @@ void display(void)
 
 	// Reset game if button pressed
 	if (!boxIsEnabled && GetKeyState('B') < 0) {
+		mot_TeleportCamera(5, mot_GetConstant(MOT_EYE_HEIGHT), 5);
 		boxIsEnabled = !boxIsEnabled;
 	}
 
@@ -287,6 +291,8 @@ void display(void)
 		else {
 			dir = vect_Rotate(dir, boxAngle, 0, 1, 0);
 		}
+
+		// If the player catches the box
 		if (sqrt(pow(player.x - boxPos.x, 2) + pow(player.z - boxPos.z, 2)) < sqrt(2)) {
 			boxIsEnabled = false;
 			boxPos = vect_Create(0, 0.5, 0);
@@ -447,10 +453,10 @@ void tick(int value)
 		// Change the window's title
 		char title[50];
 		if (mot_GetState(MOT_IS_PAUSED)){
-			sprintf(title, "Catch the Box Paused | FPS: %f", fps);
+			sprintf(title, "Timix Paused | FPS: %f", fps);
 		}
 		else {
-			sprintf(title, "Catch the Box | FPS: %f", fps);
+			sprintf(title, "Timix | FPS: %f", fps);
 		}
 		glutSetWindowTitle(title);
 	}
@@ -486,9 +492,35 @@ int main(int argc, char *argv[])
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 	glutInitWindowSize(800, 600);
-	glutCreateWindow("Catch the Box");
+	glutCreateWindow("Timix");
 	glewExperimental = GL_TRUE;
-	glewInit();
+
+	// Initialize GLEW
+	GLenum error = glewInit();
+	if (error != GLEW_OK) {
+		// Problem: glewInit failed, something is seriously wrong.
+		ctxt_ChangeColor(CTXT_FOREGROUND_LIGHT_RED);
+		printf("GLEW Error: %s\n", glewGetErrorString(error));
+		ctxt_RestoreColor();
+		printf("Press enter to exit...\n");
+		getchar();
+		exit(0);
+	}
+
+	// Check OpenGL version
+	int version = 0;
+	sscanf(glGetString(GL_VERSION), "%d", &version);
+	ctxt_ChangeColor(CTXT_FOREGROUND_LIGHT_AQUA);
+	printf("OpenGL version: %s\n\n", glGetString(GL_VERSION));
+	ctxt_RestoreColor();
+	if (version < 3) {
+		ctxt_ChangeColor(CTXT_FOREGROUND_LIGHT_RED);
+		printf("This application needs a minimum OpenGL version of 3.x.\nPlease update graphics card driver.\n\n");
+		ctxt_RestoreColor();
+		printf("Press enter to exit...\n");
+		getchar();
+		exit(0);
+	}
 	
 	initialize();
 

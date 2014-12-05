@@ -7,6 +7,7 @@
 
 	Use this line before you include this header to create the implementation. USE IT ONLY ONCE!
 		#define LOBJDER_IMPLEMENTATION
+	Also add #define LOBJDER_COLOR_OUTPUT to have the output colored. "colortext" library is required.
 
 	Usage:
 	
@@ -182,13 +183,14 @@ void lbj_PrintStats(int value);
 #define GL_GLEXT_PROTOTYPES
 
 #ifndef LBJ_NO_STB_IMPLEMENTATION
-
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ASSERT(x)
-
 #endif // LBJ_NO_STB_IMPLEMENTATION
-
 #include "stb_image.h"
+
+#ifdef LOBJDER_COLOR_OUTPUT
+#include "colortext.h"
+#endif // LOBJDER_COLOR_OUTPUT
 
 // Paths
 static char * lbjp_modelsPath = NULL;
@@ -360,7 +362,17 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model)
 	}
 	FILE * fp = fopen(path, "rt");
 	if (fp == NULL) {
+
+#ifdef LOBJDER_COLOR_OUTPUT
+		ctxt_ChangeColor(CTXT_BACKGROUND_LIGHT_YELLOW);
+#endif // LOBJDER_COLOR_OUTPUT
+
 		printf("WARNING: Failed to open \"%s\".\n", path);
+
+#ifdef LOBJDER_COLOR_OUTPUT
+		ctxt_RestoreColor();
+#endif // LOBJDER_COLOR_OUTPUT
+
 		return;
 	}
 
@@ -517,7 +529,17 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model)
 
 	if (lbjp_printStats) {
 		// Print Stats
+
+#ifdef LOBJDER_COLOR_OUTPUT
+		ctxt_ChangeColor(CTXT_FOREGROUND_LIGHT_GREEN);
+#endif // LOBJDER_COLORED_OUTPUT
+
 		printf("MODEL:\n");
+
+#ifdef LOBJDER_COLOR_OUTPUT
+		ctxt_RestoreColor();
+#endif // LOBJDER_COLORED_OUTPUT
+
 		printf("Loaded \"%s\".\n", path);
 		printf("Contained: %u vertice, %u texture coord, %u normals, %u faces, %u materials\n",
 			   model->v.used,
@@ -559,7 +581,17 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init)
 	}
 	FILE * fp = fopen(path, "rt");
 	if (fp == NULL) {
+
+#ifdef LOBJDER_COLOR_OUTPUT
+		ctxt_ChangeColor(CTXT_BACKGROUND_LIGHT_YELLOW);
+#endif // LOBJDER_COLOR_OUTPUT
+
 		printf("WARNING: Failed to open \"%s\".\n", path);
+
+#ifdef LOBJDER_COLOR_OUTPUT
+		ctxt_RestoreColor();
+#endif // LOBJDER_COLOR_OUTPUT
+
 		return;
 	}
 	// Initialize the array if init != 0
@@ -662,8 +694,18 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init)
 			int n;
 			mat.texData = stbi_load(path1, &mat.texWidth, &mat.texHeight, &n, 3);
 			if (mat.texData == NULL) {
+
+#ifdef LOBJDER_COLOR_OUTPUT
+				ctxt_ChangeColor(CTXT_BACKGROUND_LIGHT_YELLOW);
+#endif // LOBJDER_COLOR_OUTPUT
+
 				printf("WARNING: Failed to open \"%s\".\n", path1);
 				printf("stb_image.h says: %s\n", stbi_failure_reason());
+
+#ifdef LOBJDER_COLOR_OUTPUT
+				ctxt_RestoreColor();
+#endif // LOBJDER_COLOR_OUTPUT
+
 			}
 			else {
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
@@ -822,7 +864,15 @@ void lbj_CreateVBO(lbj_Model * model, int economic)
 	// A variable to hold a VBOVertex 
 	lbj_VBOVertex vert;
 
-	if (lbjp_printStats) printf("Creating VBO...\n");
+#ifdef LOBJDER_COLOR_OUTPUT
+	ctxt_ChangeColor(CTXT_FOREGROUND_LIGHT_PURPLE);
+#endif // LOBJDER_COLOR_OUTPUT
+
+	if (lbjp_printStats && model->f.used != 0) printf("Creating VBO...\n");
+
+#ifdef LOBJDER_COLOR_OUTPUT
+	ctxt_RestoreColor();
+#endif // LOBJDER_COLOR_OUTPUT
 
 	for (i = 0; i < model->f.used; i++) {
 		for (j = 0; j < 4; j++) {
