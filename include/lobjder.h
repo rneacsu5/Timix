@@ -548,11 +548,11 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model)
 			   model->f.used,
 			   model->mats.used);
 		printf("Allocated %u bytes of memory\n",
-			   model->v.size * sizeof(lbj_Vector3f)+
-			   model->vt.size * sizeof(lbj_Vector3f)+
-			   model->vn.size * sizeof(lbj_Vector3f)+
-			   model->f.size * sizeof(lbj_Vector3i)* 4 +
-			   model->mats.size * sizeof(lbj_Material)+
+			   model->v.size * sizeof(lbj_Vector3f) +
+			   model->vt.size * sizeof(lbj_Vector3f) +
+			   model->vn.size * sizeof(lbj_Vector3f) +
+			   model->f.size * sizeof(lbj_Vector3i) * 4 +
+			   model->mats.size * sizeof(lbj_Material) +
 			   model->matsi.size * sizeof(unsigned int));
 		printf("\n");
 	}

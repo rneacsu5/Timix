@@ -5,10 +5,14 @@
 		A crap ton of other thing that will be done in the future (so hard to work alone...)
 		Testing... Heavy testing 
 		Make a library avalable for Timix
-	TODO: Test on Linux
 	TODO: motion: Crouch and prone
 	TODO: Shadows
 	TODO: Transparency
+
+v0.8.2-alpha
+
+	** Tested on Linux
+	** colortext: Compiles even if not on Windows (compiles succesfully, functions can be called but they do nothing)
 
 v0.8.1-alpha
 

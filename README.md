@@ -12,8 +12,8 @@ How to play
 ---
 ###Windows
 Download this repository, open `windows/Timix.sln` and build.
-###Linux [OUTDATED]
-Download this repository, navigate with your terminal to it (using cd) and enter this command:
+###Linux
+Download this repository, navigate with your terminal to it (using `cd`) and enter this command:
 ```
 make
 ```

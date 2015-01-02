@@ -98,6 +98,70 @@ void ctxt_RestoreColor(void)
 
 #endif // CTXT_IMPLEMENTATION
 
+#else
+
+// Windows is not supported so just empty function and constants
+
+// All the colors
+#define CTXT_FOREGROUND_BLACK					0
+#define CTXT_FOREGROUND_BLUE 					0
+#define CTXT_FOREGROUND_GREEN 					0
+#define CTXT_FOREGROUND_AQUA 					0
+#define CTXT_FOREGROUND_RED 					0
+#define CTXT_FOREGROUND_PURPLE 					0
+#define CTXT_FOREGROUND_YELLOW 					0
+#define CTXT_FOREGROUND_WHITE 					0
+
+#define CTXT_FOREGROUND_GRAY 					0
+#define CTXT_FOREGROUND_LIGHT_BLUE 				0
+#define CTXT_FOREGROUND_LIGHT_GREEN 			0
+#define CTXT_FOREGROUND_LIGHT_AQUA 				0
+#define CTXT_FOREGROUND_LIGHT_RED 				0
+#define CTXT_FOREGROUND_LIGHT_PURPLE  			0
+#define CTXT_FOREGROUND_LIGHT_YELLOW  			0
+#define CTXT_FOREGROUND_BRIGHT_WHITE 			0
+
+#define CTXT_BACKGROUND_BLACK 					0
+#define CTXT_BACKGROUND_BLUE 					0
+#define CTXT_BACKGROUND_GREEN 					0
+#define CTXT_BACKGROUND_AQUA 					0
+#define CTXT_BACKGROUND_RED 					0
+#define CTXT_BACKGROUND_PURPLE 					0
+#define CTXT_BACKGROUND_YELLOW 					0
+#define CTXT_BACKGROUND_WHITE 					0
+
+#define CTXT_BACKGROUND_GRAY 					0
+#define CTXT_BACKGROUND_LIGHT_BLUE 				0
+#define CTXT_BACKGROUND_LIGHT_GREEN 			0
+#define CTXT_BACKGROUND_LIGHT_AQUA 				0
+#define CTXT_BACKGROUND_LIGHT_RED 				0
+#define CTXT_BACKGROUND_LIGHT_PURPLE 			0
+#define CTXT_BACKGROUND_LIGHT_YELLOW 			0
+#define CTXT_BACKGROUND_BRIGHT_WHITE			0
+
+// Main color changing function. Use any of the colors constants from this library. You can combine foreground and background colors with |
+void ctxt_ChangeColor(int color);
+
+// Restore original color set when the application started
+void ctxt_RestoreColor(void);
+
+// Implementation
+#ifdef COLORTEXT_IMPLEMENTATION
+
+// Main color changing function. Use any of the colors constants from this library. You can combine foreground and background colors with |
+void ctxt_ChangeColor(int color)
+{
+	// Windows not supported so no code here
+}
+
+// Restore original color set when the application started
+void ctxt_RestoreColor(void)
+{
+	// Windows not supported so no code here
+}
+
+#endif // CTXT_IMPLEMENTATION
+
 #endif // _WIN32
 
 #endif // !CTXT_HEADER_INCLUDED

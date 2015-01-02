@@ -1,13 +1,11 @@
 buildrun:
-	rm -rf bin
-	mkdir bin
-	gcc -g src/main.c src/utility.c src/lobjder.c src/motion.c -lglut -lGL -lGLU -lGLEW -lm  -Linclude -Linclude/x64 -Wl,-rpath,./include/:./include/x64/ -lbass -o bin/fin -Wall
+	rm -f bin/fin
+	gcc -g src/main.c src/utility.c -lglut -lGL -lGLU -lGLEW -lm  -Llibs/Linux -Llibs/Linux/x64 -Wl,-rpath,./libs/Linux/:./libs/Linux/x64/ -lbass -o bin/fin -Wall
 	./bin/fin
 build:
-	rm -rf bin
-	mkdir bin
-	gcc -g src/main.c src/utility.c src/lobjder.c src/motion.c -lglut -lGL -lGLU -lGLEW -lm -Linclude -Linclude/x64 -Wl,-rpath,./include/:./include/x64/ -lbass -o bin/fin -Wall
+	rm -f bin/fin
+	gcc -g src/main.c src/utility.c -lglut -lGL -lGLU -lGLEW -lm -Llibs/Linux -Llibs/Linux/x64 -Wl,-rpath,./libs/Linux/:./libs/Linux/x64/ -lbass -o bin/fin -Wall
 run:
 	./bin/fin
-clear:
-	rm -rf bin
+clean:
+	rm -f bin/fin

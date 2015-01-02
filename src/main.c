@@ -209,7 +209,12 @@ void display(void)
 	lbj_LoadDefaultMaterial();
 
 	// Reset game if button pressed
-	if (!boxIsEnabled && GetKeyState('B') < 0) {
+#ifdef _WIN32
+	if (!boxIsEnabled && GetKeyState('B') < 0)
+#else
+	if (!boxIsEnabled && (mot_GetKeyStatus('b') || mot_GetKeyStatus('B')))
+#endif // _WIN32
+	{
 		mot_TeleportCamera(5, mot_GetConstant(MOT_EYE_HEIGHT), 5);
 		boxIsEnabled = !boxIsEnabled;
 	}
@@ -509,7 +514,7 @@ int main(int argc, char *argv[])
 
 	// Check OpenGL version
 	int version = 0;
-	sscanf(glGetString(GL_VERSION), "%d", &version);
+	sscanf((char *)glGetString(GL_VERSION), "%d", &version);
 	ctxt_ChangeColor(CTXT_FOREGROUND_LIGHT_AQUA);
 	printf("OpenGL version: %s\n\n", glGetString(GL_VERSION));
 	ctxt_RestoreColor();
