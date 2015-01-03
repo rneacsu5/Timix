@@ -19,7 +19,6 @@
 
 #ifdef _WIN32
 
-#include <stdio.h>
 #include <Windows.h>
 
 // All the colors
@@ -65,8 +64,14 @@ void ctxt_ChangeColor(WORD color);
 // Restore original color set when the application started
 void ctxt_RestoreColor(void);
 
+// Print the givent text to the console in the given color
+void ctxt_PrintColored(WORD color, const char* format, ...);
+
 // Implementation
 #ifdef COLORTEXT_IMPLEMENTATION
+
+#include <stdio.h>
+#include <stdarg.h>
 
 static HANDLE ctxtp_consoleHandle = 0;
 static WORD ctxtp_originalColor;
@@ -94,6 +99,22 @@ void ctxt_RestoreColor(void)
 {
 	if (ctxtp_firstUsed) ctxtp_init();
 	SetConsoleTextAttribute(ctxtp_consoleHandle, ctxtp_originalColor);
+}
+
+// Print the givent text to the console in the given color
+void ctxt_PrintColored(WORD color, const char* format, ...)
+{
+	// Change color
+	ctxt_ChangeColor(color);
+
+	// Print text
+	va_list args;
+	va_start(args, format);
+	vprintf(format, args);
+	va_end(args);
+
+	// Restore color
+	ctxt_RestoreColor();
 }
 
 #endif // CTXT_IMPLEMENTATION
@@ -145,8 +166,14 @@ void ctxt_ChangeColor(int color);
 // Restore original color set when the application started
 void ctxt_RestoreColor(void);
 
+// Print the givent text to the console in the given color
+void ctxt_PrintColored(WORD color, const char* format, ...);
+
 // Implementation
 #ifdef COLORTEXT_IMPLEMENTATION
+
+#include <stdio.h>
+#include <stdarg.h>
 
 // Main color changing function. Use any of the colors constants from this library. You can combine foreground and background colors with |
 void ctxt_ChangeColor(int color)
@@ -158,6 +185,22 @@ void ctxt_ChangeColor(int color)
 void ctxt_RestoreColor(void)
 {
 	// Windows not supported so no code here
+}
+
+// Print the givent text to the console in the given color
+void ctxt_PrintColored(WORD color, const char* format, ...)
+{
+	// Change color
+	ctxt_ChangeColor(color);
+
+	// Print text
+	va_list args;
+	va_start(args, format);
+	vprintf(format, args);
+	va_end(args);
+
+	// Restore color
+	ctxt_RestoreColor();
 }
 
 #endif // CTXT_IMPLEMENTATION

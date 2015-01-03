@@ -209,11 +209,7 @@ void display(void)
 	lbj_LoadDefaultMaterial();
 
 	// Reset game if button pressed
-#ifdef _WIN32
-	if (!boxIsEnabled && GetKeyState('B') < 0)
-#else
 	if (!boxIsEnabled && (mot_GetKeyStatus('b') || mot_GetKeyStatus('B')))
-#endif // _WIN32
 	{
 		mot_TeleportCamera(5, mot_GetConstant(MOT_EYE_HEIGHT), 5);
 		boxIsEnabled = !boxIsEnabled;
@@ -504,9 +500,7 @@ int main(int argc, char *argv[])
 	GLenum error = glewInit();
 	if (error != GLEW_OK) {
 		// Problem: glewInit failed, something is seriously wrong.
-		ctxt_ChangeColor(CTXT_FOREGROUND_LIGHT_RED);
-		printf("GLEW Error: %s\n", glewGetErrorString(error));
-		ctxt_RestoreColor();
+		ctxt_PrintColored(CTXT_FOREGROUND_LIGHT_RED, "GLEW Error: %s\n", glewGetErrorString(error));
 		printf("Press enter to exit...\n");
 		getchar();
 		exit(0);
@@ -519,9 +513,7 @@ int main(int argc, char *argv[])
 	printf("OpenGL version: %s\n\n", glGetString(GL_VERSION));
 	ctxt_RestoreColor();
 	if (version < 3) {
-		ctxt_ChangeColor(CTXT_FOREGROUND_LIGHT_RED);
-		printf("This application needs a minimum OpenGL version of 3.x.\nPlease update graphics card driver.\n\n");
-		ctxt_RestoreColor();
+		ctxt_PrintColored(CTXT_FOREGROUND_LIGHT_RED, "This application needs a minimum OpenGL version of 3.x.\nPlease update graphics card driver.\n\n");
 		printf("Press enter to exit...\n");
 		getchar();
 		exit(0);

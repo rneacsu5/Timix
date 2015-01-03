@@ -364,13 +364,9 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model)
 	if (fp == NULL) {
 
 #ifdef LOBJDER_COLOR_OUTPUT
-		ctxt_ChangeColor(CTXT_BACKGROUND_LIGHT_YELLOW);
-#endif // LOBJDER_COLOR_OUTPUT
-
+		ctxt_PrintColored(CTXT_BACKGROUND_LIGHT_YELLOW, "WARNING: Failed to open \"%s\".\n", path);
+#else
 		printf("WARNING: Failed to open \"%s\".\n", path);
-
-#ifdef LOBJDER_COLOR_OUTPUT
-		ctxt_RestoreColor();
 #endif // LOBJDER_COLOR_OUTPUT
 
 		return;
@@ -531,13 +527,9 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model)
 		// Print Stats
 
 #ifdef LOBJDER_COLOR_OUTPUT
-		ctxt_ChangeColor(CTXT_FOREGROUND_LIGHT_GREEN);
-#endif // LOBJDER_COLORED_OUTPUT
-
+		ctxt_PrintColored(CTXT_FOREGROUND_LIGHT_GREEN, "MODEL:\n");
+#else
 		printf("MODEL:\n");
-
-#ifdef LOBJDER_COLOR_OUTPUT
-		ctxt_RestoreColor();
 #endif // LOBJDER_COLORED_OUTPUT
 
 		printf("Loaded \"%s\".\n", path);
@@ -583,13 +575,9 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init)
 	if (fp == NULL) {
 
 #ifdef LOBJDER_COLOR_OUTPUT
-		ctxt_ChangeColor(CTXT_BACKGROUND_LIGHT_YELLOW);
-#endif // LOBJDER_COLOR_OUTPUT
-
+		ctxt_PrintColored(CTXT_BACKGROUND_LIGHT_YELLOW, "WARNING: Failed to open \"%s\".\n", path);
+#else
 		printf("WARNING: Failed to open \"%s\".\n", path);
-
-#ifdef LOBJDER_COLOR_OUTPUT
-		ctxt_RestoreColor();
 #endif // LOBJDER_COLOR_OUTPUT
 
 		return;
@@ -696,14 +684,9 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init)
 			if (mat.texData == NULL) {
 
 #ifdef LOBJDER_COLOR_OUTPUT
-				ctxt_ChangeColor(CTXT_BACKGROUND_LIGHT_YELLOW);
-#endif // LOBJDER_COLOR_OUTPUT
-
-				printf("WARNING: Failed to open \"%s\".\n", path1);
-				printf("stb_image.h says: %s\n", stbi_failure_reason());
-
-#ifdef LOBJDER_COLOR_OUTPUT
-				ctxt_RestoreColor();
+				ctxt_PrintColored(CTXT_BACKGROUND_LIGHT_YELLOW, "WARNING: Failed to open \"%s\".\nstb_image.h says: %s\n", path1, stbi_failure_reason());
+#else
+				printf("WARNING: Failed to open \"%s\".\nstb_image.h says: %s\n", path1, stbi_failure_reason());
 #endif // LOBJDER_COLOR_OUTPUT
 
 			}
@@ -864,14 +847,12 @@ void lbj_CreateVBO(lbj_Model * model, int economic)
 	// A variable to hold a VBOVertex 
 	lbj_VBOVertex vert;
 
-#ifdef LOBJDER_COLOR_OUTPUT
-	ctxt_ChangeColor(CTXT_FOREGROUND_LIGHT_PURPLE);
-#endif // LOBJDER_COLOR_OUTPUT
-
-	if (lbjp_printStats && model->f.used != 0) printf("Creating VBO...\n");
+	if (lbjp_printStats && model->f.used != 0) 
 
 #ifdef LOBJDER_COLOR_OUTPUT
-	ctxt_RestoreColor();
+		ctxt_PrintColored(CTXT_FOREGROUND_LIGHT_PURPLE, "Creating VBO...\n");
+#else
+		printf("Creating VBO...\n");
 #endif // LOBJDER_COLOR_OUTPUT
 
 	for (i = 0; i < model->f.used; i++) {

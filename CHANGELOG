@@ -9,10 +9,15 @@
 	TODO: Shadows
 	TODO: Transparency
 
+v0.8.3-alpha
+
+	++ colortext: New function: ctxt_PrintColored() that prints the given text in the given color (works like printf)
+	** Implemented the function in the code (less code now)
+
 v0.8.2-alpha
 
 	** Tested on Linux
-	** colortext: Compiles even if not on Windows (compiles succesfully, functions can be called but they do nothing)
+	** colortext: Works even if not on Windows (compiles succesfully and functions/constants can be used but they do nothing)
 
 v0.8.1-alpha
 
