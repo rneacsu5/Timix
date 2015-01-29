@@ -49,7 +49,7 @@ int fpsCurrentTime = 0, fpsPreviousTime = 0, fpsFrameCount = 0;
 lbj_Arraym terrainMats;
 
 // Models
-lbj_Model planeModel, nexusModel, carModel;
+lbj_Model planeModel, nexusModel, carModel, mengerModel;
 
 // Music stream
 int musicStream;
@@ -262,6 +262,15 @@ void display(void)
 		glScalef(0.01, 0.01, 0.01);
 		lbj_DrawModelVBO(nexusModel);
 		glPopMatrix();
+
+		// Draws Menger Sponge
+		glPushMatrix();
+		glTranslatef(12, 0, 15);
+		glRotatef(45, 0, 1, 0);
+		glScalef(0.05, 0.05, 0.05);
+		glTranslatef(-27, 0, -27);
+		lbj_DrawModelVBO(mengerModel);
+		glPopMatrix();
 	}
 	// Draw and move box away from player
 	else {
@@ -403,6 +412,10 @@ void initialize(void)
 	lbj_LoadOBJToModel("Avent.obj", &carModel);
 	lbj_CreateVBO(&carModel, 0);
 	lbj_SetFlipping(0, 1, 0, 0, 0);
+
+	// Menger Sponge
+	lbj_LoadOBJToModel("menger_sponge_4.obj", &mengerModel);
+	lbj_CreateVBO(&mengerModel, 0);
 
 	// Loads the shaders
 	loadShaders("./src/vshader.vsh", GL_VERTEX_SHADER, "./src/fshader.fsh", GL_FRAGMENT_SHADER);

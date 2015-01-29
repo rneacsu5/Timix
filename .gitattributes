@@ -11,3 +11,4 @@
 *.exe binary
 *.png binary
 *.jpg binary
+*.obj binary
