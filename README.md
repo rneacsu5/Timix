@@ -17,9 +17,9 @@ Download this repository, navigate with your terminal to it (using `cd`) and ent
 ```
 make
 ```
-Note: You must have `glew` installed. Install it using:
+Note: You must have `freeglut-dev` and `libglew1.5` installed. Install both with:
 ```
-sudo apt-get install libglew1.5
+make install
 ```
 Enjoy.
 Note

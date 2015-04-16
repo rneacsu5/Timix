@@ -6,15 +6,8 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
 
-#ifdef _WIN32
-
 #include <bass.h>
 
-#else
-
-#include "../libs/Linux/bass.h"
-
-#endif // _WIN32
 
 #include "../include/utility.h"
 #define COLORTEXT_IMPLEMENTATION
@@ -522,9 +515,7 @@ int main(int argc, char *argv[])
 	// Check OpenGL version
 	int version = 0;
 	sscanf((char *)glGetString(GL_VERSION), "%d", &version);
-	ctxt_ChangeColor(CTXT_FOREGROUND_LIGHT_AQUA);
-	printf("OpenGL version: %s\n\n", glGetString(GL_VERSION));
-	ctxt_RestoreColor();
+	ctxt_PrintColored(CTXT_FOREGROUND_LIGHT_AQUA, "OpenGL version: %s\n\n", glGetString(GL_VERSION));
 	if (version < 3) {
 		ctxt_PrintColored(CTXT_FOREGROUND_LIGHT_RED, "This application needs a minimum OpenGL version of 3.x.\nPlease update graphics card driver.\n\n");
 		printf("Press enter to exit...\n");
