@@ -9,6 +9,11 @@
 	TODO: Shadows
 	TODO: Transparency
 
+v0.8.4-alpha
+
+	** Changed libs folder structure
+	++ "make install" now installs freeglut3-dev and libglew1.5 (required for Linux)
+
 v0.8.3-alpha
 
 	++ colortext: New function: ctxt_PrintColored() that prints the given text in the given color (works like printf)
