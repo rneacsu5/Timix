@@ -69,38 +69,38 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin\MapCreator\$(Configuration)\</OutDir>
-    <IncludePath>$(SolutionDir)..\libs\include\;$(IncludePath)</IncludePath>
-    <ExecutablePath>$(SolutionDir)..\libs\bin\;$(ExecutablePath)</ExecutablePath>
-    <ReferencePath>$(SolutionDir)..\libs\lib\;$(ReferencePath)</ReferencePath>
-    <LibraryPath>$(SolutionDir)..\libs\lib\;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)..\libs\Windows\include\;$(IncludePath)</IncludePath>
+    <ExecutablePath>$(SolutionDir)..\libs\Windows\bin\;$(ExecutablePath)</ExecutablePath>
+    <ReferencePath>$(SolutionDir)..\libs\Windows\lib\;$(ReferencePath)</ReferencePath>
+    <LibraryPath>$(SolutionDir)..\libs\Windows\lib\;$(LibraryPath)</LibraryPath>
     <IntDir>bin\MapCreator\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IntDir>bin\MapCreator\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir)bin\MapCreator\$(Configuration)\</OutDir>
-    <IncludePath>$(SolutionDir)..\libs\include\;$(IncludePath)</IncludePath>
-    <ExecutablePath>$(SolutionDir)..\libs\bin\x64\;$(ExecutablePath)</ExecutablePath>
-    <ReferencePath>$(SolutionDir)..\libs\lib\x64\;$(ReferencePath)</ReferencePath>
-    <LibraryPath>$(SolutionDir)..\libs\lib\x64\;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)..\libs\Windows\include\;$(IncludePath)</IncludePath>
+    <ExecutablePath>$(SolutionDir)..\libs\Windows\bin\x64\;$(ExecutablePath)</ExecutablePath>
+    <ReferencePath>$(SolutionDir)..\libs\Windows\lib\x64\;$(ReferencePath)</ReferencePath>
+    <LibraryPath>$(SolutionDir)..\libs\Windows\lib\x64\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin\MapCreator\$(Configuration)\</OutDir>
-    <IncludePath>$(SolutionDir)..\libs\include\;$(IncludePath)</IncludePath>
-    <ExecutablePath>$(SolutionDir)..\libs\bin\;$(ExecutablePath)</ExecutablePath>
-    <ReferencePath>$(SolutionDir)..\libs\lib\;$(ReferencePath)</ReferencePath>
-    <LibraryPath>$(SolutionDir)..\libs\lib\;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)..\libs\Windows\include\;$(IncludePath)</IncludePath>
+    <ExecutablePath>$(SolutionDir)..\libs\Windows\bin\;$(ExecutablePath)</ExecutablePath>
+    <ReferencePath>$(SolutionDir)..\libs\Windows\lib\;$(ReferencePath)</ReferencePath>
+    <LibraryPath>$(SolutionDir)..\libs\Windows\lib\;$(LibraryPath)</LibraryPath>
     <IntDir>bin\MapCreator\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin\MapCreator\$(Configuration)\</OutDir>
     <IntDir>bin\MapCreator\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)..\libs\include\;$(IncludePath)</IncludePath>
-    <ExecutablePath>$(SolutionDir)..\libs\bin\x64\;$(ExecutablePath)</ExecutablePath>
-    <ReferencePath>$(SolutionDir)..\libs\lib\x64\;$(ReferencePath)</ReferencePath>
-    <LibraryPath>$(SolutionDir)..\libs\lib\x64\;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)..\libs\Windows\include\;$(IncludePath)</IncludePath>
+    <ExecutablePath>$(SolutionDir)..\libs\Windows\bin\x64\;$(ExecutablePath)</ExecutablePath>
+    <ReferencePath>$(SolutionDir)..\libs\Windows\lib\x64\;$(ReferencePath)</ReferencePath>
+    <LibraryPath>$(SolutionDir)..\libs\Windows\lib\x64\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -113,16 +113,16 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\libs\Windows\bin\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>opengl32.lib;glu32.lib;user32.lib;glut32.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>if "$(Platform)"=="Win32" (
-for %%a in ("$(SolutionDir)..\libs\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+for %%a in ("$(SolutionDir)..\libs\Windows\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
 xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"
 )
 if "$(Platform)"=="x64" (
-for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+for %%a in ("$(SolutionDir)..\libs\Windows\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
 xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64\"
 )</Command>
     </PostBuildEvent>
@@ -138,16 +138,16 @@ xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64\"
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\x64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\libs\Windows\bin\x64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>opengl32.lib;glu32.lib;user32.lib;glut64.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>if "$(Platform)"=="Win32" (
-for %%a in ("$(SolutionDir)..\libs\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+for %%a in ("$(SolutionDir)..\libs\Windows\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
 xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"
 )
 if "$(Platform)"=="x64" (
-for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+for %%a in ("$(SolutionDir)..\libs\Windows\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
 xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64\"
 )</Command>
     </PostBuildEvent>
@@ -167,16 +167,16 @@ xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64\"
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\libs\Windows\bin\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>opengl32.lib;glu32.lib;user32.lib;glut32.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>if "$(Platform)"=="Win32" (
-for %%a in ("$(SolutionDir)..\libs\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+for %%a in ("$(SolutionDir)..\libs\Windows\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
 xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"
 )
 if "$(Platform)"=="x64" (
-for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+for %%a in ("$(SolutionDir)..\libs\Windows\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
 xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64\"
 )</Command>
     </PostBuildEvent>
@@ -196,16 +196,16 @@ xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64\"
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\libs\bin\x64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\libs\Windows\bin\x64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>opengl32.lib;glu32.lib;user32.lib;glut64.lib;glew32.lib;glew32s.lib;bass.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>if "$(Platform)"=="Win32" (
-for %%a in ("$(SolutionDir)..\libs\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+for %%a in ("$(SolutionDir)..\libs\Windows\bin\*.*") do xcopy /Y "%%a" "$(TargetDir)"
 xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\"
 )
 if "$(Platform)"=="x64" (
-for %%a in ("$(SolutionDir)..\libs\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
+for %%a in ("$(SolutionDir)..\libs\Windows\bin\x64\*.*") do xcopy /Y "%%a" "$(TargetDir)"
 xcopy /Y "$(TargetPath)" "$(SolutionDir)..\bin\x64\"
 )</Command>
     </PostBuildEvent>

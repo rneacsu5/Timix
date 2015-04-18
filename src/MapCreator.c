@@ -84,13 +84,13 @@ void resizeArrayData(MAP_Data* a, unsigned int size[3])
 // Returns the cube at the given position
 MAP_Cube getCubeAt(MAP_Data d, int x, int y, int z)
 {
-	return d.array[(z + d.offset[2]) + (y + d.offset[1]) * d.size[2] + (x + d.offset[0]) * d.size[2] * d.size[1]];
+	return d.array[(z - d.offset[2]) + (y - d.offset[1]) * d.size[2] + (x - d.offset[0]) * d.size[2] * d.size[1]];
 }
 
 // Sets the cube at the given position
 void setCubeAt(MAP_Data *d, int x, int y, int z, MAP_Cube c)
 {
-	d->array[(z + d->offset[2]) + (y + d->offset[1]) * d->size[2] + (x + d->offset[0]) * d->size[2] * d->size[1]] = c;
+	d->array[(z - d->offset[2]) + (y - d->offset[1]) * d->size[2] + (x - d->offset[0]) * d->size[2] * d->size[1]] = c;
 }
 
 // Folder where to store and load maps files
@@ -109,9 +109,9 @@ void drawMap(MAP_Map map)
 {
 	int a, b, c;
 	// "For frenzy"
-	for (a = -map.Data.offset[0]; a < (int)map.Data.size[0] - map.Data.offset[0]; a++) {
-		for (b = -map.Data.offset[1]; b < (int)map.Data.size[1] - map.Data.offset[1]; b++) {
-			for (c = -map.Data.offset[2]; c < (int)map.Data.size[2] - map.Data.offset[2]; c++) {
+	for (a = map.Data.offset[0]; a < (int)map.Data.size[0] + map.Data.offset[0]; a++) {
+		for (b = map.Data.offset[1]; b < (int)map.Data.size[1] + map.Data.offset[1]; b++) {
+			for (c = map.Data.offset[2]; c < (int)map.Data.size[2] + map.Data.offset[2]; c++) {
 				if (getCubeAt(map.Data, a, b, c).type != CUBE_AIR) {
 					glPushMatrix();
 					glTranslatef(a + 0.5, b + 0.5, c + 0.5);
@@ -196,9 +196,9 @@ int loadMapFromFile(FILE * fp, MAP_Map * map)
 	// Now initialize the map
 	initMap(&myMap, size);
 
-	// Offset is -min
+	// Offset is min
 	for (int i = 0; i < 3; i++) {
-		myMap.Data.offset[i] = -min[i];
+		myMap.Data.offset[i] = min[i];
 	}
 
 	// Get the name of the map
@@ -237,9 +237,9 @@ int saveMapToFile(FILE * fp, MAP_Map map)
 
 	int a, b, c;
 	// "For frenzy"
-	for (a = -map.Data.offset[0]; a < (int)map.Data.size[0] - map.Data.offset[0]; a++) {
-		for (b = -map.Data.offset[1]; b < (int)map.Data.size[1] - map.Data.offset[1]; b++) {
-			for (c = -map.Data.offset[2]; c < (int)map.Data.size[2] - map.Data.offset[2]; c++) {
+	for (a = map.Data.offset[0]; a < (int)map.Data.size[0] + map.Data.offset[0]; a++) {
+		for (b = map.Data.offset[1]; b < (int)map.Data.size[1] + map.Data.offset[1]; b++) {
+			for (c = map.Data.offset[2]; c < (int)map.Data.size[2] + map.Data.offset[2]; c++) {
 				// If the cube is not air add it to the array
 				if (getCubeAt(map.Data, a, b, c).type != CUBE_AIR) {
 					// Increment
@@ -392,31 +392,31 @@ void changeBlock(void)
 	}
 
 	// Check if the block is outside the boundary and resize newMap's size and offset
-	if (pos.x < -Map.Data.offset[0]) {
-		newData.size[0] += -Map.Data.offset[0] - pos.x;
-		newData.offset[0] = -pos.x;
+	if (pos.x < Map.Data.offset[0]) {
+		newData.size[0] += Map.Data.offset[0] - pos.x;
+		newData.offset[0] = pos.x;
 		resize = 1;
 	}
-	if (pos.y < -Map.Data.offset[1]) {
-		newData.size[1] += -Map.Data.offset[1] - pos.y;
-		newData.offset[1] = -pos.y;
+	if (pos.y < Map.Data.offset[1]) {
+		newData.size[1] += Map.Data.offset[1] - pos.y;
+		newData.offset[1] = pos.y;
 		resize = 1;
 	}
-	if (pos.z < -Map.Data.offset[2]) {
-		newData.size[2] += -Map.Data.offset[2] - pos.z;
-		newData.offset[2] = -pos.z;
+	if (pos.z < Map.Data.offset[2]) {
+		newData.size[2] += Map.Data.offset[2] - pos.z;
+		newData.offset[2] = pos.z;
 		resize = 1;
 	}
-	if (pos.x > Map.Data.size[0] - Map.Data.offset[0] - 1) {
-		newData.size[0] += pos.x - Map.Data.size[0] + Map.Data.offset[0] + 1;
+	if (pos.x > Map.Data.size[0] + Map.Data.offset[0] - 1) {
+		newData.size[0] += pos.x - Map.Data.size[0] - Map.Data.offset[0] + 1;
 		resize = 1;
 	}
-	if (pos.y > Map.Data.size[1] - Map.Data.offset[1] - 1) {
-		newData.size[1] += pos.y - Map.Data.size[1] + Map.Data.offset[1] + 1;
+	if (pos.y > Map.Data.size[1] + Map.Data.offset[1] - 1) {
+		newData.size[1] += pos.y - Map.Data.size[1] - Map.Data.offset[1] + 1;
 		resize = 1;
 	}
-	if (pos.z > Map.Data.size[2] - Map.Data.offset[2] - 1) {
-		newData.size[2] += pos.z - Map.Data.size[2] + Map.Data.offset[2] + 1;
+	if (pos.z > Map.Data.size[2] + Map.Data.offset[2] - 1) {
+		newData.size[2] += pos.z - Map.Data.size[2] - Map.Data.offset[2] + 1;
 		resize = 1;
 	}
 
@@ -449,9 +449,9 @@ void changeBlock(void)
 		// The content of the original map is copied to the new map
 		int a, b, c;
 		// "For frenzy"
-		for (a = -Map.Data.offset[0]; a < (int)Map.Data.size[0] - Map.Data.offset[0]; a++) {
-			for (b = -Map.Data.offset[1]; b < (int)Map.Data.size[1] - Map.Data.offset[1]; b++) {
-				for (c = -Map.Data.offset[2]; c < (int)Map.Data.size[2] - Map.Data.offset[2]; c++) {
+		for (a = Map.Data.offset[0]; a < (int)Map.Data.size[0] + Map.Data.offset[0]; a++) {
+			for (b = Map.Data.offset[1]; b < (int)Map.Data.size[1] + Map.Data.offset[1]; b++) {
+				for (c = Map.Data.offset[2]; c < (int)Map.Data.size[2] + Map.Data.offset[2]; c++) {
 					setCubeAt(&newData, a, b, c, getCubeAt(Map.Data, a, b, c));
 				}
 			}
@@ -480,31 +480,31 @@ void drawGuides(void)
 	if (!mot_GetState(MOT_IS_OP)) return;
 	// Draw Map bound
 	glBegin(GL_LINE_LOOP);
-		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2]);
-		glVertex3f(-Map.Data.offset[0] + Map.Data.size[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2]);
-		glVertex3f(-Map.Data.offset[0] + Map.Data.size[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2] + Map.Data.size[2]);
-		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2] + Map.Data.size[2]);
+		glVertex3f(Map.Data.offset[0], Map.Data.offset[1] + Map.Data.size[1], Map.Data.offset[2]);
+		glVertex3f(Map.Data.offset[0] + Map.Data.size[0], Map.Data.offset[1] + Map.Data.size[1], Map.Data.offset[2]);
+		glVertex3f(Map.Data.offset[0] + Map.Data.size[0], Map.Data.offset[1] + Map.Data.size[1], Map.Data.offset[2] + Map.Data.size[2]);
+		glVertex3f(Map.Data.offset[0], Map.Data.offset[1] + Map.Data.size[1], Map.Data.offset[2] + Map.Data.size[2]);
 	glEnd();
 
 	glBegin(GL_LINE_LOOP);
-		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1], -Map.Data.offset[2]);
-		glVertex3f(-Map.Data.offset[0] + Map.Data.size[0], -Map.Data.offset[1], -Map.Data.offset[2]);
-		glVertex3f(-Map.Data.offset[0] + Map.Data.size[0], -Map.Data.offset[1], -Map.Data.offset[2] + Map.Data.size[2]);
-		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1], -Map.Data.offset[2] + Map.Data.size[2]);
+		glVertex3f(Map.Data.offset[0], Map.Data.offset[1], Map.Data.offset[2]);
+		glVertex3f(Map.Data.offset[0] + Map.Data.size[0], Map.Data.offset[1], Map.Data.offset[2]);
+		glVertex3f(Map.Data.offset[0] + Map.Data.size[0], Map.Data.offset[1], Map.Data.offset[2] + Map.Data.size[2]);
+		glVertex3f(Map.Data.offset[0], Map.Data.offset[1], Map.Data.offset[2] + Map.Data.size[2]);
 	glEnd();
 
 	glBegin(GL_LINES);
-		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1], -Map.Data.offset[2]);
-		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2]);
+		glVertex3f(Map.Data.offset[0], Map.Data.offset[1], Map.Data.offset[2]);
+		glVertex3f(Map.Data.offset[0], Map.Data.offset[1] + Map.Data.size[1], Map.Data.offset[2]);
 
-		glVertex3f(-Map.Data.offset[0] + Map.Data.size[0], -Map.Data.offset[1], -Map.Data.offset[2]);
-		glVertex3f(-Map.Data.offset[0] + Map.Data.size[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2]);
+		glVertex3f(Map.Data.offset[0] + Map.Data.size[0], Map.Data.offset[1], Map.Data.offset[2]);
+		glVertex3f(Map.Data.offset[0] + Map.Data.size[0], Map.Data.offset[1] + Map.Data.size[1], Map.Data.offset[2]);
 
-		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1], -Map.Data.offset[2] + Map.Data.size[2]);
-		glVertex3f(-Map.Data.offset[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2] + Map.Data.size[2]);
+		glVertex3f(Map.Data.offset[0], Map.Data.offset[1], Map.Data.offset[2] + Map.Data.size[2]);
+		glVertex3f(Map.Data.offset[0], Map.Data.offset[1] + Map.Data.size[1], Map.Data.offset[2] + Map.Data.size[2]);
 
-		glVertex3f(-Map.Data.offset[0] + Map.Data.size[0], -Map.Data.offset[1], -Map.Data.offset[2] + Map.Data.size[2]);
-		glVertex3f(-Map.Data.offset[0] + Map.Data.size[0], -Map.Data.offset[1] + Map.Data.size[1], -Map.Data.offset[2] + Map.Data.size[2]);
+		glVertex3f(Map.Data.offset[0] + Map.Data.size[0], Map.Data.offset[1], Map.Data.offset[2] + Map.Data.size[2]);
+		glVertex3f(Map.Data.offset[0] + Map.Data.size[0], Map.Data.offset[1] + Map.Data.size[1], Map.Data.offset[2] + Map.Data.size[2]);
 	glEnd();
 	
 	// Select cube
