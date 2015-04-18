@@ -24,6 +24,8 @@
 #define true 1
 #define false 0
 
+#define MINIMUM_OPENGL_VERSION 3
+
 // Light parameters
 GLfloat lightPos[] = {10, 4.5, 10, 1};
 GLfloat lightAmbient[] = {0.5, 0.5, 0.5, 1};
@@ -494,7 +496,7 @@ void bass(void) {
 
 int main(int argc, char *argv[])
 {
-	printf("===================================================\n");
+	printf("\n===================================================\n");
 	// Initialize OpenGL, create a window
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
@@ -506,7 +508,7 @@ int main(int argc, char *argv[])
 	GLenum error = glewInit();
 	if (error != GLEW_OK) {
 		// Problem: glewInit failed, something is seriously wrong.
-		ctxt_PrintColored(CTXT_FOREGROUND_LIGHT_RED, "GLEW Error: %s\n", glewGetErrorString(error));
+		ctxt_PrintColored(ctxt_CreateColor(CTXT_LIGHT_RED, CTXT_DEFAULT, CTXT_BOLD), "GLEW Error: %s\n\n", glewGetErrorString(error));
 		printf("Press enter to exit...\n");
 		getchar();
 		exit(0);
@@ -515,9 +517,9 @@ int main(int argc, char *argv[])
 	// Check OpenGL version
 	int version = 0;
 	sscanf((char *)glGetString(GL_VERSION), "%d", &version);
-	ctxt_PrintColored(CTXT_FOREGROUND_LIGHT_AQUA, "OpenGL version: %s\n\n", glGetString(GL_VERSION));
-	if (version < 3) {
-		ctxt_PrintColored(CTXT_FOREGROUND_LIGHT_RED, "This application needs a minimum OpenGL version of 3.x.\nPlease update graphics card driver.\n\n");
+	ctxt_PrintColored(ctxt_CreateColor(CTXT_LIGHT_CYAN, CTXT_DEFAULT, CTXT_UNDERLINED), "OpenGL version: %s\n\n", glGetString(GL_VERSION));
+	if (version < MINIMUM_OPENGL_VERSION) {
+		ctxt_PrintColored(ctxt_CreateColor(CTXT_LIGHT_RED, CTXT_DEFAULT, CTXT_BOLD), "This application needs a minimum OpenGL version of %d.x.\nPlease update graphics card driver.\n\n", MINIMUM_OPENGL_VERSION);
 		printf("Press enter to exit...\n");
 		getchar();
 		exit(0);

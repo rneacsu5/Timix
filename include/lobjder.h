@@ -364,7 +364,8 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model)
 	if (fp == NULL) {
 
 #ifdef LOBJDER_COLOR_OUTPUT
-		ctxt_PrintColored(CTXT_BACKGROUND_LIGHT_YELLOW, "WARNING: Failed to open \"%s\".\n", path);
+		ctxt_PrintColored(ctxt_CreateColor(CTXT_BLACK, CTXT_LIGHT_YELLOW, CTXT_DEFAULT), "WARNING: Failed to open \"%s\".", path);
+		printf("\n");
 #else
 		printf("WARNING: Failed to open \"%s\".\n", path);
 #endif // LOBJDER_COLOR_OUTPUT
@@ -527,7 +528,7 @@ void lbj_LoadOBJToModel(char * fileName, lbj_Model * model)
 		// Print Stats
 
 #ifdef LOBJDER_COLOR_OUTPUT
-		ctxt_PrintColored(CTXT_FOREGROUND_LIGHT_GREEN, "MODEL:\n");
+		ctxt_PrintColored(ctxt_CreateColor(CTXT_LIGHT_GREEN, CTXT_DEFAULT, CTXT_UNDERLINED), "MODEL:\n");
 #else
 		printf("MODEL:\n");
 #endif // LOBJDER_COLORED_OUTPUT
@@ -575,7 +576,8 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init)
 	if (fp == NULL) {
 
 #ifdef LOBJDER_COLOR_OUTPUT
-		ctxt_PrintColored(CTXT_BACKGROUND_LIGHT_YELLOW, "WARNING: Failed to open \"%s\".\n", path);
+		ctxt_PrintColored(ctxt_CreateColor(CTXT_BLACK, CTXT_LIGHT_YELLOW, CTXT_DEFAULT), "WARNING: Failed to open \"%s\".", path);
+		printf("\n");
 #else
 		printf("WARNING: Failed to open \"%s\".\n", path);
 #endif // LOBJDER_COLOR_OUTPUT
@@ -684,7 +686,8 @@ void lbj_LoadMTLToMaterials(char * fileName, lbj_Arraym * mats, int init)
 			if (mat.texData == NULL) {
 
 #ifdef LOBJDER_COLOR_OUTPUT
-				ctxt_PrintColored(CTXT_BACKGROUND_LIGHT_YELLOW, "WARNING: Failed to open \"%s\".\nstb_image.h says: %s\n", path1, stbi_failure_reason());
+				ctxt_PrintColored(ctxt_CreateColor(CTXT_BLACK, CTXT_LIGHT_YELLOW, CTXT_DEFAULT), "WARNING: Failed to open \"%s\".\nstb_image.h says: %s", path1, stbi_failure_reason());
+				printf("\n");
 #else
 				printf("WARNING: Failed to open \"%s\".\nstb_image.h says: %s\n", path1, stbi_failure_reason());
 #endif // LOBJDER_COLOR_OUTPUT
@@ -850,7 +853,7 @@ void lbj_CreateVBO(lbj_Model * model, int economic)
 	if (lbjp_printStats && model->f.used != 0) 
 
 #ifdef LOBJDER_COLOR_OUTPUT
-		ctxt_PrintColored(CTXT_FOREGROUND_LIGHT_PURPLE, "Creating VBO...\n");
+		ctxt_PrintColored(ctxt_CreateColor(CTXT_LIGHT_MAGENTA, CTXT_DEFAULT, CTXT_DEFAULT), "Creating VBO...\n");
 #else
 		printf("Creating VBO...\n");
 #endif // LOBJDER_COLOR_OUTPUT
