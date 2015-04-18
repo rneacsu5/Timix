@@ -105,7 +105,7 @@ void ctxt_ChangeColor(ctxt_Color color)
 {
 	if (ctxtp_firstUsed) ctxtp_init();
 
-	WORD newAttr = ctxtp_textAttributes;
+	short newAttr = ctxtp_textAttributes;
 	if (!(color.foreColor & CTXT_DEFAULT)) {
 		// Set new foreground
 		newAttr = newAttr / (1 << 4) + (color.foreColor >> 1);
